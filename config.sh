@@ -711,8 +711,12 @@ do
 		break
 	;;
 	'-r'|'--oscam-revision')
-		offset=1103 #difference between last svn revision number and git commit count (without merge commits) + 1
-		revision=`git rev-list --no-merges --count HEAD`
+		#get revision based on latest git tag
+		revision=`git describe --tags --abbrev=0 2>/dev/null`
+		if [ -z $revision ]; then
+			#get revision based on git-svn-id in commit message
+			revision=`git log -10 --pretty=%B | grep git-svn-id | head -n 1 | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
+		fi
 		emuversion=`grep EMU_VERSION module-emulator-osemu.h | awk '{ print $3 }'`
 		echo $(($offset + $revision))-$emuversion
 		break
