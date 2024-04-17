@@ -18,6 +18,6 @@ jobs:
       run: |
         git config --global user.name "oscam-emu"
         git config --global user.email "oscam-emu@users.noreply.github.com"
-        git remote add --track master oscam-gitlab https://git.streamboard.tv/common/oscam.git
-        git pull oscam-gitlab master
-        git push origin 
+        git remote add --track master streamboard https://git.streamboard.tv/common/oscam.git
+        git pull streamboard master
+        git push origin --tags
