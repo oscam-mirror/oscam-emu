@@ -718,7 +718,7 @@ do
 			revision=`git log -10 --pretty=%B | grep git-svn-id | head -n 1 | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
 		fi
 		emuversion=`grep EMU_VERSION module-emulator-osemu.h | awk '{ print $3 }'`
-		echo $(($offset + $revision))-$emuversion
+		echo $revision-$emuversion
 		break
 	;;
 	'-c'|'--oscam-commit')
