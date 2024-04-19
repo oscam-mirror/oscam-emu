@@ -335,7 +335,7 @@ static int8_t gbox_clear_peer(struct gbox_peer *peer)
 	peer->ecm_idx = 0;
 	peer->next_hello = 0;
 	peer->authstat = 0;
-
+	peer->crd_crc_change = 1;
 	gbox_delete_cards(GBOX_DELETE_FROM_PEER, peer->gbox.id);
 	gbox_peer_online(peer, GBOX_PEER_OFFLINE);
 
