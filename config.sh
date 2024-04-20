@@ -715,7 +715,11 @@ do
 		revision=`git describe --tags --abbrev=0 2>/dev/null`
 		if [ -z $revision ]; then
 			#get revision based on git-svn-id in commit message
-			revision=`git log -10 --pretty=%B | grep git-svn-id | head -n 1 | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
+			revision=`git log -10 --pretty=%B 2>/dev/null | grep git-svn-id | head -n 1 | sed -n -e 's/^.*trunk@\([0-9]*\) .*$/\1/p'`
+		fi
+		if [ -z $revision ]; then
+			#get revision based on globals.h (not a git repository)
+			revision=`grep '# define CS_SVN_VERSION' globals.h | cut -d\" -f2`
 		fi
 		emuversion=`grep EMU_VERSION module-emulator-osemu.h | awk '{ print $3 }'`
 		echo $revision-$emuversion
