@@ -370,7 +370,7 @@
  * =========================== */
 #define CS_VERSION				"1.30"
 #ifndef CS_SVN_VERSION
-# define CS_SVN_VERSION			"11768"
+# define CS_SVN_VERSION			"11769"
 #endif
 #ifndef CS_GIT_COMMIT
 # define CS_GIT_COMMIT			"a2b4c6d8"

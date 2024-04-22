@@ -556,8 +556,8 @@ static void stream_parse_pmt_ca_descriptor(const uint8_t *data, const int32_t da
 				}
 				cdata->ecm_pid = b2i(2, data + i + 4 + data_pos) & 0x1FFF;
 				cs_log_dbg(D_READER, "Stream client %i found ecm pid: 0x%04X (%i)",
-							cdata->connid, cdata->ecm_pid, cdata->ecm_pid);	
-			}	
+							cdata->connid, cdata->ecm_pid, cdata->ecm_pid);
+			}
 		}
 	}
 }
@@ -1346,7 +1346,7 @@ static void DescrambleTsPackets(stream_client_data *data, uint8_t *stream_buf, u
 #ifdef __BISS__
 		if(data->ecm_pid == 0x1FFF && caid_is_biss_fixed(data->caid))
 		{
-			uint32_t j, n; 
+			uint32_t j, n;
 			uint16_t ecm_len = 7;
 			data->ecm_data[0] = 0x80; // to pass the cache check it must be 0x80 or 0x81
 			data->ecm_data[1] = 0x00;
@@ -1833,7 +1833,7 @@ void *stream_server(void *UNUSED(a))
 		(!DVBCSA_HEADER_ECM || !has_dvbcsa_ecm) ? "WARNING" : "INFO",
 		(!has_dvbcsa_ecm) ? "wrong" : "ecm",
 		(!is_dvbcsa_static) ? "dynamic" : "static",
-		cluster_size, 
+		cluster_size,
 		cfg.stream_relay_buffer_time,
 		(!DVBCSA_HEADER_ECM || !has_dvbcsa_ecm) ? "! ECM processing via Streamrelay does not work!" : "",
 		(!DVBCSA_HEADER_ECM) ? " Missing dvbcsa ecm headers during build!" : "");

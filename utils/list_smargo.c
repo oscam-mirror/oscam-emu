@@ -76,7 +76,7 @@ static void smartreader_check_endpoint(libusb_device *usb_dev, libusb_device_han
 					}
 				}
 			}
-			
+
 			if(nb_endpoint_ok == 2)
 			{
 				busid = libusb_get_bus_number(usb_dev);

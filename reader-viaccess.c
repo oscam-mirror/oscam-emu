@@ -75,7 +75,7 @@ void N98_decrypt(byte* data)
 	int r;                                               // round
 	int i,j;
 	uint N98[4];                                        // make 32 bits words
-	for(i = 0; i < 4; i++) 
+	for(i = 0; i < 4; i++)
 		N98[i] = data[4*i] + (data[4*i+1] << 8) + (data[4*i+2] << 16) + (data[4*i+3] << 24);
 	for(r = 31; r >= 0; r--)                             // decrypt, inverse order
 	{
@@ -1428,7 +1428,7 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 	}
 	if (SubECM == 1)
 	{
-		uint8_t rw[16]; 
+		uint8_t rw[16];
 		memcpy(rw, ea->cw, 16);
 		memcpy(ea->cw, rw+4, 4);
 		memcpy(ea->cw+4, rw, 4);

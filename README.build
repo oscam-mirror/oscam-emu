@@ -102,7 +102,7 @@ OSCam build system documentation
                      Using USE_STAPI=1 adds to '-stapi' to PLUS_TARGET.
                      In order for USE_STAPI to work you have to create stapi
                      directory and put liboscam_stapi.a file in it.
-                     
+
    USE_STAPI5=1    - Request linking with STAPI5. The variables that control
                      USE_STAPI5=1 build are:
                          STAPI5_FLAGS='-DWITH_STAPI5=1'

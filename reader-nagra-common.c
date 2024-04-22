@@ -252,7 +252,7 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 					return 1;
 				}
 				return 0;
-			
+
 			case 0x84:
 				memset(ep->hexserial, 0x00, 0x08);
 				memcpy(ep->hexserial, ep->emm + 5, 3);
@@ -260,7 +260,7 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 				{
 					ep->type = SHARED;
 					i = get_prov_idx(rdr, ep->emm + 3);
-					
+
 					if(i == -1)
 					{
 						return 0;
@@ -306,7 +306,7 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 				else if ((ep->emm[5] == 0x04) && (ep->emm[6] == 0x70))
 				{
 					ep->type = GLOBAL;
-					return 1;				
+					return 1;
 				}
 				return 0;
 

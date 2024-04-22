@@ -185,7 +185,7 @@ li.menu a,li.menu a:hover,
 li.menu_selected a,li.menu_selected a:hover {
 	color:#050840
 }
-li.menu:hover, li.menu_selected, 
+li.menu:hover, li.menu_selected,
 li.configmenu:hover, li.configmenu_selected {
 	background-color:#DDD
 }
@@ -332,7 +332,7 @@ table#cachexstats {
 /* for settings in configuration of readers and users */
 /* inline table in config, readerconfig.html & user_edit.html */
 .invisible table {
-	border-spacing:0; 
+	border-spacing:0;
 	margin-left:0
 }
 /* user_edit.html, readerconfig.html */
@@ -598,7 +598,7 @@ textarea.editor {
 }
 /* textarea for config */
 textarea.bt {
-	width:380px; 
+	width:380px;
 	font-size:12px
 }
 /* textarea for emm.html */

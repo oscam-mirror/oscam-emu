@@ -1615,7 +1615,7 @@ var nostorage = 0;
  * General: Start Polling
  */
 $(document).ready(function () {
-	
+
 	try {
 		if (!localStorage) {
 			nostorage = 1;
@@ -1627,7 +1627,7 @@ $(document).ready(function () {
 		nostorage = 1;
 		$('#regex').remove();
 	}
-	
+
 	// set default to nothing excluded
 	poll_excluded = '';
 

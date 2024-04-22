@@ -2,6 +2,6 @@
 	<status>
 ##APISTATUSBITS##
 	</status>
-	<log><![CDATA[ 
+	<log><![CDATA[
    ##LOGHISTORY##
 	]]></log>##TPLAPIFOOTER##

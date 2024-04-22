@@ -24,7 +24,7 @@
 
 //#define __BISS__
 #ifdef __BISS__
-#define MAX_STREAM_PIDS 32 
+#define MAX_STREAM_PIDS 32
 #endif
 
 #include "cscrypt/md5.h"

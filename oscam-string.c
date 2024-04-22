@@ -60,7 +60,7 @@ size_t cs_strlen(const char *c)
 			return strlen(c);
 		}
 	}
-} 
+}
 
 /* Allocates a new empty string and copies str into it. You need to free() the result. */
 char *cs_strdup(const char *str)
@@ -152,7 +152,7 @@ bool cs_strncat(char *destination, char *source, size_t destination_size)
 	else
 	{
 		cs_log("ERROR, buffer overflow!");
-		return false;	
+		return false;
 	}
 
 	return true;
