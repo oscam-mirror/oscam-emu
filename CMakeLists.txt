@@ -697,8 +697,6 @@ add_custom_target (
 	touch ${CMAKE_CURRENT_SOURCE_DIR}/oscam-log.c
 )
 
-execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-revision COMMAND tr -d '\n' OUTPUT_VARIABLE CS_SVN_VERSION)
-add_definitions ("-D'CS_SVN_VERSION=\"${CS_SVN_VERSION}\"'")
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-commit COMMAND tr -d '\n' OUTPUT_VARIABLE CS_GIT_COMMIT)
 add_definitions ("-D'CS_GIT_COMMIT=\"${CS_GIT_COMMIT}\"'")
 
@@ -885,7 +883,7 @@ include (CPack)
 message (STATUS "")
 message (STATUS "  operating system: ${OSCamOperatingSystem}")
 message (STATUS "  target system: ${CS_TARGET}")
-message (STATUS "  revision: ${CS_SVN_VERSION}")
+message (STATUS "  revision: ${CS_VERSION}")
 message (STATUS "  commit: ${CS_GIT_COMMIT}")
 if (HAVE_LIBCRYPTO)
 	message (STATUS "  use system libcrypto functions")

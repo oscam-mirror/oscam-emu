@@ -673,8 +673,8 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 				cs_strncat(capabilities, ",e2", sizeof(capabilities)); // usage of DES algo signalled through PID index - CSA and DES only
 			}
 
-			*info_len = snprintf((char *) &packet[size], sizeof(packet) - size, "OSCam v%s, build r%s@%s (%s); %s",
-						CS_VERSION, CS_SVN_VERSION, CS_GIT_COMMIT, CS_TARGET, capabilities + 1);
+			*info_len = snprintf((char *) &packet[size], sizeof(packet) - size, "OSCam %s (%s); %s",
+						CS_VERSION, CS_TARGET, capabilities + 1);
 
 			size += *info_len;
 			break;

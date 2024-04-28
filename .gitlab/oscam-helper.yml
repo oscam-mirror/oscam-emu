@@ -184,7 +184,7 @@
 
     - |
       echo "Updating VERSION information in globals.h..."
-      sed -i "/# define CS_SVN_VERSION/s/.*/# define CS_SVN_VERSION\t\t\t\"$new_tag\"/" globals.h
+      sed -i "/^#define CS_VERSION/s/\.[0-9].*\"/.$new_ver\"/" globals.h
       git diff globals.h
       git add globals.h
       git commit --amend --no-edit
