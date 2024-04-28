@@ -33,8 +33,8 @@ setup:
   variables:
     GIT_STRATEGY: none
   rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_PIPELINE_SOURCE == 'schedule'
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $SETUP_BUILD_ENV == 'True'
+    - if: $CI_PIPELINE_SOURCE == 'schedule' && $SETUP_BUILD_ENV == 'True'
   script:
     - !reference [.helper, runner-setup]
   allow_failure: true
