@@ -8224,7 +8224,7 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 
 		if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_CAMD3)
 		{
-			if(caid_is_videoguard(er->caid))
+			if((caid_is_videoguard(er->caid)) || (caid_is_powervu(er->caid)))
 			{
 				if(memcmp(er->cw, null_cw8, 8) != 0)
 				{
@@ -8244,7 +8244,7 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 				fprintf(ecmtxt, "CW1: %s\n", cs_hexdump(1, er->cw + 8, cw_length, tmp, sizeof(tmp)));
 			}
 		}
-		else if(caid_is_videoguard(er->caid))
+		else if((caid_is_videoguard(er->caid)) || (caid_is_powervu(er->caid)))
 		{
 			if(memcmp(er->cw, null_cw8, 8) != 0)
 			{
