@@ -63,6 +63,7 @@ ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
 endif
 
 override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
+override STD_DEFS := -D'CS_VERSION="$(VER)"'
 override STD_DEFS += -D'CS_GIT_COMMIT="$(GIT_SHA)"'
 override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 

@@ -666,7 +666,7 @@ void camd35_cacheex_feature_trigger(struct s_client *cl, int32_t feature, uint8_
 			break;
 		// aio-version
 		case 32: ;
-			size += 14;
+			size += 12;
 			if(size < 32)
 				size = 32;
 

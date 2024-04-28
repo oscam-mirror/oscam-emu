@@ -697,6 +697,8 @@ add_custom_target (
 	touch ${CMAKE_CURRENT_SOURCE_DIR}/oscam-log.c
 )
 
+execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-version COMMAND tr -d '\n' OUTPUT_VARIABLE CS_VERSION)
+add_definitions ("-D'CS_VERSION=\"${CS_VERSION}\"'")
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-commit COMMAND tr -d '\n' OUTPUT_VARIABLE CS_GIT_COMMIT)
 add_definitions ("-D'CS_GIT_COMMIT=\"${CS_GIT_COMMIT}\"'")
 
@@ -855,8 +857,6 @@ install (FILES ${monitor_files} DESTINATION share/doc/oscam/monitor COMPONENT do
 #----------------------- we can use CPack to build pacakges --------------------------
 
 # get version from source file
-execute_process (COMMAND grep CS_VERSION ${CMAKE_CURRENT_SOURCE_DIR}/globals.h
-				 OUTPUT_VARIABLE CS_VERSION)
 string (REGEX REPLACE ".*\"\(.*\)\".*" "\\1" CS_VERSION ${CS_VERSION})
 string (REGEX REPLACE "\(.*\)\\..*\\..*" "\\1" CPACK_PACKAGE_VERSION_MAJOR ${CS_VERSION})
 string (REGEX REPLACE ".*\\.\(.*\)\\..*" "\\1" CPACK_PACKAGE_VERSION_MINOR ${CS_VERSION})
