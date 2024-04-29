@@ -8224,10 +8224,14 @@ void dvbapi_write_ecminfo_file(struct s_client *client, ECM_REQUEST *er, uint8_t
 		if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_CAMD3)
 		{
 			fprintf(ecmtxt, "FROM: %s\n", reader_name);
+			fprintf(ecmtxt, "CW0: %s\n", cs_hexdump(1, lastcw0, cw_length, tmp, sizeof(tmp)));
+			fprintf(ecmtxt, "CW1: %s\n", cs_hexdump(1, lastcw1, cw_length, tmp, sizeof(tmp)));
 		}
-
-		fprintf(ecmtxt, "cw0: %s\n", cs_hexdump(1, er->cw, cw_length, tmp, sizeof(tmp)));
-		fprintf(ecmtxt, "cw1: %s\n", cs_hexdump(1, er->cw + 8, cw_length, tmp, sizeof(tmp)));
+		else
+		{
+			fprintf(ecmtxt, "cw0: %s\n", cs_hexdump(1, lastcw0, cw_length, tmp, sizeof(tmp)));
+			fprintf(ecmtxt, "cw1: %s\n", cs_hexdump(1, lastcw1, cw_length, tmp, sizeof(tmp)));
+		}
 
 		if(cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_WICARDD || cfg.dvbapi_ecminfo_type == ECMINFO_TYPE_MGCAMD)
 		{
