@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - oscam-gitlab
+  workflow_dispatch:
 
 jobs:
   sync:
