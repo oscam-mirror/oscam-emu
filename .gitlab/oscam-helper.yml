@@ -1,4 +1,18 @@
 .helper:
+  #terminal colors
+  terminal-color:
+    - | #define terminal color variables
+      echo
+      TC_FNT_DEFAULT='\e[0m'
+      TC_FNT_BLACK='\e[30m'
+      TC_FNT_RED='\e[31m'
+      TC_FNT_GREEN='\e[32m'
+      TC_FNT_YELLOW='\e[33m'
+      TC_FNT_BLUE='\e[34m'
+      TC_FNT_MAGENTA='\e[35m'
+      TC_FNT_CYAN='\e[36m'
+      TC_FNT_GRAY='\e[37m'
+
   #get some system information
   runner-info:
     - |
@@ -7,6 +21,11 @@
       echo "Host: $(cat /etc/hostname)"
       echo "Version: $(cat /etc/issue)"
       echo "User: $(whoami)"
+      echo "---------------------------------"
+      echo "SETUP_BUILD_ENV: $SETUP_BUILD_ENV"
+      echo "API_PROTOCOL: $API_PROTOCOL"
+      echo "CROSS_BUILD_ARCH: $CROSS_BUILD_ARCH"
+      echo "GIT_REF: $GIT_REF"
 
   #setup build environment for oscam
   runner-setup:
@@ -17,8 +36,8 @@
 
     - | #get processor capabilities
       echo "Installing libdvbcsa from source..."
-      FLAGS="$(cat /proc/cpuinfo | grep -im1 flags | awk -F':' '{print $2}')" || echo
-      FLAGS+="$(cat /proc/cpuinfo | grep -im1 features | awk -F':' '{print $2}')" || echo
+      FLAGS="$(cat /proc/cpuinfo | grep -im1 flags | awk -F':' '{print $2}')" || true
+      FLAGS+="$(cat /proc/cpuinfo | grep -im1 features | awk -F':' '{print $2}')" || true
 
     - | #autodetect libdvbcsa optimization
       echo "$FLAGS" | grep -qiw 'altivec' && optimization="--enable-altivec"
@@ -49,6 +68,30 @@
       sudo ldconfig
       sudo ldconfig -v
 
+  #installs jq for pipeline user
+  jq-installer:
+    - |
+      if ! JQ_BIN="$(which jq)" && [ ! -f $HOME/bin/jq ]; then
+        echo "Downloading jq binary to '$HOME/bin/jq'...";
+        case $(uname -m) in
+          i386|i686)     HOST_ARCH="i386" ;;
+          aarch64|arm64) HOST_ARCH="arm64" ;;
+          *)             HOST_ARCH="amd64" ;;
+        esac;
+        curl --progress-bar -L --output $HOME/bin/jq https://github.com/jqlang/jq/releases/download/jq-1.7.1/jq-linux-$HOST_ARCH;
+        chmod +x $HOME/bin/jq;
+        JQ_BIN="$HOME/bin/jq";
+      else
+        JQ_BIN="$(which jq || printf $HOME/bin/jq)"
+      fi
+
+  #installs download-secure-files for pipeline user
+  download-secure-files-installer:
+    - |
+      echo "Installing gitlab download-secure-files binary...";
+      CI_API_V4_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}"
+      curl --silent -L "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash;
+
   #checkout git repository parts (needs variables GIT_STRATEGY: none and e.g. GIT SPARSE_FILTER: .gitlab to be set in the calling job)
   sparse-checkout:
     - |
@@ -77,72 +120,93 @@
       git config user.name "pipeline-user"
       git config user.email "pipeline-user@users.noreply.git.streamboard.tv"
 
-  #run oscam make test build
-  oscam-make:
+  #runs oscam make/cmake test builds (needs variable ARCH: native|aarch64|armv7|mips32el|powerpc|sh4 to be set in the calling job)
+  oscam-build:
     - | #autodetect build options
       export LC_ALL=C
-      [ -z "$(find "/usr/lib" -name "arm_neon.h" -type f -print -quit)" ] && DISABLE_OPT="WITH_ARM_NEON"
-      echo "List some debug information..."
-      openssl version
-      if ! ls -la /usr/lib/libdvbcsa.* 2>/dev/null; then
-        if ! ls -la /usr/local/lib/libdvbcsa.* 2>/dev/null; then
-            DISABLE_OPT+=" MODULE_STREAMRELAY";
+      DISABLE_OPT="WITH_NEUTRINO"
+      if [ "$ARCH" == "native" ]; then
+        if [ -z "$(find "/usr/lib" -name "arm_neon.h" -type f -print -quit)" ]; then
+            DISABLE_OPT+=" WITH_ARM_NEON";
+            CMAKE_OPT="-DWITH_ARM_NEON=0";
+        else
+            CMAKE_OPT="-DWITH_ARM_NEON=1";
         fi;
-      fi;
-      if ! ls -la /usr/include/openssl/aes.h 2>/dev/null; then DISABLE_OPT+=" WITH_SSL"; fi
-
-    - | #oscam make build
-      echo "Build oscam via make"
-      [ ! -d build ] && mkdir build
-      ./config.sh --enable all --disable $DISABLE_OPT | tee build/oscam-make-build.log
-      make OSCAM_BIN=build/oscam-make | tee -a build/oscam-make-build.log
-      if grep -cq 'warning:' build/oscam-make-build.log; then
-        echo "Please check your commit, build warnings occurred!";
-        exit 1;
-      fi;
-
-  #run oscam cmake test build
-  oscam-cmake:
-    - | #autodetect build options
-      export LC_ALL=C
-      [ -z "$(find "/usr/lib" -name "arm_neon.h" -type f -print -quit)" ] && DISABLE_OPT="WITH_ARM_NEON" && CMAKE_OPT="-DWITH_ARM_NEON=0";
-      echo "List some debug information..."
-      openssl version
-      if ! ls -la /usr/lib/libdvbcsa.* 2>/dev/null; then
-        if ! ls -la /usr/local/lib/libdvbcsa.* 2>/dev/null; then
+        echo "List some debug information...";
+        openssl version;
+        if ! ls -la /usr/lib/libdvbcsa.* 2>/dev/null; then
+            if ! ls -la /usr/local/lib/libdvbcsa.* 2>/dev/null; then
+                DISABLE_OPT+=" MODULE_STREAMRELAY";
+            else
+                CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
+            fi;
+        else
+            CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
+        fi;
+        if ! ls -la /usr/include/openssl/aes.h 2>/dev/null; then DISABLE_OPT+=" WITH_SSL"; fi;
+        unset MAKE_OPT;
+      else
+        [ "$REMOVE_TOOLCHAIN" == "True" ] && rm -rf $HOME/toolchains/${ARCH}_generic 2>/dev/null || true;
+        mkdir $HOME/toolchains $HOME/toolchains/${ARCH}_generic 2>/dev/null || true;
+        if [ ! -f $HOME/toolchains/${ARCH}_generic/download.ok ]; then
+            echo "Downloading cross toolchain Toolchain-${ARCH}_generic.tar.xz to '$HOME/toolchains/${ARCH}_generic'...";
+            curl --progress-bar -L "https://simplebuild.dedyn.io/toolchains/gitlab/Toolchain-${ARCH}_generic.tar.xz"  | tar -xJ -C $HOME/toolchains/${ARCH}_generic;
+            touch $HOME/toolchains/${ARCH}_generic/download.ok;
+        fi;
+        if [ -z "$(find "$HOME/toolchains/${ARCH}_generic" -name "arm_neon.h" -type f -print -quit)" ]; then
+            DISABLE_OPT+=" WITH_ARM_NEON";
+            CMAKE_OPT="-DWITH_ARM_NEON=0";
+        else
+            CMAKE_OPT="-DWITH_ARM_NEON=1";
+        fi;
+        if [ -z "$(find "$HOME/toolchains/${ARCH}_generic" -name "libdvbcsa.*" -type f -print -quit)" ]; then
             DISABLE_OPT+=" MODULE_STREAMRELAY";
         else
             CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
         fi;
-      else
-        CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
+        [ -z "$(find "$HOME/toolchains/${ARCH}_generic" -name "aes.h" -type f -print -quit)" ] && DISABLE_OPT+=" WITH_SSL";
+        MAKE_OPT="CROSS=$(find -L "$HOME/toolchains/${ARCH}_generic/bin" -name "*-gcc" -type f -print -quit | sed 's/.\{3\}$//')";
+        echo -e "SET(CMAKE_FIND_ROOT_PATH $HOME/toolchains/${ARCH}_generic/)\nSET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\nSET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)\n\
+        SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\nSET(OSCAM_SYSTEM_NAME Tuxbox)\nSET(CMAKE_SYSTEM_NAME Linux)\n\
+        SET(CMAKE_C_COMPILER $(find -L "$HOME/toolchains/${ARCH}_generic/bin" -name "*-gcc" -type f -print -quit))\n\
+        SET(CMAKE_CXX_COMPILER $(find -L "$HOME/toolchains/${ARCH}_generic/bin" -name "*-g++" -type f -print -quit))\nSET(CMAKE_SYSTEM_PROCESSOR ${ARCH})" > $HOME/toolchains/${ARCH}_generic/${ARCH}.cmake;
+        CMAKE_OPT+=" -DCMAKE_TOOLCHAIN_FILE=$HOME/toolchains/${ARCH}_generic/${ARCH}.cmake";
       fi;
-      if ! ls -la /usr/include/openssl/aes.h 2>/dev/null; then
-        DISABLE_OPT+=" WITH_SSL";
-      fi;
-
-    - | #oscam cmake build
-      echo "Build oscam via cmake"
-      [ ! -d build ] && mkdir build; cd build
-      ../config.sh --enable all --disable $DISABLE_OPT | tee oscam-cmake-build.log
-      cmake $CMAKE_OPT .. | tee -a oscam-cmake-build.log
-      make | tee -a oscam-cmake-build.log
-      [ -f oscam ] && mv oscam oscam-cmake
-      if grep -cq 'warning:' oscam-cmake-build.log; then
-        echo "Please check your commit, build warnings occurred!";
+    - | #make build
+      [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}
+      ./config.sh --enable all --disable $DISABLE_OPT |& tee build/${ARCH}/oscam-make-${ARCH}.log
+      make OSCAM_BIN=build/${ARCH}/oscam-make-${ARCH} $MAKE_OPT |& tee -a build/${ARCH}/oscam-make-${ARCH}.log
+    - | #cmake build
+      [ ! -d build/${ARCH} ] && mkdir build/${ARCH}; cd build/${ARCH}
+      ../../config.sh --enable all --disable $DISABLE_OPT |& tee oscam-cmake-${ARCH}.log
+      cmake $CMAKE_OPT ../.. |& tee -a oscam-cmake-${ARCH}.log
+      make |& tee -a oscam-cmake-${ARCH}.log
+      [ -f oscam ] && mv oscam oscam-cmake-${ARCH}
+      cd ../..
+    - !reference [.helper, terminal-color]
+    - | #evaluate build
+      if grep -ciq 'warning:' build/${ARCH}/oscam-make-${ARCH}.log build/${ARCH}/oscam-cmake-${ARCH}.log; then
+        echo -e "${TC_FNT_MAGENTA}Please check your commit, build warnings occurred!${TC_FNT_DEFAULT}";
         exit 1;
       fi;
 
-  #runs a simple oscam startup test (needs variable OSCAM_BUILD: make|cmake to be set in the calling job)
+  #runs a simple oscam startup test (needs variables OSCAM_BUILD: make|cmake and ARCH: native|aarch64|armv7|mips32el|powerpc|sh4 to be set in the calling job)
   oscam-startup-test:
+    - !reference [.helper, download-secure-files-installer]
+    - !reference [.helper, terminal-color]
     - |
-      curl --silent "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash
-      build/oscam-${OSCAM_BUILD} --help | head -n 12 | tee build/oscam-${OSCAM_BUILD}-test.log
-      if timeout 5 build/oscam-${OSCAM_BUILD} --config-dir .secure_files/ --temp-dir ./build/ | tee -a build/oscam-${OSCAM_BUILD}-test.log; then echo; fi
+      build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH} --help | head -n 12 | tee build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log
+      timeout 5 build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH} --config-dir .secure_files/ --temp-dir ./build/ | tee -a build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log || true
+    - | #evaluate startup
+      if [[ $(grep -ci 'error:' build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log) -gt 1 ]]; then
+        echo -e "${TC_FNT_RED}Please check your commit, startup errors occurred!${TC_FNT_DEFAULT}";
+        exit 1;
+      fi;
 
   #fix trailing white and convert dos2unix
   fix-whitespaces:
     - !reference [.helper, set-git-properties]
+    - !reference [.helper, terminal-color]
     - |
       export LC_ALL=C
       echo "Fixing trailing whitespaces automation process..."
@@ -151,15 +215,15 @@
         git status --verbose;
         if git commit -am "Fix trailing whitespaces"; then
             if [ $CI_PIPELINE_SOURCE == 'merge_request_event' ]; then
-                git push "https://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME;
+                git push "${API_PROTOCOL}://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_MERGE_REQUEST_SOURCE_BRANCH_NAME;
             else
-                git push "https://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_COMMIT_BRANCH;
+                git push "${API_PROTOCOL}://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_COMMIT_BRANCH;
             fi;
-            echo "Please check the additional commit!";
+            echo -e "${TC_FNT_MAGENTA}Trailing whitespaces found!\nPlease check the additional commit!${TC_FNT_DEFAULT}";
             exit 1;
         fi;
       else
-        echo "No trailing whitespaces found.";
+        echo -e "${TC_FNT_GREEN}No trailing whitespaces found.${TC_FNT_DEFAULT}";
       fi;
       echo "Fixing trailing whitespaces automation complete."
 
@@ -169,12 +233,14 @@
       export LC_ALL=C
       echo "Versioning automation process..."
       echo "List some debug information..."
-      git status --verbose || echo
+      git status --verbose || true
+
+    - !reference [.helper, jq-installer]
 
     - |
       echo "Calculating new TAG and VERSION values..."
-      TAG_API_URL="$CI_API_V4_URL/projects/$CI_PROJECT_ID/repository/tags"
-      curr_tag="$(curl -s "$TAG_API_URL" | jq -r '.[0].name')"
+      TAG_API_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}/projects/$CI_PROJECT_ID/repository/tags"
+      curr_tag="$(curl --silent "$TAG_API_URL" | $JQ_BIN -r '.[0].name')"
       new_tag=$(($curr_tag + 1))
       new_ver="$(date +%y.%m)-$new_tag"
       echo "New TAG: $new_tag"
@@ -191,7 +257,7 @@
       sha=$(git rev-parse HEAD)
 
     - |
-      if [ "$(curl -s "${TAG_API_URL}/${new_tag}" | jq -r '.name')" == "$new_tag" ]; then
+      if [ "$(curl --silent "${TAG_API_URL}/${new_tag}" | $JQ_BIN -r '.name')" == "$new_tag" ]; then
         echo "Removing existing TAG $new_tag...";
         curl --request DELETE \
              --header "PRIVATE-TOKEN: ${GIT_PUSH_TOKEN}" \
@@ -204,5 +270,5 @@
 
     - |
       echo "Pushing changes (forced) to repository..."
-      git push --force --follow-tags "https://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_COMMIT_BRANCH
+      git push --force --follow-tags "${API_PROTOCOL}://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_COMMIT_BRANCH
       echo "Versioning automation complete."

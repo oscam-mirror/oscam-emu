@@ -6674,6 +6674,14 @@ static void *dvbapi_main_local(void *cli)
 	memset(assoc_fd, 0, sizeof(assoc_fd));
 	dvbapi_read_priority();
 	dvbapi_load_channel_cache();
+	dvbapi_detect_api();
+
+	if(selected_box == -1 || selected_api == -1)
+	{
+		cs_log("ERROR: Could not detect DVBAPI version.");
+		free(mbuf);
+		return NULL;
+	}
 
 	// detect box type first and then get descrambler info
 	dvbapi_get_descrambler_info();
@@ -6746,7 +6754,7 @@ static void *dvbapi_main_local(void *cli)
 #if defined WITH_COOLAPI || defined WITH_COOLAPI2 || defined WITH_NEUTRINO
 	int sysret = system("pzapit -rz");
 	if(sysret == -1){
-  		// To avoid not used and correct error handling by not ignoring system return value
+		// To avoid not used and correct error handling by not ignoring system return value
 	}
 #endif
 	cs_ftime(&start); // register start time
@@ -8290,19 +8298,15 @@ void *dvbapi_start_handler(struct s_client *cl, uint8_t *UNUSED(mbuf), int32_t m
 	// cs_log("dvbapi loaded fd=%d", idx);
 	if(cfg.dvbapi_enabled == 1)
 	{
-		dvbapi_detect_api();
-
-		if(selected_box == -1 || selected_api == -1)
-		{
-			cs_log("ERROR: Could not detect DVBAPI version.");
-			return NULL;
-		}
-
 		cl = create_client(get_null_ip());
 		cl->module_idx = module_idx;
 		cl->typ = 'c';
 
-		start_thread("dvbapi handler", _main_func, (void *)cl, &cl->thread, 1, 0);
+		int32_t ret = start_thread("dvbapi handler", _main_func, (void *)cl, &cl->thread, 1, 0);
+		if(ret)
+		{
+			return NULL;
+		}
 	}
 	return NULL;
 }

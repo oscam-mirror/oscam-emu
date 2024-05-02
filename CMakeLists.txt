@@ -678,25 +678,6 @@ endif (OSCamOperatingSystem MATCHES "Linux")
 
 target_link_libraries (${exe_name} ${libusb_link} ${rt_link} ${setupapi_link} ${ole32_link} ${shell32_link} ${pthread_link} ${dl_link} ${xcas_link} ${dvbcsa_link})
 
-#----------------------- put svnversion in the build ------------------------------
-# at every target rebuild, we re-build the oscam.c compilation...
-
-# add the needed dependency
-add_dependencies (${exe_name} svnversion)
-add_dependencies (${csoscam} svnversion-log)
-
-# how to re-build the files which printout the version
-add_custom_target (
-	svnversion
-	ALL
-	touch ${CMAKE_CURRENT_SOURCE_DIR}/oscam.c
-)
-add_custom_target (
-	svnversion-log
-	ALL
-	touch ${CMAKE_CURRENT_SOURCE_DIR}/oscam-log.c
-)
-
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-version COMMAND tr -d '\n' OUTPUT_VARIABLE CS_VERSION)
 add_definitions ("-D'CS_VERSION=\"${CS_VERSION}\"'")
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-commit COMMAND tr -d '\n' OUTPUT_VARIABLE CS_GIT_COMMIT)
