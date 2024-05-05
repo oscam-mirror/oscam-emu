@@ -144,9 +144,9 @@ ifeq ($(uname_S),Darwin)
 	DEFAULT_LIBDVBCSA_FLAGS = -I/usr/local/opt/libdvbcsa/include
 	DEFAULT_LIBDVBCSA_LIB = -L/usr/local/opt/libdvbcsa/lib -ldvbcsa
 	DEFAULT_LIBUSB_FLAGS = -I/usr/local/opt/libusb/include
-	DEFAULT_LIBUSB_LIB = -L/usr/local/opt/libusb/lib -lusb-1.0 -lobjc -framework IOKit -framework CoreFoundation -framework Security
+	DEFAULT_LIBUSB_LIB = -L/usr/local/opt/libusb/lib -lusb-1.0 -framework IOKit -framework CoreFoundation -framework Security
 	DEFAULT_PCSC_FLAGS = -I/usr/local/opt/pcsc-lite/include/PCSC
-	DEFAULT_PCSC_LIB = -L/usr/local/opt/pcsc-lite/lib -lpcsclite -lobjc -framework IOKit -framework CoreFoundation -framework PCSC
+	DEFAULT_PCSC_LIB = -L/usr/local/opt/pcsc-lite/lib -lpcsclite -framework IOKit -framework CoreFoundation -framework PCSC
 else
 	# Get the compiler's last include PATHs. Basicaly it is /usr/include
 	# but in case of cross compilation it might be something else.
