@@ -39,179 +39,57 @@ setup:
     - !reference [.helper, runner-setup]
   allow_failure: true
 
-oscam-build-native:
+oscam-build:
   stage: build
   tags:
     - build
-  variables:
-    ARCH: "native"
+  parallel:
+    matrix:
+      - ARCH: [native,aarch64,armv7,mips32el,powerpc,sh4]
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'schedule'
   script:
+    - if [[ ! $BUILD_ARCHS =~ $ARCH ]]; then
+        echo -e "\e[33mSkipped by configuration, check BUILD_ARCHS variable.\e[0m";
+        exit 0;
+      fi
     - !reference [.helper, custom-checkout]
     - !reference [.helper, oscam-build]
   artifacts:
     when: always
     paths:
-      - build/${ARCH}/oscam-make-${ARCH}
-      - build/${ARCH}/oscam-make-${ARCH}.log
-      - build/${ARCH}/oscam-cmake-${ARCH}
-      - build/${ARCH}/oscam-cmake-${ARCH}.log
+      - build/${ARCH}/oscam-make-${ARCH}*
+      - build/${ARCH}/oscam-cmake-${ARCH}*
     expire_in: 1 week
   allow_failure: true
 
-oscam-build-aarch64:
-  stage: build
-  tags:
-    - build
-  variables:
-    ARCH: "aarch64"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CROSS_BUILD_ARCH =~ /aarch64/
-    - if: $CI_PIPELINE_SOURCE == 'schedule' && $CROSS_BUILD_ARCH =~ /aarch64/
-  script:
-    - !reference [.helper, custom-checkout]
-    - !reference [.helper, oscam-build]
-  artifacts:
-    when: always
-    paths:
-      - build/${ARCH}/oscam-make-${ARCH}
-      - build/${ARCH}/oscam-make-${ARCH}.log
-      - build/${ARCH}/oscam-cmake-${ARCH}
-      - build/${ARCH}/oscam-cmake-${ARCH}.log
-    expire_in: 1 week
-  allow_failure: true
-
-oscam-build-armv7:
-  stage: build
-  tags:
-    - build
-  variables:
-    ARCH: "armv7"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CROSS_BUILD_ARCH =~ /armv7/
-    - if: $CI_PIPELINE_SOURCE == 'schedule' && $CROSS_BUILD_ARCH =~ /armv7/
-  script:
-    - !reference [.helper, custom-checkout]
-    - !reference [.helper, oscam-build]
-  artifacts:
-    when: always
-    paths:
-      - build/${ARCH}/oscam-make-${ARCH}
-      - build/${ARCH}/oscam-make-${ARCH}.log
-      - build/${ARCH}/oscam-cmake-${ARCH}
-      - build/${ARCH}/oscam-cmake-${ARCH}.log
-    expire_in: 1 week
-  allow_failure: true
-
-oscam-build-mips32el:
-  stage: build
-  tags:
-    - build
-  variables:
-    ARCH: "mips32el"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CROSS_BUILD_ARCH =~ /mips32el/
-    - if: $CI_PIPELINE_SOURCE == 'schedule' && $CROSS_BUILD_ARCH =~ /mips32el/
-  script:
-    - !reference [.helper, custom-checkout]
-    - !reference [.helper, oscam-build]
-  artifacts:
-    when: always
-    paths:
-      - build/${ARCH}/oscam-make-${ARCH}
-      - build/${ARCH}/oscam-make-${ARCH}.log
-      - build/${ARCH}/oscam-cmake-${ARCH}
-      - build/${ARCH}/oscam-cmake-${ARCH}.log
-    expire_in: 1 week
-  allow_failure: true
-
-oscam-build-powerpc:
-  stage: build
-  tags:
-    - build
-  variables:
-    ARCH: "powerpc"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CROSS_BUILD_ARCH =~ /powerpc/
-    - if: $CI_PIPELINE_SOURCE == 'schedule' && $CROSS_BUILD_ARCH =~ /powerpc/
-  script:
-    - !reference [.helper, custom-checkout]
-    - !reference [.helper, oscam-build]
-  artifacts:
-    when: always
-    paths:
-      - build/${ARCH}/oscam-make-${ARCH}
-      - build/${ARCH}/oscam-make-${ARCH}.log
-      - build/${ARCH}/oscam-cmake-${ARCH}
-      - build/${ARCH}/oscam-cmake-${ARCH}.log
-    expire_in: 1 week
-  allow_failure: true
-
-oscam-build-sh4:
-  stage: build
-  tags:
-    - build
-  variables:
-    ARCH: "sh4"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $CROSS_BUILD_ARCH =~ /sh4/
-    - if: $CI_PIPELINE_SOURCE == 'schedule' && $CROSS_BUILD_ARCH =~ /sh4/
-  script:
-    - !reference [.helper, custom-checkout]
-    - !reference [.helper, oscam-build]
-  artifacts:
-    when: always
-    paths:
-      - build/${ARCH}/oscam-make-${ARCH}
-      - build/${ARCH}/oscam-make-${ARCH}.log
-      - build/${ARCH}/oscam-cmake-${ARCH}
-      - build/${ARCH}/oscam-cmake-${ARCH}.log
-    expire_in: 1 week
-  allow_failure: true
-
-oscam-make-test:
+oscam-test:
   stage: test
   tags:
     - test
-  needs: [oscam-build-native]
+  needs: [oscam-build]
   variables:
     GIT_STRATEGY: none
-    OSCAM_BUILD: "make"
-    ARCH: "native"
+  parallel:
+    matrix:
+      - ARCH: [native]
+        OSCAM_BUILD: [make,cmake]
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'schedule'
   script:
+    - if [[ ! $BUILD_ARCHS =~ $ARCH ]]; then
+        echo -e "\e[33mSkipped by configuration, check BUILD_ARCHS variable.\e[0m";
+        exit 0;
+      fi
     - !reference [.helper, oscam-startup-test]
   artifacts:
     when: always
     paths:
-      - build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log
+      - build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}*-test.log
     expire_in: 1 week
   allow_failure: true
-
-oscam-cmake-test:
-  stage: test
-  tags:
-    - test
-  needs: [oscam-build-native]
-  variables:
-    GIT_STRATEGY: none
-    OSCAM_BUILD: "cmake"
-    ARCH: "native"
-  rules:
-    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
-    - if: $CI_PIPELINE_SOURCE == 'schedule'
-  script:
-    - !reference [.helper, oscam-startup-test]
-  allow_failure: true
-  artifacts:
-    when: always
-    paths:
-      - build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log
-    expire_in: 1 week
 
 code-cleanup:
   stage: fixup

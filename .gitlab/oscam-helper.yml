@@ -107,7 +107,7 @@
 
   #checkout a specific git reference (needs variable GIT_REF: commit|branch|tag to be set in the calling job)
   custom-checkout:
-    - if [ ! -z $GIT_REF ]; then
+    - if [ ! -z "$GIT_REF" ]; then
         echo "Checking out specific git reference $GIT_REF...";
         git fetch --unshallow;
         git checkout $GIT_REF;
@@ -124,48 +124,92 @@
   oscam-build:
     - | #autodetect build options
       export LC_ALL=C
+      unset MAKE_OPT CMAKE_OPT BIN_EXT
       DISABLE_OPT="WITH_NEUTRINO"
       if [ "$ARCH" == "native" ]; then
+        echo "List some debug information...";
+        openssl version;
+        if [ -z "$(find -L "/usr/include" -name "aes.h" -type f -print -quit)" ]; then
+            DISABLE_OPT+=" WITH_SSL";
+        else
+            echo "Enabling SSL...";
+            BIN_EXT+="-ssl";
+        fi
         if [ -z "$(find "/usr/lib" -name "arm_neon.h" -type f -print -quit)" ]; then
             DISABLE_OPT+=" WITH_ARM_NEON";
             CMAKE_OPT="-DWITH_ARM_NEON=0";
         else
+            echo "Enabling ARM_NEON...";
             CMAKE_OPT="-DWITH_ARM_NEON=1";
+            BIN_EXT+="-neon";
         fi;
-        echo "List some debug information...";
-        openssl version;
         if ! ls -la /usr/lib/libdvbcsa.* 2>/dev/null; then
             if ! ls -la /usr/local/lib/libdvbcsa.* 2>/dev/null; then
                 DISABLE_OPT+=" MODULE_STREAMRELAY";
             else
+                echo "Enabling LIBDVBCSA...";
                 CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
+                BIN_EXT+="-libdvbcsa";
             fi;
         else
+            echo "Enabling LIBDVBCSA...";
             CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
+            BIN_EXT+="-libdvbcsa";
         fi;
-        if ! ls -la /usr/include/openssl/aes.h 2>/dev/null; then DISABLE_OPT+=" WITH_SSL"; fi;
-        unset MAKE_OPT;
       else
         [ "$REMOVE_TOOLCHAIN" == "True" ] && rm -rf $HOME/toolchains/${ARCH}_generic 2>/dev/null || true;
         mkdir $HOME/toolchains $HOME/toolchains/${ARCH}_generic 2>/dev/null || true;
         if [ ! -f $HOME/toolchains/${ARCH}_generic/download.ok ]; then
             echo "Downloading cross toolchain Toolchain-${ARCH}_generic.tar.xz to '$HOME/toolchains/${ARCH}_generic'...";
-            curl --progress-bar -L "https://simplebuild.dedyn.io/toolchains/gitlab/Toolchain-${ARCH}_generic.tar.xz"  | tar -xJ -C $HOME/toolchains/${ARCH}_generic;
+            curl --progress-bar -L "https://simplebuild.dedyn.io/toolchains/gitlab/Toolchain-${ARCH}_generic.tar.xz" | tar -xJ -C $HOME/toolchains/${ARCH}_generic;
             touch $HOME/toolchains/${ARCH}_generic/download.ok;
         fi;
-        if [ -z "$(find "$HOME/toolchains/${ARCH}_generic" -name "arm_neon.h" -type f -print -quit)" ]; then
+        if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "aes.h" -type f -print -quit)" ]; then
+            DISABLE_OPT+=" WITH_SSL";
+            CMAKE_OPT+=" -DUSE_SSL=0";
+        else
+            echo "Enabling SSL...";
+            MAKE_OPT+=" USE_SSL=1";
+            CMAKE_OPT+=" -DUSE_SSL=1";
+            BIN_EXT+="-ssl";
+        fi;
+        if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "arm_neon.h" -type f -print -quit)" ]; then
             DISABLE_OPT+=" WITH_ARM_NEON";
             CMAKE_OPT="-DWITH_ARM_NEON=0";
         else
+            echo "Enabling ARM_NEON...";
             CMAKE_OPT="-DWITH_ARM_NEON=1";
+            BIN_EXT+="-neon";
         fi;
-        if [ -z "$(find "$HOME/toolchains/${ARCH}_generic" -name "libdvbcsa.*" -type f -print -quit)" ]; then
+        if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "dvbcsa.h" -type f -print -quit)" ]; then
             DISABLE_OPT+=" MODULE_STREAMRELAY";
+            CMAKE_OPT+=" -DHAVE_LIBDVBCSA=0";
         else
+            echo "Enabling LIBDVBCSA...";
+            MAKE_OPT+=" USE_LIBDVBCSA=1";
             CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
+            BIN_EXT+="-libdvbcsa";
         fi;
-        [ -z "$(find "$HOME/toolchains/${ARCH}_generic" -name "aes.h" -type f -print -quit)" ] && DISABLE_OPT+=" WITH_SSL";
-        MAKE_OPT="CROSS=$(find -L "$HOME/toolchains/${ARCH}_generic/bin" -name "*-gcc" -type f -print -quit | sed 's/.\{3\}$//')";
+        if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "libusb.h" -type f -print -quit)" ]; then
+            DISABLE_OPT+=" WITH_LIBUSB";
+            CMAKE_OPT+=" -DHAVE_LIBUSB=0";
+        else
+            echo "Enabling LIBUSB...";
+            MAKE_OPT+=" USE_LIBUSB=1";
+            CMAKE_OPT+=" -DHAVE_LIBUSB=1";
+            BIN_EXT+="-libusb";
+        fi;
+        if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "pcsclite.h" -type f -print -quit)" ]; then
+            DISABLE_OPT+=" WITH_PCSC";
+            CMAKE_OPT+=" -DHAVE_PCSC=0";
+        else
+            echo "Enabling PCSC...";
+            MAKE_OPT+=" USE_PCSC=1";
+            CMAKE_OPT+=" -DHAVE_PCSC=1";
+            BIN_EXT+="-pcsc";
+        fi;
+
+        MAKE_OPT+=" CROSS=$(find -L "$HOME/toolchains/${ARCH}_generic/bin" -name "*-gcc" -type f -print -quit | sed 's/.\{3\}$//')";
         echo -e "SET(CMAKE_FIND_ROOT_PATH $HOME/toolchains/${ARCH}_generic/)\nSET(CMAKE_FIND_ROOT_PATH_MODE_PROGRAM NEVER)\nSET(CMAKE_FIND_ROOT_PATH_MODE_LIBRARY ONLY)\n\
         SET(CMAKE_FIND_ROOT_PATH_MODE_INCLUDE ONLY)\nSET(OSCAM_SYSTEM_NAME Tuxbox)\nSET(CMAKE_SYSTEM_NAME Linux)\n\
         SET(CMAKE_C_COMPILER $(find -L "$HOME/toolchains/${ARCH}_generic/bin" -name "*-gcc" -type f -print -quit))\n\
@@ -174,18 +218,19 @@
       fi;
     - | #make build
       [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}
-      ./config.sh --enable all --disable $DISABLE_OPT |& tee build/${ARCH}/oscam-make-${ARCH}.log
-      make OSCAM_BIN=build/${ARCH}/oscam-make-${ARCH} $MAKE_OPT |& tee -a build/${ARCH}/oscam-make-${ARCH}.log
+      ./config.sh --enable all --disable $DISABLE_OPT |& tee build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
+      make OSCAM_BIN=build/${ARCH}/oscam-make-${ARCH}${BIN_EXT} $MAKE_OPT |& tee -a build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
+      rm -f build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.debug 2>/dev/null
     - | #cmake build
-      [ ! -d build/${ARCH} ] && mkdir build/${ARCH}; cd build/${ARCH}
-      ../../config.sh --enable all --disable $DISABLE_OPT |& tee oscam-cmake-${ARCH}.log
-      cmake $CMAKE_OPT ../.. |& tee -a oscam-cmake-${ARCH}.log
-      make |& tee -a oscam-cmake-${ARCH}.log
-      [ -f oscam ] && mv oscam oscam-cmake-${ARCH}
+      [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}; cd build/${ARCH}
+      ../../config.sh --enable all --disable $DISABLE_OPT |& tee oscam-cmake-${ARCH}${BIN_EXT}.log
+      cmake $CMAKE_OPT ../.. |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
+      make |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
+      [ -f oscam ] && mv oscam oscam-cmake-${ARCH}${BIN_EXT}
       cd ../..
     - !reference [.helper, terminal-color]
     - | #evaluate build
-      if grep -ciq 'warning:' build/${ARCH}/oscam-make-${ARCH}.log build/${ARCH}/oscam-cmake-${ARCH}.log; then
+      if grep -ciq 'warning:' build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log build/${ARCH}/oscam-cmake-${ARCH}${BIN_EXT}.log; then
         echo -e "${TC_FNT_MAGENTA}Please check your commit, build warnings occurred!${TC_FNT_DEFAULT}";
         exit 1;
       fi;
@@ -195,10 +240,11 @@
     - !reference [.helper, download-secure-files-installer]
     - !reference [.helper, terminal-color]
     - |
-      build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH} --help | head -n 12 | tee build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log
-      timeout 5 build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH} --config-dir .secure_files/ --temp-dir ./build/ | tee -a build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log || true
+      OSCAM_BIN="$(find "build/${ARCH}/" ! -name '*.log' -name "oscam-${OSCAM_BUILD}-${ARCH}*" -type f -print -quit)"
+      $OSCAM_BIN --help | head -n 12 | tee ${OSCAM_BIN}-test.log
+      timeout 5 $OSCAM_BIN --config-dir .secure_files/ --temp-dir ./build/${ARCH}/ | tee -a ${OSCAM_BIN}-test.log || true
     - | #evaluate startup
-      if [[ $(grep -ci 'error:' build/${ARCH}/oscam-${OSCAM_BUILD}-${ARCH}-test.log) -gt 1 ]]; then
+      if [[ $(grep -ci 'error:' ${OSCAM_BIN}-test.log) -gt 1 ]]; then
         echo -e "${TC_FNT_RED}Please check your commit, startup errors occurred!${TC_FNT_DEFAULT}";
         exit 1;
       fi;
