@@ -62,6 +62,7 @@ CONFIGCCCAM                   config/cccam.html                                 
 CONFIGCCCAMCTRL               config/cccam_control.html                                   MODULE_CCCSHARE
 CONFIGCONTENT                 config/config.html
 CONFIGDVBAPI                  config/dvbapi.html                                          HAVE_DVBAPI
+EXTENDEDCWAPI                 config/dvbapi_extended_cw_api.html                          WITH_EXTENDED_CW
 DEMUXERFIX                    config/dvbapi_demuxerfix.html                               MODULE_STREAMRELAY
 CCCAMRESHAREBIT               config/cccreshare.html                                      MODULE_GBOX
 CONFIGGBOX                    config/gbox.html                                            MODULE_GBOX

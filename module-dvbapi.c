@@ -662,7 +662,7 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 			size += 2;
 			uint8_t *info_len = &packet[size]; // info string length
 			size += 1;
-
+#ifdef WITH_EXTENDED_CW
 			if(cfg.dvbapi_extended_cw_api == 1)
 			{
 				cs_strncat(capabilities, ",e1mk", sizeof(capabilities)); // extended cw, key follows mode - supports CSA, DES, AES128
@@ -672,7 +672,7 @@ int32_t dvbapi_net_send(uint32_t request, int32_t socket_fd, uint32_t msgid, int
 			{
 				cs_strncat(capabilities, ",e2", sizeof(capabilities)); // usage of DES algo signalled through PID index - CSA and DES only
 			}
-
+#endif
 			*info_len = snprintf((char *) &packet[size], sizeof(packet) - size, "OSCam %s (%s); %s",
 						CS_VERSION, CS_TARGET, capabilities + 1);
 
@@ -2437,12 +2437,12 @@ void dvbapi_set_pid(int32_t demux_id, int32_t num, uint32_t idx, bool enable, bo
 										i);
 								newidx = INDEX_INVALID; // flag this takeover / new index as handled
 							}
-
+#ifdef WITH_EXTENDED_CW
 							if(use_des && cfg.dvbapi_extended_cw_api == 2 && ca_pid2.index != -1)
 							{
 								ca_pid2.index |= 0x100; // flag DES algo through pid index
 							}
-
+#endif
 							if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
 							{
 								dvbapi_net_send(DVBAPI_CA_SET_PID, demux[demux_id].socket_fd,
@@ -7323,15 +7323,15 @@ void dvbapi_write_cw(int32_t demux_id, int32_t pid, int32_t stream_id, uint8_t *
 				return; // return on no index!
 			}
 
-#if defined WITH_COOLAPI || defined WITH_COOLAPI2
-			ca_descr.index = idx;
-			ca_descr.parity = n;
-
 			// just to make the compiler happy (-Wunused-parameter)
 			// (better move the coolapi code to a separate function)
 			ca_descr_mode.cipher_mode = cipher_mode;
 			ca_descr_data.data = iv;
 			ca_descr_data.length = iv_length;
+
+#if defined WITH_COOLAPI || defined WITH_COOLAPI2
+			ca_descr.index = idx;
+			ca_descr.parity = n;
 
 			memcpy(demux[demux_id].last_cw[stream_id][n], cw + (n * 8), 8);
 			memcpy(ca_descr.cw, cw + (n * 8), 8);
@@ -7409,7 +7409,7 @@ void dvbapi_write_cw(int32_t demux_id, int32_t pid, int32_t stream_id, uint8_t *
 						demux_id, (n == 1 ? "even" : "odd"), newcw, lastcw);
 
 					cs_log_dbg(D_DVBAPI, "Demuxer %d write cw%d index: %d (ca%d)", demux_id, n, ca_descr.index, i);
-
+#ifdef WITH_EXTENDED_CW
 					if(cfg.dvbapi_extended_cw_api == 1) // Set descrambler algorithm and mode
 					{
 						ca_descr_mode.index = usedidx;
@@ -7479,6 +7479,7 @@ void dvbapi_write_cw(int32_t demux_id, int32_t pid, int32_t stream_id, uint8_t *
 						}
 					}
 					else // Send 8 byte CW for DVB-CSA or DES
+#endif
 					{
 						if(cfg.dvbapi_boxtype == BOXTYPE_PC || cfg.dvbapi_boxtype == BOXTYPE_PC_NODMX)
 						{
@@ -8772,23 +8773,26 @@ int8_t update_streampid_list(uint8_t cadevice, uint16_t pid, uint32_t idx, bool 
 			{
 				if((listitem->activeindexers & (1 << idx)) == (uint64_t) (1 << idx))
 				{
+#ifdef WITH_EXTENDED_CW
 					if(cfg.dvbapi_extended_cw_api == 2 && use_des != listitem->use_des)
 					{
 						listitem->use_des = use_des;
 						return FIRST_STREAMPID_INDEX;
 					}
+#endif
 					return FOUND_STREAMPID_INDEX; // match found
 				}
 				else
 				{
 					listitem->activeindexers |= (1 << idx); // ca + pid found but not this index -> add this index
 					cs_log_dbg(D_DVBAPI, "Added existing streampid %04X with new index %d to ca%d", pid, idx, cadevice);
-
+#ifdef WITH_EXTENDED_CW
 					if(cfg.dvbapi_extended_cw_api == 2 && use_des != listitem->use_des)
 					{
 						listitem->use_des = use_des;
 						return FIRST_STREAMPID_INDEX;
 					}
+#endif
 					return ADDED_STREAMPID_INDEX;
 				}
 			}

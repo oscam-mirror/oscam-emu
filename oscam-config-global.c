@@ -1360,7 +1360,9 @@ static const struct config_list dvbapi_opts[] =
 	DEF_OPT_STR("user"            , OFS(dvbapi_usr)            , NULL),
 	DEF_OPT_INT8("read_sdt"       , OFS(dvbapi_read_sdt)       , 0),
 	DEF_OPT_INT8("write_sdt_prov" , OFS(dvbapi_write_sdt_prov) , 0),
+#ifdef WITH_EXTENDED_CW
 	DEF_OPT_INT8("extended_cw_api", OFS(dvbapi_extended_cw_api), 0),
+#endif
 #ifdef MODULE_STREAMRELAY
 	DEF_OPT_INT8("demuxer_fix"    , OFS(dvbapi_demuxer_fix)    , 0),
 #endif
