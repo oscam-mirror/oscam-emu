@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.24.05-11783"
+#define CS_VERSION				"2.24.05-11784"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1651,6 +1651,7 @@ struct s_reader										// contains device info, reader info and card info
 	int8_t			evensa;
 	int8_t			forceemmg;
 	int8_t			cwpkota;
+	int8_t			headermode;
 
 #endif
 #ifdef CS_CACHEEX

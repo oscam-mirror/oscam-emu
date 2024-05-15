@@ -1476,7 +1476,7 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 	uint8_t ecmreq[0xC0];
 	memset(ecmreq,0xCC,0xC0);
 	ecmreq[ 7] = 0x05;
-	if(reader->caid == 0x1830)
+	if(reader->headermode == 0)
 	{
 		ecmreq[ 9] = 0x00;
 		ecmreq[10] = 0x00;
@@ -1484,7 +1484,7 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		ecmreq[12] = 0x00;
 		ecmreq[13] = 0x00;
 	}
-	else
+	else if(reader->headermode == 1)
 	{
 		ecmreq[ 9] = 0x04;
 		ecmreq[10] = reader->ecmheader[0];
@@ -1600,7 +1600,7 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		uint8_t emmreq[0xC0];
 		memset(emmreq, 0xCC, 0xC0);
 		emmreq[ 7] = 0x05;
-		if(reader->caid == 0x1830)
+		if(reader->headermode == 0)
 		{
 			emmreq[ 9] = 0x00;
 			emmreq[10] = 0x00;
@@ -1608,7 +1608,7 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			emmreq[12] = 0x00;
 			emmreq[13] = 0x00;
 		}
-		else
+		else if(reader->headermode == 1)
 		{
 			emmreq[ 9] = 0x04;
 			emmreq[10] = reader->ecmheader[0];

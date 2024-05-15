@@ -1045,6 +1045,7 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_INT8("evensa"                         , OFS(evensa),                          0),
 	DEF_OPT_INT8("forceemmg"                      , OFS(forceemmg),                       0),
 	DEF_OPT_INT8("cwpkota"                        , OFS(cwpkota),                         0),
+	DEF_OPT_INT8("headermode"                     , OFS(headermode),                      1),
 #endif
 #if defined(READER_NAGRA)
 	DEF_OPT_FUNC_X("cak63nuid"                    , OFS(cak63nuid),                       param_fn, SIZEOF(cak63nuid) ^ (OFS(cak63nuid_length) - OFS(cak63nuid)) << 8),
@@ -1165,7 +1166,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 		"fix9993", "rsakey", "deskey", "ins7e", "ins42", "ins7e11", "ins2e06", "k1_generic", "k1_unique", "force_irdeto", "needsemmfirst", "boxkey",
 		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio", "needsglobalfirst",
 #ifdef READER_NAGRA_MERLIN
-		"mod1", "idird", "cmd0eprov", "mod2", "key3588", "key3460", "key3310", "data50", "mod50", "nuid", "forcepair", "otpcsc", "otacsc", "cwpkcaid", "cwekey0", "cwekey1", "cwekey2", "cwekey3", "cwekey4", "cwekey5", "cwekey6", "cwekey7",
+		"mod1", "idird", "cmd0eprov", "mod2", "key3588", "key3460", "key3310", "data50", "mod50", "nuid", "forcepair", "otpcsc", "otacsc", "cwpkcaid", "headermode", "cwekey0", "cwekey1", "cwekey2", "cwekey3", "cwekey4", "cwekey5", "cwekey6", "cwekey7",
 #endif
 #if defined(READER_NAGRA)
 		"cak63nuid", "cak63cwekey",

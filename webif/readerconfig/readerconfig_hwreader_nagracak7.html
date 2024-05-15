@@ -18,6 +18,14 @@
 				<TR><TD><A>Force OTA CSC (optional):</A></TD><TD><input name="otacsc" class="medium" type="text" maxlength="4" value="##OTACSC##"></TD></TR>
 				<TR><TD><A>CaID BoxEMM:</A></TD><TD><input name="cwpkcaid" class="medium" type="text" maxlength="4" value="##CWPKCAID##"></TD></TR>
 				<TR><TD><A>OTA (Over-The-Air) CWPK:</A></TD><TD><input name="cwpkota" type="hidden" value="0"><input name="cwpkota" type="checkbox" value="1" ##CWPKOTACHECKED##><label></label></TD></TR>
+				<TR><TD><A>Header mode:</A></TD>
+					<TD>
+						<select name="headermode">
+							<option value="0" ##NAGRACAK7HEADERMODE0##>0 - 0x00</option>
+							<option value="1" ##NAGRACAK7HEADERMODE1##>1 - 0x04</option>
+						</select>
+					</TD>
+				</TR>
 				<TR><TD><A>CWPK0:</A></TD><TD><input name="cwekey0" class="longer" type="text" maxlength="32" value="##CWEKEY0##"></TD></TR>
 				<TR><TD><A>CWPK1:</A></TD><TD><input name="cwekey1" class="longer" type="text" maxlength="32" value="##CWEKEY1##"></TD></TR>
 				<TR><TD><A>CWPK2:</A></TD><TD><input name="cwekey2" class="longer" type="text" maxlength="32" value="##CWEKEY2##"></TD></TR>

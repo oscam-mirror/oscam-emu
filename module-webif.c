@@ -2819,9 +2819,12 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	if(rdr->forceemmg)
 		{ tpl_addVar(vars, TPLADD, "FORCEEMMGCHECKED", "checked"); }
 
-        // OTA_CWPKs
-        if(rdr->cwpkota)
-                { tpl_addVar(vars, TPLADD, "CWPKOTACHECKED", "checked"); }
+	// OTA_CWPKs
+	if(rdr->cwpkota)
+		{ tpl_addVar(vars, TPLADD, "CWPKOTACHECKED", "checked"); }
+
+	tpl_printf(vars, TPLADD, "TMP", "NAGRACAK7HEADERMODE%d", rdr->headermode);
+	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
 #endif
 
 	// CWPK CaID (CAK7)
