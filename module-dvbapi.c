@@ -352,7 +352,7 @@ struct s_dvbapi_priority *dvbapi_priority;
 struct s_client *dvbapi_client;
 
 const char *boxdesc[] = { "none", "dreambox", "duckbox", "ufs910", "dbox2", "ipbox", "ipbox-pmt",
-							"dm7000", "qboxhd", "coolstream", "neumo", "pc", "pc-nodmx", "samygo", "sogno" };
+							"dm7000", "qboxhd", "coolstream", "neumo", "pc", "pc-nodmx", "samygo" };
 
 // when updating devices[BOX_COUNT] make sure to update these index defines
 #define BOX_INDEX_QBOXHD 0
@@ -1726,19 +1726,12 @@ int32_t dvbapi_stop_filternum(int32_t demux_id, int32_t num, uint32_t msgid)
 
 							if(!match)
 							{
-								if (cfg.dvbapi_boxtype == BOXTYPE_SOGNO)
+								for(j = 0; j < CA_MAX; j++)
 								{
-									remove_streampid_from_list(demux[demux_id].ca_mask, pidtobestopped, idx);
-								}
-								else
-								{
-									for(j = 0; j < CA_MAX; j++)
+									if(((demux[demux_id].ca_mask & (1 << j)) == (uint32_t) (1 << j)))
 									{
-										if(((demux[demux_id].ca_mask & (1 << j)) == (uint32_t) (1 << j)))
-										{
-											remove_streampid_from_list(j, pidtobestopped, idx);
-											break;
-										}
+										remove_streampid_from_list(j, pidtobestopped, idx);
+										break;
 									}
 								}
 							}
@@ -2403,38 +2396,17 @@ void dvbapi_set_pid(int32_t demux_id, int32_t num, uint32_t idx, bool enable, bo
 						action != REMOVED_STREAMPID_INDEX)
 					{
 						// removed last index of this streampid on ca? -> disable this pid with -1 on this ca
-						if (cfg.dvbapi_boxtype == BOXTYPE_SOGNO)
+						if((action == REMOVED_STREAMPID_LASTINDEX || action == FIRST_STREAMPID_INDEX)
+							&& (is_ca_used(i, streampid) == INDEX_INVALID))
 						{
-							if((action == REMOVED_STREAMPID_LASTINDEX) && (is_ca_used(i, streampid) == INDEX_INVALID))
-							{
-								curidx = DVBAPI_INDEX_DISABLE;
-							}
-						}
-						else
-						{
-							if((action == REMOVED_STREAMPID_LASTINDEX || action == FIRST_STREAMPID_INDEX) && (is_ca_used(i, streampid) == INDEX_INVALID))
-							{
-								curidx = DVBAPI_INDEX_DISABLE;
-							}
+							curidx = DVBAPI_INDEX_DISABLE;
 						}
 
 						// removed index of streampid that is used to decode on ca -> get a fresh one
-
-						if (cfg.dvbapi_boxtype == BOXTYPE_SOGNO)
+						if(action == REMOVED_DECODING_STREAMPID_INDEX || action == FIRST_STREAMPID_INDEX)
 						{
-							if(action == REMOVED_DECODING_STREAMPID_INDEX)
-							{
-								newidx = is_ca_used(i, streampid); // get an active index for this pid and enable it on ca device
-								curidx = DVBAPI_INDEX_DISABLE;
-							}
-						}
-						else
-						{
-							if(action == REMOVED_DECODING_STREAMPID_INDEX || action == FIRST_STREAMPID_INDEX)
-							{
-								newidx = is_ca_used(i, streampid); // get an active index for this pid and enable it on ca device
-								curidx = DVBAPI_INDEX_DISABLE;
-							}
+							newidx = is_ca_used(i, streampid); // get an active index for this pid and enable it on ca device
+							curidx = DVBAPI_INDEX_DISABLE;
 						}
 
 						while(curidx != INDEX_INVALID || newidx != INDEX_INVALID)
@@ -2444,26 +2416,25 @@ void dvbapi_set_pid(int32_t demux_id, int32_t num, uint32_t idx, bool enable, bo
 							if(curidx != INDEX_INVALID)
 							{
 								(curidx == DVBAPI_INDEX_DISABLE) ? (ca_pid2.index = -1) : (ca_pid2.index = curidx);
-								if (cfg.dvbapi_boxtype == BOXTYPE_SOGNO)
-								{
-									cs_log_dbg(D_DVBAPI, "Demuxer %d %s stream %d pid=0x%04x index=%d on ca%d", demux_id, (enable ? "enable" : "disable"), num + 1, ca_pid2.pid, ca_pid2.index, i);
-								}
-								else
-								{
-									cs_log_dbg(D_DVBAPI, "Demuxer %d %s stream %d pid=0x%04x index=%d on ca%d", demux_id, ((enable && curidx != DVBAPI_INDEX_DISABLE) ? "enable" : "disable"), num + 1, ca_pid2.pid, ca_pid2.index, i);
-								}
+								cs_log_dbg(D_DVBAPI, "Demuxer %d %s stream %d pid=0x%04x index=%d on ca%d",
+										demux_id,
+										((enable && curidx != DVBAPI_INDEX_DISABLE) ? "enable" : "disable"),
+										num + 1,
+										ca_pid2.pid,
+										ca_pid2.index,
+										i);
 								curidx = INDEX_INVALID; // flag this index as handled
 							}
 							else if(newidx != INDEX_INVALID)
 							{
-								if (cfg.dvbapi_boxtype == BOXTYPE_SOGNO)
-								{
-									cs_log_dbg(D_DVBAPI, "Demuxer %d takeover stream %d pid=0x%04x by index=%d on ca%d", demux_id, num + 1, ca_pid2.pid, ca_pid2.index, i);
-								}
-								else
-								{
-									cs_log_dbg(D_DVBAPI, "Demuxer %d %s stream %d pid=0x%04x by index=%d on ca%d", demux_id, ((enable && action == FIRST_STREAMPID_INDEX) ? "enable" : "takeover"), num + 1, ca_pid2.pid, ca_pid2.index, i);
-								}
+								(newidx == DVBAPI_INDEX_DISABLE) ? (ca_pid2.index = -1) : (ca_pid2.index = newidx);
+								cs_log_dbg(D_DVBAPI, "Demuxer %d %s stream %d pid=0x%04x by index=%d on ca%d",
+										demux_id,
+										((enable && action == FIRST_STREAMPID_INDEX) ? "enable" : "takeover"),
+										num + 1,
+										ca_pid2.pid,
+										ca_pid2.index,
+										i);
 								newidx = INDEX_INVALID; // flag this takeover / new index as handled
 							}
 #ifdef WITH_EXTENDED_CW
