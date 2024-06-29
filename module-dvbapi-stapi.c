@@ -727,10 +727,8 @@ int32_t stapi_write_cw(int32_t demux_id, uint8_t *cw, uint16_t *STREAMpids, int3
 
 	for(l = 0; l < 2; l++)
 	{
-		// Skip check for BISS1 - cw could be indeed zero
-		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
 		if(memcmp(cw + (l * 8), demux[demux_id].last_cw[0][l], 8) != 0
-			&& (memcmp(cw + (l * 8), nullcw, 8) != 0 || caid_is_biss(demux[demux_id].ECMpids[pidnum].CAID)))
+			&& (memcmp(cw + (l * 8), nullcw, 8) != 0))
 		{
 			for(n = 0; n < PTINUM; n++)
 			{

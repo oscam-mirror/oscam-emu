@@ -1883,14 +1883,7 @@ void dvbapi_start_emm_filter(int32_t demux_id)
 
 			if(match)
 			{
-				if(rdr->typ == R_EMU)
-				{
-					csystem = rdr->csystem;
-				}
-				else
-				{
-					csystem = get_cardsystem_by_caid(caid);
-				}
+				csystem = get_cardsystem_by_caid(caid);
 				if(csystem)
 				{
 					if(caid != ncaid)
@@ -1911,15 +1904,7 @@ void dvbapi_start_emm_filter(int32_t demux_id)
 					}
 					else if(csystem->get_emm_filter)
 					{
-						if(rdr->typ == R_EMU)
-						{
-							csystem->get_emm_filter_adv(rdr, &dmx_filter, &filter_count, caid, provid, demux[demux_id].program_number,
-														demux[demux_id].tsid, demux[demux_id].onid, demux[demux_id].ens);
-						}
-						else
-						{
-							csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
-						}
+						csystem->get_emm_filter(rdr, &dmx_filter, &filter_count);
 					}
 				}
 				else
@@ -2697,63 +2682,6 @@ int32_t dvbapi_start_descrambling(int32_t demux_id, int32_t pid, int8_t checked,
 		if(config_enabled(CS_CACHEEX) && (!match && (cacheex_is_match_alias(dvbapi_client, er))))
 		{
 			match = 1; // so make it a match to try it!
-		}
-
-		// BISS1 and BISS2 mode 1/E or FAKE caid
-		// ecm pid is fake, so send out one fake ecm request
-		// special treatment: if we asked the cw first without starting a filter,
-		// the cw request will be killed due to no ecmfilter started
-		if(caid_is_fake(demux[demux_id].ECMpids[pid].CAID) || caid_is_biss_fixed(demux[demux_id].ECMpids[pid].CAID))
-		{
-			int32_t j, n;
-			er->ecmlen = 7;
-			er->ecm[0] = 0x80; // to pass the cache check it must be 0x80 or 0x81
-			er->ecm[1] = 0x00;
-			er->ecm[2] = 0x04;
-			i2b_buf(2, er->srvid, er->ecm + 3);
-			i2b_buf(2, er->pmtpid, er->ecm + 5);
-
-			for(j = 0, n = 7; j < demux[demux_id].STREAMpidcount; j++, n += 2)
-			{
-				i2b_buf(2, demux[demux_id].STREAMpids[j], er->ecm + n);
-				er->ecm[2] += 2;
-				er->ecmlen += 2;
-			}
-
-			er->ens &= 0x0FFFFFFF; // clear top 4 bits (in case of DVB-T/C or garbage), prepare for flagging
-			er->ens |= 0xA0000000; // flag to emu: this is the namespace, not a pid
-
-			i2b_buf(2, er->tsid, er->ecm + er->ecmlen);     // place tsid after the last stream pid
-			i2b_buf(2, er->onid, er->ecm + er->ecmlen + 2); // place onid right after tsid
-			i2b_buf(4, er->ens, er->ecm + er->ecmlen + 4);  // place namespace at the end of the ecm
-
-			er->ecm[2] += 8;
-			er->ecmlen += 8;
-
-			cs_log("Demuxer %d trying to descramble PID %d CAID %04X PROVID %06X ECMPID %04X ANY CHID PMTPID %04X VPID %04X",
-				demux_id,
-				pid,
-				demux[demux_id].ECMpids[pid].CAID,
-				demux[demux_id].ECMpids[pid].PROVID,
-				demux[demux_id].ECMpids[pid].ECM_PID,
-				demux[demux_id].pmtpid,
-				demux[demux_id].ECMpids[pid].VPID);
-
-			demux[demux_id].curindex = pid; // set current pid to the fresh started one
-			dvbapi_start_filter(demux_id,
-						pid,
-						demux[demux_id].ECMpids[pid].ECM_PID,
-						demux[demux_id].ECMpids[pid].CAID,
-						demux[demux_id].ECMpids[pid].PROVID,
-						0x80,
-						0xF0,
-						3000,
-						TYPE_ECM);
-
-			started = 1;
-			request_cw(dvbapi_client, er, demux_id, 0); // do not register ecm since this try!
-			fake_ecm = 1;
-			break; // we started an ecmfilter so stop looking for next matching reader!
 		}
 
 		if(match) // if matching reader found check for irdeto cas if local irdeto card check if it received emms in last 60 minutes
@@ -3865,7 +3793,7 @@ static void dvbapi_parse_pmt_ca_descriptor(int32_t demux_id, const uint8_t *buff
 	ca_system_id = b2i(2, buffer);
 	ca_pid = b2i(2, buffer + 2) & 0x1FFF;
 
-	if(ca_system_id == 0x0000 || (!caid_is_biss_fixed(ca_system_id) && !caid_is_fake(ca_system_id) && ca_pid == 0x1FFF))
+	if(ca_system_id == 0x0000 || ca_pid == 0x1FFF)
 	{
 		return; // This is not a valid CAID or ECM pid
 	}
@@ -4453,33 +4381,14 @@ static void dvbapi_capmt_notify(struct demux_s *dmx)
 
 static void dvbapi_prepare_descrambling(int32_t demux_id, uint32_t msgid)
 {
-	bool is_powervu = false, start_emm = true;
+	bool start_emm = true;
 	char service_name[CS_SERVICENAME_SIZE];
-
-	// The CA PMT should have given us enough info to determine if descrambling
-	// is possible. Parsing the (real) PMT is not necessary, unless we have a
-	// PowerVu encrypted channel or (for some weird reason) no stream pids at all.
-	// Actually, when no streams are available, we set the PMT pid as the 1st
-	// stream pid, so we have to check against that. Finally, if the PMT pid is
-	// not included in the CA PMT, we start the PAT filter instead.
-
-#ifdef WITH_EXTENDED_CW
-	uint8_t i;
-	for(i = 0; i < demux[demux_id].ECMpidcount; i++)
-	{
-		if(caid_is_powervu(demux[demux_id].ECMpids[i].CAID))
-		{
-			is_powervu = true;
-			break;
-		}
-	}
-#endif
 
 	if(demux[demux_id].pmtpid == 0)
 	{
 		dvbapi_start_pat_filter(demux_id);
 	}
-	else if(demux[demux_id].STREAMpids[0] == demux[demux_id].pmtpid || is_powervu)
+	else if(demux[demux_id].STREAMpids[0] == demux[demux_id].pmtpid)
 	{
 		dvbapi_start_pmt_filter(demux_id);
 	}
@@ -5702,23 +5611,6 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 				return;
 			}
 
-#ifdef WITH_EMU
-			if(caid_is_powervu(curpid->CAID)) // ecm counter for powervu
-			{
-				pvu_skip = 1;
-
-				if(sctlen - 11 > buffer[9])
-				{
-					if(buffer[11 + buffer[9]] > curpid->pvu_counter
-						|| (curpid->pvu_counter == 255 && buffer[11 + buffer[9]] == 0)
-						|| ((curpid->pvu_counter - buffer[11 + buffer[9]]) > 5))
-					{
-						curpid->pvu_counter = buffer[11 + buffer[9]];
-						pvu_skip = 0;
-					}
-				}
-			}
-#endif
 			// wait for odd / even ecm change (only not for irdeto!)
 			if((curpid->table == buffer[0] && !caid_is_irdeto(curpid->CAID)) || pvu_skip)
 			{
@@ -6064,35 +5956,6 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 			return; // just skip on internal buffer overflow
 		}
 
-#ifdef WITH_EMU
-		if(caid_is_director(demux[demux_id].demux_fd[filter_num].caid))
-		{
-			uint32_t i;
-			uint32_t emmhash;
-
-			if(sctlen < 4)
-			{
-				return;
-			}
-
-			for(i = 0; i + 2 < sctlen; i++)
-			{
-				if(buffer[i] == 0xF0 && (buffer[i + 2] == 0xE1 || buffer[i + 2] == 0xE4))
-				{
-					emmhash = (buffer[3] << 8) | buffer[sctlen - 2];
-					if(demux[demux_id].demux_fd[filter_num].cadata == emmhash)
-					{
-						return;
-					}
-
-					demux[demux_id].demux_fd[filter_num].cadata = emmhash;
-					dvbapi_process_emm(demux_id, filter_num, buffer, sctlen);
-					return;
-				}
-			}
-			return;
-		}
-#endif
 		// fix to handle more than one irdeto emm packet
 		uint8_t *pbuf = buffer;
 		int32_t done = 0;
@@ -7311,10 +7174,8 @@ void dvbapi_write_cw(int32_t demux_id, int32_t pid, int32_t stream_id, uint8_t *
 	for(n = 0; n < 2; n++)
 	{
 		// Check if cw has changed and if new cw is empty (all zeros)
-		// Skip check for BISS1 - cw could be indeed zero
-		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
 		if((memcmp(cw + (n * cw_length), demux[demux_id].last_cw[stream_id][n], cw_length) != 0 || cw_empty)
-			&& (memcmp(cw + (n * cw_length), null_cw, cw_length) != 0 || caid_is_biss(demux[demux_id].ECMpids[pid].CAID)))
+			&& (memcmp(cw + (n * cw_length), null_cw, cw_length) != 0))
 		{
 			// prepare ca device
 			uint32_t idx = dvbapi_ca_set_pid(demux_id, pid, stream_id, (algo == CA_ALGO_DES), msgid);
@@ -7622,9 +7483,7 @@ void dvbapi_send_dcw(struct s_client *client, ECM_REQUEST *er)
 
 		// 0=matching ecm hash, 2=no filter, 3=table reset, 4=cache-ex response
 		// Check only against last_cw[0] (index 0) - No need to check the rest
-		// Skip check for BISS1 - cw could be indeed zero
-		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
-		if((status == 0 || status == 3 || status == 4) && er->rc < E_NOTFOUND && !caid_is_biss(er->caid))
+		if((status == 0 || status == 3 || status == 4) && er->rc < E_NOTFOUND)
 		{
 			// check for matching control word
 			if(memcmp(er->cw, demux[i].last_cw[0][0], 8) == 0 &&
@@ -8611,9 +8470,7 @@ int32_t dvbapi_check_ecm_delayed_delivery(int32_t demux_id, ECM_REQUEST *er)
 	}
 
 	// Check for null cw
-	// Skip check for BISS1 - cw could be indeed zero
-	// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
-	if(memcmp(er->cw, nullcw, 8) == 0 && memcmp(er->cw + 8, nullcw, 8) == 0 && !caid_is_biss(er->caid))
+	if(memcmp(er->cw, nullcw, 8) == 0 && memcmp(er->cw + 8, nullcw, 8) == 0)
 	{
 		return 5;
 	}

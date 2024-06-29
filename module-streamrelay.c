@@ -393,9 +393,6 @@ static void ParsePatData(stream_client_data *cdata)
 {
 	int32_t i;
 	uint16_t srvid;
-#ifdef __BISS__
-	cdata->STREAMpidcount = 0;
-#endif
 	for (i = 8; i + 7 < SCT_LEN(cdata->pat_data); i += 4)
 	{
 		srvid = b2i(2, cdata->pat_data + i);
@@ -665,10 +662,6 @@ static void ParsePmtData(stream_client_data *cdata)
 				break;
 			}
 		}
-#ifdef __BISS__
-		cdata->STREAMpids[cdata->STREAMpidcount] = elementary_pid;
-		cdata->STREAMpidcount++;
-#endif
 	}
 #ifdef WITH_EMU
 	// If we haven't found a CAID for this service,
@@ -1343,31 +1336,6 @@ static void DescrambleTsPackets(stream_client_data *data, uint8_t *stream_buf, u
 			continue;
 		}
 #ifdef MODULE_RADEGAST
-#ifdef __BISS__
-		if(data->ecm_pid == 0x1FFF && caid_is_biss_fixed(data->caid))
-		{
-			uint32_t j, n;
-			uint16_t ecm_len = 7;
-			data->ecm_data[0] = 0x80; // to pass the cache check it must be 0x80 or 0x81
-			data->ecm_data[1] = 0x00;
-			data->ecm_data[2] = 0x04;
-			i2b_buf(2, data->srvid, data->ecm_data + 3);
-			i2b_buf(2, data->pmt_pid, data->ecm_data + 5);
-			for(j = 0, n = 7; j < data->STREAMpidcount; j++, n += 2)
-			{
-				i2b_buf(2, data->STREAMpids[j], data->ecm_data + n);
-				data->ecm_data[2] += 2;
-				ecm_len += 2;
-			}
-			data->ens &= 0x0FFFFFFF; // clear top 4 bits (in case of DVB-T/C or garbage), prepare for flagging
-			data->ens |= 0xA0000000; // flag to emu: this is the namespace, not a pid
-			i2b_buf(2, data->tsid, data->ecm_data + ecm_len);     // place tsid after the last stream pid
-			i2b_buf(2, data->onid, data->ecm_data + ecm_len + 2); // place onid right after tsid
-			i2b_buf(4, data->ens, data->ecm_data + ecm_len + 4);  // place namespace at the end of the ecm
-			data->ecm_data[2] += 8;
-			ParseEcmData(data);
-		} else
-#endif // __BISS__
 		if (data->ecm_pid && pid == data->ecm_pid) // Process the ECM data
 		{
 			// set to null pid

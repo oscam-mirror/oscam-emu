@@ -478,9 +478,6 @@ DESCRIPTIONS
 	    0 = resharing for direct peer only
 	    x = resharing for direct peer and share level x
 
-       cccwantemu = 0|1
-	  1 = request to provide emu from CCCam server, too, default:0
-
        ccckeepalive = 0|1
 	  1 = send keepalive messages to keep connection to remote CCCam server up, default:0
 

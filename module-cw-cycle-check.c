@@ -123,9 +123,7 @@ static uint8_t checkvalidCW(ECM_REQUEST *er)
 {
 	uint8_t ret = 1;
 
-	// Skip check for BISS1 - cw could be indeed zero
-	// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
-	if(chk_is_null_CW(er->cw) && !caid_is_biss(er->caid))
+	if(chk_is_null_CW(er->cw))
 	{ er->rc = E_NOTFOUND; }
 
 	if(er->rc == E_NOTFOUND)

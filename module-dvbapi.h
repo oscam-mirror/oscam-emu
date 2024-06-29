@@ -336,9 +336,6 @@ typedef struct filter_s
 	uint32_t         SlotHandle[10];
 	uint32_t         BufferHandle[10];
 #endif
-#ifdef WITH_EMU
-	uint32_t cadata;
-#endif
 } FILTERTYPE;
 
 #ifdef WITH_EXTENDED_CW
@@ -371,9 +368,6 @@ typedef struct s_ecmpid
 	uint32_t         index[MAX_STREAM_INDICES];          // ca indices used for this ecm pid (index[0] holds ca index for STREAMmpids[0] and so on)
 	uint32_t         streams;                            // bit mask of STREAMpids enabled for this ECMpid
 	uint32_t         cadata;
-#ifdef WITH_EMU
-	int16_t pvu_counter;
-#endif
 } ECMPIDTYPE;
 
 typedef struct s_emmpid
