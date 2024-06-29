@@ -1009,7 +1009,7 @@ int32_t cc_send_cli_data(struct s_client *cl)
 
 	memcpy(buf, rdr->r_usr, sizeof(rdr->r_usr));
 	memcpy(buf + 20, cc->node_id, 8);
-	buf[28] = 0; // <-- Client wants to have EMUs, 0 - NO; 1 - YES
+	buf[28] = rdr->cc_want_emu; // <-- Client wants to have EMUs, 0 - NO; 1 - YES
 	memcpy(buf + 29, rdr->cc_version, sizeof(rdr->cc_version)); // cccam version (ascii)
 	memcpy(buf + 61, rdr->cc_build, sizeof(rdr->cc_build)); // build number (ascii)
 
@@ -1544,7 +1544,8 @@ struct cc_card *get_matching_card(struct s_client *cl, ECM_REQUEST *cur_er, int8
 		}
 
 		if((ncard->caid == cur_er->caid // caid matches
-			|| lb_match)) // or system matches if caid ends with 00
+			|| (rdr->cc_want_emu && (ncard->caid == (cur_er->caid & 0xFF00))))
+			|| lb_match) // or system matches if caid ends with 00 (needed for wantemu)
 		{
 			int32_t goodSidCount = ll_count(ncard->goodsids);
 			int32_t badSidCount = ll_count(ncard->badsids);
@@ -1583,7 +1584,7 @@ struct cc_card *get_matching_card(struct s_client *cl, ECM_REQUEST *cur_er, int8
 				}
 			}
 
-			if(caid_is_nagra(ncard->caid) && (!xcard || ncard->hop < xcard->hop))
+			if(!(rdr->cc_want_emu) && caid_is_nagra(ncard->caid) && (!xcard || ncard->hop < xcard->hop))
 			{
 				xcard = ncard; // remember card (D+ / 1810 fix) if request has no provider, but card has
 			}

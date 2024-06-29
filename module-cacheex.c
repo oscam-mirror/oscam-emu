@@ -921,7 +921,9 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 	}
 #endif
 
-	if(chk_is_null_CW(er->cw))
+	// Skip check for BISS1 - cw could be indeed zero
+	// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
+	if(chk_is_null_CW(er->cw) && !caid_is_biss(er->caid))
 	{
 		cs_log_dump_dbg(D_CACHEEX, er->cw, 16, "push received null cw from %s", csp ? "csp" : username(cl));
 		cl->cwcacheexerr++;
@@ -930,7 +932,9 @@ static int32_t cacheex_add_to_cache_int(struct s_client *cl, ECM_REQUEST *er, in
 		return 0;
 	}
 
-	if(get_odd_even(er) == 0)
+	// Don't check for BISS1 and BISS2 mode 1/E or fake caid (ECM is fake for them)
+	// Don't check for BISS2 mode CA (ECM table is always 0x80)
+	if(!caid_is_biss(er->caid) && !caid_is_fake(er->caid) && get_odd_even(er) == 0)
 	{
 		cs_log_dbg(D_CACHEEX, "push received ecm with null odd/even byte from %s", csp ? "csp" : username(cl));
 		cl->cwcacheexerr++;

@@ -468,6 +468,8 @@ const char *get_cardsystem_desc_by_caid(uint16_t caid)
 	if(caid_is_viaccess(caid)) { return "viaccess"; }
 	if(caid_is_irdeto(caid)) { return "irdeto"; }
 	if(caid_is_videoguard(caid)) { return "videoguard"; }
+	if(caid_is_powervu(caid)) { return "powervu"; }
+	if(caid_is_director(caid)) { return "director"; }
 	if(caid_is_conax(caid)) { return "conax"; }
 	if(caid_is_cryptoworks(caid)) { return "cryptoworks"; }
 	if(caid_is_betacrypt(caid)) { return "betacrypt"; }
@@ -476,6 +478,7 @@ const char *get_cardsystem_desc_by_caid(uint16_t caid)
 	if(caid >= 0x5501 && caid <= 0x551A) { return "griffin"; }
 	if(caid_is_dre(caid)) { return "drecrypt"; }
 	if(caid_is_bulcrypt(caid)) { return "bulcrypt"; }
+	if(caid_is_biss(caid)) { return "biss"; }
 	if(caid == 0x4ABF) { return "dgcrypt"; }
 	return "unknown";
 }

@@ -10,6 +10,23 @@
 #define DVB_BUFFER_WAIT_CSA 188*(DVB_MAX_TS_PACKETS-128)
 #define DVB_BUFFER_SIZE DVB_BUFFER_SIZE_CSA
 
+#ifdef WITH_EMU
+#define EMU_STREAM_MAX_AUDIO_SUB_TRACKS 4
+#define EMU_DVB_BUFFER_SIZE_CSA DVB_BUFFER_SIZE_CSA
+#define EMU_DVB_BUFFER_WAIT_CSA DVB_BUFFER_WAIT_CSA
+#define EMU_DVB_BUFFER_SIZE_DES 188*32
+#define EMU_DVB_BUFFER_WAIT_DES 188*29
+#define EMU_STREAM_SERVER_MAX_CONNECTIONS STREAM_SERVER_MAX_CONNECTIONS
+#define emu_fixed_key_srvid_mutex fixed_key_srvid_mutex
+#define emu_stream_cur_srvid stream_cur_srvid
+#define emu_stream_client_data stream_client_data
+#endif
+
+//#define __BISS__
+#ifdef __BISS__
+#define MAX_STREAM_PIDS 32
+#endif
+
 #include "cscrypt/md5.h"
 #include <dvbcsa/dvbcsa.h>
 
@@ -61,6 +78,10 @@ typedef struct
 	uint16_t ecm_pid;
 	uint16_t emm_pid;
 	uint16_t pcr_pid;
+#ifdef __BISS__
+	uint8_t STREAMpidcount;
+	uint16_t STREAMpids[MAX_STREAM_PIDS];
+#endif
 	uint8_t ecm_md5[MD5_DIGEST_LENGTH];
 #ifdef WITH_EMU
 	int16_t ecm_nb;

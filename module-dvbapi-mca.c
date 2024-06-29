@@ -601,8 +601,10 @@ void mca_send_dcw(struct s_client *client, ECM_REQUEST *er)
 	int32_t n;
 	for(n = 0; n < 2; n++)
 	{
+		// Skip check for BISS1 - cw could be indeed zero
+		// Skip check for BISS2 - we use the extended cw, so the "simple" cw is always zero
 		if((memcmp(er->cw + (n * 8), demux[0].last_cw[0][0], 8) && memcmp(er->cw + (n * 8), demux[0].last_cw[0][1], 8))
-			&& (memcmp(er->cw + (n * 8), nullcw, 8) != 0))
+			&& (memcmp(er->cw + (n * 8), nullcw, 8) != 0 || caid_is_biss(er->caid)))
 		{
 			memcpy(demux[0].last_cw[0][n], er->cw + (n * 8), 8);
 			memcpy(openxcas_cw + (n * 8), er->cw + (n * 8), 8);

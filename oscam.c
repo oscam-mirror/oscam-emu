@@ -1649,6 +1649,9 @@ const struct s_cardreader *cardreaders[] =
 #ifdef CARDREADER_STINGER
 	&cardreader_stinger,
 #endif
+#ifdef WITH_EMU
+	&cardreader_emu,
+#endif
 
 	NULL
 };

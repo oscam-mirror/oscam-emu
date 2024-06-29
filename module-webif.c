@@ -2436,7 +2436,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		chk_reader("services", servicelabels, rdr);
 		chk_reader("lb_whitelist_services", servicelabelslb, rdr);
 
-		if(is_network_reader(rdr))    //physical readers make trouble if re-started
+		if(is_network_reader(rdr) || rdr->typ == R_EMU)    //physical readers make trouble if re-started
 		{
 			if(rdr)
 				{
@@ -3170,6 +3170,8 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_printf(vars, TPLADD, "RESHARE",      "%d", cfg.cc_reshare);
 	tpl_printf(vars, TPLADD, "CCCRECONNECT", "%d", rdr->cc_reconnect);
 
+	if(rdr->cc_want_emu)
+		{ tpl_addVar(vars, TPLADD, "CCCWANTEMUCHECKED", "checked"); }
 	if(rdr->cc_keepalive)
 		{ tpl_addVar(vars, TPLADD, "KEEPALIVECHECKED", "checked"); }
 #endif
@@ -3207,6 +3209,23 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_addVar(vars, TPLADD, "USERSCRIPT", rdr->userscript);
 #endif
 
+#ifdef WITH_EMU
+	//emu_auproviders
+	value = mk_t_ftab(&rdr->emu_auproviders);
+	tpl_addVar(vars, TPLADD, "EMUAUPROVIDERS", value);
+	free_mk_t(value);
+
+	// Date-coded BISS keys
+	if(!apicall)
+	{
+		tpl_addVar(vars, TPLADD, "EMUDATECODEDENABLED", (rdr->emu_datecodedenabled == 1) ? "checked" : "");
+	}
+	else
+	{
+		tpl_addVar(vars, TPLADD, "EMUDATECODEDENABLED", (rdr->emu_datecodedenabled == 1) ? "1" : "0");
+	}
+#endif
+
 	tpl_addVar(vars, TPLADD, "PROTOCOL", reader_get_type_desc(rdr, 0));
 
 	// Show only parameters which needed for the reader
@@ -3227,6 +3246,9 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		break;
 	case R_CAMD35 :
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGCAMD35BIT"));
+		break;
+	case R_EMU :
+		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGEMUBIT"));
 		break;
 	case R_CS378X :
 		tpl_addVar(vars, TPLAPPEND, "READERDEPENDINGCONFIG", tpl_getTpl(vars, "READERCONFIGCS378XBIT"));
@@ -5256,9 +5278,34 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 
 					tpl_addVar(vars, TPLAPPEND, "LOGHISTORY", "<BR><BR>New Structure:<BR>");
 					char tbuffer[83];
+#ifdef WITH_EMU
+					char keyBuffer[1024];
+#endif
 					int jsondelimiter = 0;
 					while((item = ll_iter_next(&itr)))
 					{
+#ifdef WITH_EMU
+						if(item->isKey)
+						{
+							tpl_addVar(vars, TPLADD, "ENTSTARTDATE", "");
+							tpl_addVar(vars, TPLADD, "ENTENDDATE", "");
+							cs_hexdump(0, item->key, item->keyLength, keyBuffer, sizeof(keyBuffer));
+							tpl_addVar(vars, TPLADD, "ENTEXPIERED", "e_valid");
+							tpl_printf(vars, TPLADD, "ENTCAID", "%04X", item->caid);
+							tpl_printf(vars, TPLADD, "ENTPROVID", "%08X", item->provid);
+							tpl_addVar(vars, TPLADD, "ENTID", item->name);
+							tpl_addVar(vars, TPLADD, "ENTCLASS", keyBuffer);
+							if(item->isData) { tpl_addVar(vars, TPLADD, "ENTTYPE", "data"); }
+							else { tpl_addVar(vars, TPLADD, "ENTTYPE", "key"); }
+							tpl_addVar(vars, TPLADD, "ENTRESNAME", "");
+
+							if((strcmp(getParam(params, "hideexpired"), "1") != 0) || (item->end > now))
+								{ tpl_addVar(vars, TPLAPPEND, "READERENTENTRY", tpl_getTpl(vars, "ENTITLEMENTITEMBIT")); }
+
+							continue;
+						}
+#endif
+
 						localtime_r(&item->start, &start_t);
 						localtime_r(&item->end, &end_t);
 
@@ -5752,6 +5799,9 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 						filtered = (type == cl->typ) || (type == 'x' && (cl->typ == 'p' || cl->typ == 'r') && (cl->reader && cl->reader->cacheex.mode));
 #else
 						filtered = (type == cl->typ);
+#endif
+#ifdef WITH_EMU
+						if(type == 'e' && cl->typ == 'r' && cl->reader->typ == R_EMU) filtered = 1;
 #endif
 					}
 				}
@@ -7305,6 +7355,9 @@ static char *send_oscam_files(struct templatevars * vars, struct uriparams * par
 		{ "expired.info",    MNU_GBX_FEXPINF,   FTYPE_GBOX },     // id 28
 		{ "info.log",        MNU_GBX_INFOLOG,   FTYPE_GBOX },     // id 29
 #endif
+#ifdef WITH_EMU
+		{ "SoftCam.Key",     MNU_CFG_FSOFTCAMKEY,FTYPE_CONFIG },  // id 30
+#endif
 		{ NULL, 0, 0 },
 	};
 
@@ -7776,7 +7829,11 @@ static char *send_oscam_EMM_running(struct templatevars * vars, struct uriparams
 		else if(!proxy && rdr->csystem_active)     // local active reader
 		{
 			csystem = rdr->csystem;
-			caid = rdr->caid;
+
+			if(rdr->typ != R_EMU)
+			{
+				caid = rdr->caid;
+			}
 		}
 
 		if(csystem)
@@ -8945,7 +9002,11 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 		memcpy(*result + bufsize, buf2, n);
 		bufsize += n;
 
+#ifdef WITH_EMU
+		if(bufsize > 204800) // max request size 200kb
+#else
 		if(bufsize > 102400) // max request size 100kb
+#endif
 		{
 			cs_log("error: too much data received from %s", cs_inet_ntoa(in));
 			NULLFREE(*result);
