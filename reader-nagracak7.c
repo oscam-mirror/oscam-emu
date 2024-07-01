@@ -1061,7 +1061,7 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 		int cwekeycount = 0, i;
 		memcpy(cmd0e + 132, reader->nuid, reader->nuid_length); // inject NUID
 
-		for (i = 0; i < 8; i++)
+		for (i = 0; i < 17; i++)
 			cwekeycount += !!reader->cwekey_length[i];
 
 		if(cwekeycount == 0)
@@ -1549,7 +1549,7 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		if(cta_res[27] == 0x5C)
 		{
 			uint8_t cta_res144 = cta_res[144];
-			if(cta_res144 < 0x08)
+			if(cta_res144 < 0x11)
 			{
 				if(!reader->cwekey_length[cta_res144])
 				{

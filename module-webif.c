@@ -2799,10 +2799,18 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		{ tpl_printf(vars, TPLAPPEND, "FORCEPAIR", "%02X", rdr->forcepair[i]); }
 
 	// cwekeys (CAK7)
-	for(j = 0; j < 8; j++)
+	for(j = 0; j < 17; j++)
 	{
-		char key[8] = "CWEKEYX";
-		key[6] = '0' + j;
+		char key[9] = "CWEKEY";
+		if(j > 9)
+		{
+			key[6] = '1';
+			key[7] = '0' + (j - 10);
+		}
+		else
+		{
+			key[6] = '0' + j;
+		}
 		for(i = 0; i < rdr->cwekey_length[j]; i++)
 			{ tpl_printf(vars, TPLAPPEND, key, "%02X", rdr->cwekey[j][i]); }
 	}
