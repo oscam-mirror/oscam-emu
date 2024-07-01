@@ -358,9 +358,6 @@ bool cardreader_init(struct s_reader *reader)
 	{
 		if(reader->typ == R_INTERNAL)
 		{
-			if(boxtype_is("dm8000") || boxtype_is("dm800") || boxtype_is("dm800se"))
-				{reader->cardmhz = 2700;}
-
 			if(boxtype_is("dm500") || boxtype_is("dm600pvr"))
 				{reader->cardmhz = 3150;}
 
@@ -368,7 +365,30 @@ bool cardreader_init(struct s_reader *reader)
 				{reader->cardmhz = 8300;}
 
 			if((!strncmp(boxtype_get(), "vu", 2 ))||(boxtype_is("ini-8000am")))
-				{reader->cardmhz = 2700; reader->mhz = 450;} // only one speed for vu+ and Atemio Nemesis due to usage of TDA8024
+				{reader->cardmhz = 2700; reader->mhz = 450;} // only one speed for VU+ and Atemio Nemesis due to usage of TDA8024
+		}
+
+		if(
+		reader->typ == R_INTERNAL && (
+		(strncmp(boxtype_get(), "dm500hdv2", 9) == 0) ||
+		(strncmp(boxtype_get(), "dm800sev2", 9) == 0) ||
+		(strncmp(boxtype_get(), "dm7020hd",  8) == 0) ||
+		(strncmp(boxtype_get(), "dm500hd",   7) == 0) ||
+		(strncmp(boxtype_get(), "dm800se",   7) == 0) ||
+		(strncmp(boxtype_get(), "dm7080",    6) == 0) ||
+		(strncmp(boxtype_get(), "dm8000",    6) == 0) ||
+		(strncmp(boxtype_get(), "dm520",     5) == 0) ||
+		(strncmp(boxtype_get(), "dm525",     5) == 0) ||
+		(strncmp(boxtype_get(), "dm800",     5) == 0) ||
+		(strncmp(boxtype_get(), "dm820",     5) == 0) ||
+		(strncmp(boxtype_get(), "dm900",     5) == 0) ||
+		(strncmp(boxtype_get(), "dm920",     5) == 0) ||
+		(strncmp(boxtype_get(), "one",       3) == 0) ||
+		(strncmp(boxtype_get(), "two",       3) == 0)) )
+		{
+			rdr_log(reader, "Dreambox %s found! set Internal Card-MHz = 2700", boxtype_get() );
+			reader->cardmhz = 2700;
+			return true;
 		}
 
 		if((reader->cardmhz > 2000) && (reader->typ != R_SMART))
