@@ -3,12 +3,20 @@
 		document.getElementById('serialDiv').style.display = "block";
 		document.getElementById('serialButton').style.display = "none";
 	}
+	function showIRDID() {
+		document.getElementById('irdidDiv').style.display = "block";
+		document.getElementById('irdidButton').style.display = "none";
+	}
+	function showProvids() {
+		document.getElementById('providsDiv').style.display = "block";
+		document.getElementById('providsButton').style.display = "none";
+	}
 
 	</script>
 
 	<TABLE CLASS="stats">
 		<TR><TH COLSPAN="3">Cardsystem</TH><TH COLSPAN="2">Valid To</TH><TH>IRD ID (nagra)</TH><TH COLSPAN="1">Maturity</TH><TH COLSPAN="1">Provider</TH></TR>
-		<TR CLASS="e_header"><TD COLSPAN="3">##READERCSYSTEM##</TD><TD COLSPAN="2">##READERCARDVALIDTO##</TD><TD>##READERIRDID##</TD><TD COLSPAN="1">##READERMATURITY##</TD><TD COLSPAN="1">##READERPROVIDS##</TD></TR>
+		<TR CLASS="e_header"><TD COLSPAN="3">##READERCSYSTEM##</TD><TD COLSPAN="2">##READERCARDVALIDTO##</TD><TD COLSPAN="1"><div id="irdidDiv" style="display:none;">##READERIRDID##</div><input type="button" name="irdid" id="irdidButton" value="Show" onclick="showIRDID()" /></TD><TD COLSPAN="1">##READERMATURITY##</TD><TD COLSPAN="1"><div id="providsDiv" style="display:none;">##READERPROVIDS##</div><input type="button" name="provids" id="providsButton" value="Show" onclick="showProvids()" /></TD></TR>
 		<TR><TH COLSPAN="2">Serial</TH><TH COLSPAN="2">Rom</TH><TH COLSPAN="4">ATR</TH></TR>
 		<TR CLASS="e_header">
 			<TD COLSPAN="2"><div id="serialDiv" style="display:none;">##READERSERIAL##</div><input type="button" name="serial" id="serialButton" value="Show" onclick="showSerial()" /></TD>

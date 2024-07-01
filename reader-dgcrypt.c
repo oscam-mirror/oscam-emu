@@ -6,11 +6,13 @@
 
 static const uint8_t dgcrypt_atr[8] = { 0x3B, 0xE9, 0x00, 0x00, 0x81, 0x31, 0xC3, 0x45 };
 static const uint8_t cmd_CWKEY[5]   = { 0x81, 0xD0, 0x00, 0x01, 0x08 };
-//static const uint8_t cmd_CAID[5]   = { 0x81, 0xC0, 0x00, 0x01, 0x0A };
+static const uint8_t cmd_CAID[5]   = { 0x81, 0xC0, 0x00, 0x01, 0x0A };
 static const uint8_t cmd_SERIAL[5]  = { 0x81, 0xD1, 0x00, 0x01, 0x10 };
+static const uint8_t cmd_CARD_ID[5]  = { 0x81, 0xD4, 0x00, 0x01, 0x05 };
 static const uint8_t cmd_LABEL[5]   = { 0x81, 0xD2, 0x00, 0x01, 0x10 };
 //static const uint8_t cmd_SUBSYS[5] = { 0x81, 0xDD, 0x00, 0x10, 0x04 };
 static const uint8_t cmd_ECM[3]     = { 0x80, 0xEA, 0x80 };
+static const uint8_t cmd_EMM[3]     = { 0x80, 0xEB, 0x80 };
 
 struct dgcrypt_data
 {
@@ -44,14 +46,15 @@ static int32_t dgcrypt_cmd(struct s_reader *rdr, const uint8_t *buf, const int32
 
 	if(*response_length < 2 || *response_length < min_response_len)
 	{
-		rdr_log(rdr, "ERROR: response_length=%d < min_response_length=%d", *response_length, min_response_len);
+		if (response[0] == 0x6b && response[1] == 0x01) rdr_log(rdr, "ERROR: card has expired, please update your card");
+		else rdr_log(rdr, "ERROR: response_length=%d < min_response_length=%d", *response_length, min_response_len);
 		return ERROR; // Response is two short
 	}
 
-	if(response[*response_length - 2] != 0x90 || response[*response_length - 1] != 0x00)
+	if(response[*response_length - 2] != 0x90 || (response[*response_length - 1] != 0x00 && response[*response_length - 1] != 0x17))
 	{
 		rdr_log(rdr, "ERROR: response[-2] != 0x90 its 0x%02X", response[*response_length - 2]);
-		rdr_log(rdr, "ERROR: response[-1] != 0x00 its 0x%02X", response[*response_length - 1]);
+		rdr_log(rdr, "ERROR: response[-1] != 0x00 or 0x17 its 0x%02X", response[*response_length - 1]);
 		return ERROR; // The reader responded with "command not OK"
 	}
 	return OK;
@@ -79,9 +82,10 @@ static int32_t dgcrypt_card_init(struct s_reader *rdr, ATR *newatr)
 	memset(rdr->sa, 0, sizeof(rdr->sa));
 	memset(rdr->prid, 0, sizeof(rdr->prid));
 	memset(rdr->hexserial, 0, sizeof(rdr->hexserial));
+	memset(rdr->cardid, 0, sizeof(rdr->cardid));
 
 	rdr->nprov = 1;
-	rdr->caid = 0x4ABF;
+	// rdr->caid = 0x4ABF;
 
 	// Get session key
 	// Send: 81 D0 00 01 08
@@ -94,9 +98,9 @@ static int32_t dgcrypt_card_init(struct s_reader *rdr, ATR *newatr)
 	// Get CAID
 	// Send: 81 C0 00 01 0A
 	// Recv: 4A BF 90 00
-	// if (!dgcrypt_cmd(rdr, cmd_CAID, sizeof(cmd_CAID), cta_res, &cta_lr, 2))
-	// 	return ERROR;
-	// 	rdr->caid = (cta_res[0] << 8) | cta_res[1];
+	if (!dgcrypt_cmd(rdr, cmd_CAID, sizeof(cmd_CAID), cta_res, &cta_lr, 2))
+		{ return ERROR; }
+	rdr->caid = (cta_res[0] << 8) | cta_res[1];
 
 	// Get serial number
 	// Send: 81 D1 00 01 10
@@ -104,6 +108,13 @@ static int32_t dgcrypt_card_init(struct s_reader *rdr, ATR *newatr)
 	if(!dgcrypt_cmd(rdr, cmd_SERIAL, sizeof(cmd_SERIAL), cta_res, &cta_lr, 8))
 		{ return ERROR; }
 	memcpy(rdr->hexserial, cta_res + 1, 7);
+
+	// Get card id
+	// Send: 81 D4 00 01 05
+	// Recv: 00 00 00 76 AC 90 00
+	if(!dgcrypt_cmd(rdr, cmd_CARD_ID, sizeof(cmd_CARD_ID), cta_res, &cta_lr, 5))
+		{ return ERROR; }
+	memcpy(rdr->cardid, cta_res, 5);
 
 	// Get LABEL
 	// Send: 81 D2 00 01 10
@@ -117,15 +128,16 @@ static int32_t dgcrypt_card_init(struct s_reader *rdr, ATR *newatr)
 
 	// Get subsystem - !FIXME! We are not using the answer of this command!
 	// Send: 81 DD 00 10 04
-	// Recv: 00 55 00 55 90 00
-	if(!dgcrypt_cmd(rdr, cmd_LABEL, sizeof(cmd_LABEL), cta_res, &cta_lr, 4))
-		{ return ERROR; }
+	// Recv: 00 55 00 55 90 00, also 00 8F 00 8F 90 00
+	// if(!dgcrypt_cmd(rdr, cmd_LABEL, sizeof(cmd_LABEL), cta_res, &cta_lr, 4))
+	// 	{ return ERROR; }
 
-	rdr_log_sensitive(rdr, "CAID: 0x%04X, Serial: {%"PRIu64"} HexSerial: {%02X %02X %02X %02X %02X %02X %02X} Label: {%s}",
+	rdr_log_sensitive(rdr, "CAID: 0x%04X, Serial: {%"PRIu64"} HexSerial: {%02X %02X %02X %02X %02X %02X %02X} Card Id: {%02X %02X %02X %02X %02X} Label: {%s}",
 					rdr->caid,
 					b2ll(7, rdr->hexserial),
 					rdr->hexserial[0], rdr->hexserial[1], rdr->hexserial[2],
 					rdr->hexserial[3], rdr->hexserial[4], rdr->hexserial[5], rdr->hexserial[6],
+					rdr->cardid[0], rdr->cardid[1], rdr->cardid[2], rdr->cardid[3], rdr->cardid[4],
 					label);
 
 	return OK;
@@ -158,19 +170,103 @@ static int32_t dgcrypt_do_ecm(struct s_reader *rdr, const ECM_REQUEST *er, struc
 	return OK;
 }
 
-static int32_t dgcrypt_get_emm_filter(struct s_reader *rdr __attribute__((unused)), struct s_csystem_emm_filter **emm_filters __attribute__((unused)), unsigned int *filter_count)
+static int32_t dgcrypt_do_emm(struct s_reader *rdr, EMM_PACKET *ep)
 {
-	*filter_count = 0;
+	def_resp
+	uint8_t cmd_buffer[256];
+	int32_t emm_length = ep->emm[2] + 3 + 2;
+
+        // add 2 bytes for header
+	memcpy(cmd_buffer + 2, ep->emm, emm_length);
+	// Replace The first 3 bytes of the EMM with the command
+	memcpy(cmd_buffer, cmd_EMM, sizeof(cmd_EMM));
+
+	// Write EMM
+	// Send: 80 EB 80 00 54 00 00 00 00 76 AC 00 8F 82 4A 90 03 00 00 .. .. ..
+	// Recv: 90 17
+	if(!dgcrypt_cmd(rdr, cmd_buffer, emm_length, cta_res, &cta_lr, 2))
+		{ return ERROR; }
+
+	return OK;
+}
+
+static int32_t dgcrypt_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
+{
+	rdr_log_dbg(rdr, D_EMM, "Entered dgcrypt_get_emm_type ep->emm[0]=%x", ep->emm[0]);
+	char tmp_dbg[10];
+
+	switch(ep->emm[0])
+	{
+		case 0x82:
+			ep->type = UNIQUE;
+			memset(ep->hexserial, 0, 8);
+			memcpy(ep->hexserial, ep->emm + 4, 5);
+
+			rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE, ep->hexserial = {%s}",
+								cs_hexdump(1, ep->hexserial, 5, tmp_dbg, sizeof(tmp_dbg)));
+
+			rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE, rdr->cardid = {%s}",
+								cs_hexdump(1, rdr->cardid, 5, tmp_dbg, sizeof(tmp_dbg)));
+
+			return (!memcmp(rdr->cardid, ep->hexserial, 5));
+			break;
+			// Unknown EMM types, but allready subbmited to dev's
+			// FIXME: Drop EMM's until there are implemented
+		default:
+			ep->type = UNKNOWN;
+			return 1;
+	}
+}
+
+static int32_t dgcrypt_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count)
+{
+	if(*emm_filters == NULL)
+	{
+		// need more info
+		//--|-|len|--|card id 5 byte|  const |len|const|--------------
+		//82 00 54 00 00 00 00 xx xx 00 8f 82 4a 90 03 ...  tested, works
+		//82 00 64 00 00 00 00 00 00 00 8f 82 5a ff ff ...  ? filler
+		//82 00 34 00 00 00 00 xx xx 00 8f 82 2a 90 03 ...  ?
+		//82 00 37 00 00 00 00 xx xx 00 8f 82 2d 90 03 ...  ?
+
+		const unsigned int max_filter_count = 1; // fixme
+		if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
+		{
+			return ERROR;
+		}
+
+		struct s_csystem_emm_filter *filters = *emm_filters;
+
+		int32_t idx = 0;
+
+		filters[idx].type = EMM_UNIQUE;
+		filters[idx].enabled = 1;
+		filters[idx].filter[0] = 0x82;
+		filters[idx].mask[0] = 0xFF;
+		memcpy(&filters[idx].filter[2], rdr->cardid, 5);
+		memset(&filters[idx].mask[2], 0xFF, 5);
+		idx++;
+/*
+		// I've never seen it
+		filters[idx].type = EMM_GLOBAL;
+		filters[idx].enabled = 1;
+		filters[idx].filter[0] = 0x83;
+		filters[idx].mask[0] = 0xFF;
+		idx++;
+*/
+		*filter_count = idx;
+	}
 	return OK;
 }
 
 const struct s_cardsystem reader_dgcrypt =
 {
 	.desc           = "dgcrypt",
-	.caids          = (uint16_t[]){ 0x4ABF, 0 },
-	// DGCrypt system does not send EMMs
+	.caids          = (uint16_t[]){ 0x4AB0, 0x4ABF, 0 },
 	.card_init      = dgcrypt_card_init,
+	.do_emm         = dgcrypt_do_emm,
 	.do_ecm         = dgcrypt_do_ecm,
+	.get_emm_type   = dgcrypt_get_emm_type,
 	.get_emm_filter = dgcrypt_get_emm_filter,
 };
 

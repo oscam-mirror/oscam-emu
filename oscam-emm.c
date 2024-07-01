@@ -156,7 +156,8 @@ static void reader_log_emm(struct s_reader *reader, EMM_PACKET *ep, int32_t coun
 
 int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid)
 {
-	int32_t i;
+	int32_t i, j;
+	FTAB *ftab = &reader->ftab;
 
 	// if physical reader a card needs to be inserted
 	if(!is_network_reader(reader) && reader->card_status != CARD_INSERTED)
@@ -284,6 +285,20 @@ int32_t emm_reader_match(struct s_reader *reader, uint16_t caid, uint32_t provid
 		}
 
 		rdr_log_dbg(reader, D_EMM, "reader provid %06X no match with emm provid %06X -> SKIP!", prid, provid);
+	}
+
+	if(ftab->nfilts)
+	{
+		for(j = 0; j < ftab->filts[0].nprids; j++)
+		{
+			prid = ftab->filts[0].prids[j];
+
+			if(prid == provid)
+			{
+				rdr_log_dbg(reader, D_EMM, "reader provid %06X matching with emm provid %06X -> SEND!", prid, provid);
+				return 1;
+			}
+		}
 	}
 	return 0;
 }
