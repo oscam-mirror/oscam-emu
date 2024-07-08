@@ -71,7 +71,7 @@ CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
 
 # Compiler warnings
-CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
+CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition -Wno-trigraphs
 
 # Compiler optimizations
 CCVERSION := $(shell $(CC) --version 2>/dev/null | head -n 1))

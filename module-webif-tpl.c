@@ -409,7 +409,7 @@ char *tpl_getUnparsedTpl(const char *name, int8_t removeHeader, const char *subd
 											check_conf(CARDREADER_STAPI5, ptr2);
 											check_conf(WEBIF_LIVELOG, ptr2);
 											check_conf(WEBIF_JQUERY, ptr2);
-											check_conf(WEBIF_COMPRESS, ptr2);
+											check_conf(WITH_COMPRESS_WEBIF, ptr2);
 											check_conf(CS_ANTICASC, ptr2);
 											check_conf(CS_CACHEEX, ptr2);
 											check_conf(CS_CACHEEX_AIO, ptr2);
