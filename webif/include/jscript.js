@@ -1762,7 +1762,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 		for (var i = 0; i < count; i++) {
 			var v = bytes.shift();
 			if (typeof v === 'undefined') {
-				v = '??';
+				v = 'XX';
 			}
 			html += v + ' ';
 			ret += v;

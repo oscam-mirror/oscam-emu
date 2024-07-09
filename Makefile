@@ -71,7 +71,7 @@ CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
 
 # Compiler warnings
-CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition -Wno-trigraphs
+CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
 
 # Compiler optimizations
 CCVERSION := $(shell $(CC) --version 2>/dev/null | head -n 1))
@@ -453,6 +453,7 @@ all:
 |  Binary   : $(OSCAM_BIN)\n\
 +-------------------------------------------------------------------------------\n"
 ifeq "$(shell ./config.sh --enabled WEBIF)" "Y"
+	@-$(MAKE) --no-print-directory --quiet -C webif clean
 	@$(MAKE) --no-print-directory --quiet -C webif
 endif
 	@$(MAKE) --no-print-directory $(OSCAM_BIN) $(LIST_SMARGO_BIN)
