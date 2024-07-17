@@ -242,6 +242,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			reader->prid[1][3] = 0x00;
 			reader->nprov += 1;
 			reader->caid = (SYSTEM_NAGRA | cta_res[25]);
+			reader->cak7_emm_caid = (SYSTEM_NAGRA | cta_res[25]);
 			rdr_log_dbg(reader, D_READER, "CAID : %04X", reader->caid);
 			return OK;
 		}
@@ -327,18 +328,8 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				addProvider(reader, cta_res + 19);
 				uint8_t check[] = {0x00, 0x01};
 				uint8_t checkecmcaid[] = {0xFF, 0x07};
-				if (reader->caid == 0x186D)
-				{
-					check[0] = (reader->caid - 0x03) & 0xFF;
-				}
-				else if (reader->caid == 0x1856)
-				{
-					check[0] = (reader->caid + 0x28) & 0xFF;
-				}
-				else
-				{
-					check[0] = reader->caid & 0xFF;
-				}
+				check[0] = reader->cak7_emm_caid & 0xFF;
+
 				int p;
 				for(p=23; p < (cta_lr - 6); p++)
 				{
@@ -353,11 +344,29 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						{
 							if ((reader->caid == 0x1884) && (((cta_res + p + 5)[0] == 0x83) || ((cta_res + p + 5)[0] == 0x87)) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
 							{
-								(cta_res + p + 5)[1] -= 0x01;
+								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
+								{
+									(cta_res + p + 5)[1] -= 0x01;
+								}
 							}
-							if ((reader->caid == 0x1856) && ((cta_res + p + 5)[0] == 0x87) && ((cta_res + p + 5)[1] != reader->cardid[2]) && ((cta_res + p + 5)[2] != reader->cardid[1]) && ((cta_res + p + 5)[3] != reader->cardid[0]) && ((cta_res + p + 5)[4] != reader->cardid[3]))
+							if ((reader->caid == 0x1856) && ((cta_res + p + 5)[0] == 0x83) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
+							{
+								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
+								{
+									(cta_res + p + 5)[1] -= 0x01;
+								}
+							}
+							if ((reader->caid == 0x1856) && ((cta_res + p + 5)[0] == 0x87))
 							{
 								(cta_res + p + 5)[4] = 0x00;
+								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
+								{
+									(cta_res + p + 5)[1] -= 0x01;
+								}
+							}
+							if (((reader->caid == 0x186A) || (reader->caid == 0x186D)) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x00))
+							{
+								(cta_res + p + 5)[2] = 0xAC;
 							}
 							addSA(reader, cta_res + p + 5);
 							addemmfilter(reader, cta_res + p + 5);

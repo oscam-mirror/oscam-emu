@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.24.07-11805"
+#define CS_VERSION				"2.24.07-11806"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1583,6 +1583,7 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			cak63cwekey_length;
 #endif
 #ifdef READER_NAGRA_MERLIN
+	uint16_t		cak7_emm_caid;
 	uint8_t			mod1[112];
 	uint8_t			mod1_length;
 	uint8_t			cmd0eprov[2];
