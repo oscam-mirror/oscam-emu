@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.24.07-11806"
+#define CS_VERSION				"2.24.07-11807"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1583,7 +1583,6 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			cak63cwekey_length;
 #endif
 #ifdef READER_NAGRA_MERLIN
-	uint16_t		cak7_emm_caid;
 	uint8_t			mod1[112];
 	uint8_t			mod1_length;
 	uint8_t			cmd0eprov[2];
@@ -1719,6 +1718,7 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			read_old_classes;				// viaccess
 	uint8_t			maturity;						// viaccess & seca maturity level
 	uint16_t		caid;
+	uint16_t		cak7_emm_caid;
 	uint16_t		b_nano;
 	uint16_t		s_nano;
 	int8_t			ecmcommand;						// used for filtering nagra bad ecm commands
