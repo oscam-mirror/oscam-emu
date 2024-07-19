@@ -2,7 +2,7 @@ name: sync gitlab
 
 on:
   schedule:
-    - cron: '0 0 * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -14,11 +14,25 @@ jobs:
       with:
         ref: oscam-gitlab
 
-    - name: sync
+    - name: git config
       run: |
         git config --global user.name "oscam-emu"
         git config --global user.email "oscam-emu@users.noreply.github.com"
+
+    - name: sync oscam-gitlab
+      run: |
         git remote add --track master streamboard https://git.streamboard.tv/common/oscam.git
         git fetch streamboard
         git merge streamboard/master
         git push --follow-tags origin
+
+    - name: auto-merge oscam-gitlab
+      run: |
+          git fetch --unshallow
+          git checkout --track origin/master
+          if git merge --no-ff oscam-gitlab -m "Auto-Merge branch 'oscam-gitlab'"; then
+            git push --follow-tags origin
+          else
+            printf "\nfiles with merge conficts:\n"
+            git diff --check
+          fi
