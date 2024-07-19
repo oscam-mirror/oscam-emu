@@ -10,12 +10,15 @@
 #include "oscam-work.h"
 #include "cscrypt/des.h"
 #include "cscrypt/mdc2.h"
+
 static const uint8_t public_exponent[] = { 0x01, 0x00, 0x01 };
 static const uint8_t d00ff[] = { 0x00, 0xFF, 0xFF, 0xFF };
+
 // Datatypes
 #define IRDINFO 0x03
 #define TIERS   0x0C
 #define SYSID   0x05
+
 static time_t tier_date(uint64_t date, char *buf, int32_t l)
 {
 	time_t ut = +694224000L + (date >> 1);
@@ -28,6 +31,7 @@ static time_t tier_date(uint64_t date, char *buf, int32_t l)
 	}
 	return ut;
 }
+
 static void rsa_decrypt(uint8_t *edata50, int len, uint8_t *out, uint8_t *key, int keylen)
 {
 	BN_CTX *ctx0 = BN_CTX_new();
@@ -47,6 +51,7 @@ static void rsa_decrypt(uint8_t *edata50, int len, uint8_t *out, uint8_t *key, i
 	BN_CTX_end(ctx0);
 	BN_CTX_free(ctx0);
 }
+
 static void addProvider(struct s_reader *reader, uint8_t *cta_res)
 {
 	int i;
@@ -67,6 +72,7 @@ static void addProvider(struct s_reader *reader, uint8_t *cta_res)
 		reader->nprov += 1;
 	}
 }
+
 static int32_t get_prov_index(struct s_reader *reader, const uint8_t *provid)
 {
 	int prov;
@@ -79,6 +85,7 @@ static int32_t get_prov_index(struct s_reader *reader, const uint8_t *provid)
 	}
 	return (-1);
 }
+
 static void addSA(struct s_reader *reader, uint8_t *cta_res)
 {
 	if((cta_res[0] == 0x83 && cta_res[5] == 0x10) || cta_res[0] == 0x87)
@@ -113,6 +120,7 @@ static void addSA(struct s_reader *reader, uint8_t *cta_res)
 		}
 	}
 }
+
 static void addSAseca(struct s_reader *reader, uint8_t *cta_res)
 {
 	if(cta_res[0] == 0x84)
@@ -126,6 +134,7 @@ static void addSAseca(struct s_reader *reader, uint8_t *cta_res)
 		}
 	}
 }
+
 static void addemmfilter(struct s_reader *reader, uint8_t *cta_res)
 {
 	if(cta_res[0] == 0x82)
@@ -225,9 +234,11 @@ static void addemmfilter(struct s_reader *reader, uint8_t *cta_res)
 		}
 	}
 }
+
 static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_res, uint16_t cta_lr)
 {
 	char ds[27], de[27];
+
 	switch(dt)
 	{
 		case 0x02:
@@ -243,9 +254,10 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			reader->nprov += 1;
 			reader->caid = (SYSTEM_NAGRA | cta_res[25]);
 			reader->cak7_emm_caid = (SYSTEM_NAGRA | cta_res[25]);
-			rdr_log_dbg(reader, D_READER, "CAID : %04X", reader->caid);
+			rdr_log_dbg(reader, D_READER, "EMM CAID : %04X", reader->cak7_emm_caid);
 			return OK;
 		}
+
 		case IRDINFO: // case 0x03
 		{
 			if(cta_res[21] == 0x9C)
@@ -265,17 +277,10 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				uint32_t id = b2i(0x02, cta_res + 19);
 				uint32_t start_date;
 				uint32_t expire_date;
+
 				start_date = 1;
 				expire_date = b2i(0x04, cta_res + 22);
-				cs_add_entitlement(reader,
-				reader->caid,
-				id,
-				chid,
-				0,
-				tier_date(start_date, ds, 11),
-				tier_date(expire_date, de, 11),
-				4,
-				1);
+				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
@@ -285,17 +290,10 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				uint32_t id = b2i(0x02, cta_res + 19);
 				uint32_t start_date;
 				uint32_t expire_date;
+
 				start_date = 1;
 				expire_date = b2i(0x04, cta_res + 22);
-				cs_add_entitlement(reader,
-				reader->caid,
-				id,
-				chid,
-				0,
-				tier_date(start_date, ds, 11),
-				tier_date(expire_date, de, 11),
-				4,
-				1);
+				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
@@ -305,22 +303,16 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				uint32_t id = b2i(0x02, cta_res + 19);
 				uint32_t start_date;
 				uint32_t expire_date;
+
 				start_date = 1;
 				expire_date = b2i(0x04, cta_res + 22);
-				cs_add_entitlement(reader,
-				reader->caid,
-				id,
-				chid,
-				0,
-				tier_date(start_date, ds, 11),
-				tier_date(expire_date, de, 11),
-				4,
-				1);
+				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
 			return OK;
 		}
+
 		case 0x04:
 		{
 			if(cta_res[18] != 0x80)
@@ -342,21 +334,21 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						}
 						else
 						{
-							if ((reader->caid == 0x1884) && (((cta_res + p + 5)[0] == 0x83) || ((cta_res + p + 5)[0] == 0x87)) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
+							if ((reader->cak7_emm_caid == 0x1884) && (((cta_res + p + 5)[0] == 0x83) || ((cta_res + p + 5)[0] == 0x87)) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
 							{
 								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
 								{
 									(cta_res + p + 5)[1] -= 0x01;
 								}
 							}
-							if ((reader->caid == 0x1856) && ((cta_res + p + 5)[0] == 0x83) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
+							if ((reader->cak7_emm_caid == 0x187E) && ((cta_res + p + 5)[0] == 0x83) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
 							{
 								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
 								{
 									(cta_res + p + 5)[1] -= 0x01;
 								}
 							}
-							if ((reader->caid == 0x1856) && ((cta_res + p + 5)[0] == 0x87))
+							if ((reader->cak7_emm_caid == 0x187E) && ((cta_res + p + 5)[0] == 0x87))
 							{
 								(cta_res + p + 5)[4] = 0x00;
 								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
@@ -364,7 +356,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 									(cta_res + p + 5)[1] -= 0x01;
 								}
 							}
-							if (((reader->caid == 0x186A) || (reader->caid == 0x186D)) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x00))
+							if ((reader->cak7_emm_caid == 0x186A) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x00))
 							{
 								(cta_res + p + 5)[2] = 0xAC;
 							}
@@ -372,14 +364,16 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 							addemmfilter(reader, cta_res + p + 5);
 						}
 					}
-					if(!memcmp(cta_res + p, checkecmcaid, 2))
+					if((!memcmp(cta_res + p, checkecmcaid, 2)) && ((cta_res + p + 2)[1] == 0x02))
 					{
 						reader->caid = (SYSTEM_NAGRA | (cta_res + p + 2)[0]);
+						rdr_log_dbg(reader, D_READER, "ECM CAID : %04X", reader->caid);
 					}
 				}
 			}
 			return OK;
 		}
+
 		case 0x09:
 		{
 			if((cta_res[19] == cta_res[23]) && (cta_res[20] == cta_res[24]))
@@ -388,12 +382,14 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			}
 			return OK;
 		}
+
 		case SYSID: // case 0x05
 		{
 			memcpy(reader->edata,cta_res + 26, 0x70);
 			reader->dt5num = cta_res[20];
 			char tmp[8];
 			rdr_log(reader, "Card has DT05_%s", cs_hexdump(1, &reader->dt5num, 1, tmp, sizeof(tmp)));
+
 			if(reader->dt5num == 0x00)
 			{
 				IDEA_KEY_SCHEDULE ks;
@@ -417,16 +413,19 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				MDC2_Update(&c1, check1, 0x7E);
 				MDC2_Final(&(mdc_hash1[0]), &c1);
 				rdr_log_dump_dbg(reader, D_READER, mdc_hash1, 16, "MDC_HASH: ");
+
 				if(memcmp(mdc_hash1 + 1, reader->ideakey1 + 1, 14) == 0)
 				{
-				rdr_log(reader, "DT05_00 is correct");
+					rdr_log(reader, "DT05_00 is correct");
 				}
 				else
 				{
-				rdr_log(reader, "DT05_00 error - check MOD1");
+					rdr_log(reader, "DT05_00 error - check MOD1");
 				}
+
 				rdr_log_dump_dbg(reader, D_READER, reader->kdt05_00, sizeof(reader->kdt05_00), "DT05_00: ");
 			}
+
 			if(reader->dt5num == 0x10)
 			{
 				IDEA_KEY_SCHEDULE ks;
@@ -440,14 +439,17 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				memcpy(&reader->kdt05_10[6 * 16],reader->iout,8);
 				rdr_log_dump_dbg(reader, D_READER, reader->kdt05_10, sizeof(reader->kdt05_10), "DT05_10: ");
 			}
+
 			if(reader->dt5num == 0x20)
 			{
 				rsa_decrypt(reader->edata, 0x70, reader->out, reader->mod2, reader->mod2_length);
 				memcpy(reader->tmprsa, reader->out, 0x70);
 				reader->hasunique = 1;
 			}
+
 			return OK;
 		}
+
 		case TIERS: // case 0x0C
 		{
 			uint16_t chid;
@@ -458,6 +460,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				uint32_t expire_date1;
 				uint32_t expire_date2;
 				uint32_t expire_date;
+
 				switch(reader->caid)
 				{
 					case 0x1830: // Max TV
@@ -469,81 +472,89 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						expire_date2 = (reader->caid != 0x1861) ? b2i(0x04, cta_res + 46) : expire_date1;
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
+
 					case 0x186A: // HD04, HD05
 						start_date = b2i(0x04, cta_res + 53);
 						expire_date1 = b2i(0x04, cta_res + 39);
 						expire_date2 = b2i(0x04, cta_res + 57);
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
+
 					default: // unknown card
 						start_date = 1;
 						expire_date = 0xA69EFB7F;
 				}
-				cs_add_entitlement(reader,
-					reader->caid,
-					id,
-					chid,
-					0,
-					tier_date(start_date, ds, 11),
-					tier_date(expire_date, de, 11),
-					4,
-					1);
+
+				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
 			return OK;
 		}
+
 		default:
 			return OK;
 	}
+
 	return ERROR;
 }
+
 static int32_t CAK7do_cmd(struct s_reader *reader, uint8_t dt, uint8_t len, uint8_t *res, uint16_t *rlen, int32_t sub, uint8_t retlen)
 {
 	uint8_t dtdata[0x10];
 	memset(dtdata, 0xCC, len);
-	dtdata[7] = 0x04;
-	dtdata[8] = 0x04;
-	dtdata[9]  = (sub >> 16) & 0xFF;
+	dtdata[ 7] = 0x04;
+	dtdata[ 8] = 0x04;
+	dtdata[ 9] = (sub >> 16) & 0xFF;
 	dtdata[10] = (sub >> 8) & 0xFF;
 	dtdata[11] = (sub) & 0xFF;
 	dtdata[12] = dt;
+
 	do_cak7_cmd(reader, res, rlen, dtdata, sizeof(dtdata), retlen);
+
 	return OK;
 }
+
 static int32_t CAK7GetDataType(struct s_reader *reader, uint8_t dt)
 {
 	def_resp;
 	int32_t sub = 0x00;
 	uint8_t retlen = 0x10;
+
 	while(1)
 	{
 		CAK7do_cmd(reader, dt, 0x10, cta_res, &cta_lr, sub, retlen);
 		rdr_log_dump_dbg(reader, D_READER, cta_res, cta_lr, "Decrypted Answer:");
+
 		// hier eigentlich check auf 90 am ende usw... obs halt klarging ...
 		if(cta_lr == 0)
 		{
 			break;
 		}
+
 		if(cta_res[cta_lr-2] == 0x6F && cta_res[cta_lr-1] == 0x01)
 		{
 			reader->card_status = CARD_NEED_INIT;
 			add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
 			break;
 		}
+
 		uint32_t newsub = (cta_res[9] << 16) + (cta_res[10] << 8) + (cta_res[11]);
 		if(newsub == 0xFFFFFF)
 		{
 			break;
 		}
+
 		if(cta_res[12] == dt)
 		{
 			uint8_t oretlen = retlen;
 			retlen = cta_res[13] + 0x10 + 0x2;
+
 			while(retlen % 0x10 != 0x00)
 			{
 				retlen++;
 			}
+
 			if(retlen == oretlen)
 			{
 				sub = newsub + 1;
@@ -556,8 +567,10 @@ static int32_t CAK7GetDataType(struct s_reader *reader, uint8_t dt)
 			break;
 		}
 	}
+
 	return OK;
 }
+
 static void sub_6AD78(uint32_t *dinit) // gbox function
 {
 	uint32_t v0 = (uint32_t) * dinit;
@@ -570,6 +583,7 @@ static void sub_6AD78(uint32_t *dinit) // gbox function
 	v12 = fmod(f12, f15);
 	*dinit = v12;
 }
+
 static void calc_cak7_exponent(uint32_t *dinit, uint8_t *out, uint8_t len)
 {
 	memset(out, 0x00, len);
@@ -585,13 +599,14 @@ static void calc_cak7_exponent(uint32_t *dinit, uint8_t *out, uint8_t len)
 		{
 			break;
 		}
-		out[nR5 - 1] = ((nR0    ) & 0xFF);
-		out[nR5 - 2] = ((nR0 >> 8) & 0xFF);
+		out[nR5 - 1] = ((nR0      ) & 0xFF);
+		out[nR5 - 2] = ((nR0 >>  8) & 0xFF);
 		out[nR5 - 3] = ((nR0 >> 16) & 0xFF);
 		out[nR5 - 4] = ((nR0 >> 24) & 0xFF);
 		nR4 += 4;
 		sub_6AD78(dinit);
 	}
+
 	uint32_t nR0 = (uint32_t)* dinit;
 	while(nR4 < len)
 	{
@@ -602,133 +617,159 @@ static void calc_cak7_exponent(uint32_t *dinit, uint8_t *out, uint8_t len)
 	out[0] &= 0x03;
 	out[0x10] |= 0x01;
 }
+
 static void IdeaDecrypt(unsigned char *data, int len, const unsigned char *key, unsigned char *iv)
 {
 	unsigned char v[8];
-	if(!iv) { memset(v,0,sizeof(v)); iv=v; }
+
+	if(!iv)
+	{
+		memset(v, 0, sizeof(v));
+		iv=v;
+	}
+
 	IDEA_KEY_SCHEDULE ks;
-	idea_set_encrypt_key(key,&ks);
-	idea_cbc_encrypt(data,data,len&~7,&ks,iv,IDEA_DECRYPT);
+	idea_set_encrypt_key(key, &ks);
+	idea_cbc_encrypt(data, data, len&~7, &ks, iv, IDEA_DECRYPT);
 }
+
 static inline void xxxor(uint8_t *data, int32_t len, const uint8_t *v1, const uint8_t *v2)
 {
 	int i;
 	switch(len)
 	{
-	case 16:
-	case 8:
-	case 4:
-		for(i = 0; i < len; ++i)
-		{
-			data[i] = v1[i] ^ v2[i];
-		}
-		break;
-	default:
-		while(len--)
-		{
-			*data++ = *v1++ ^ *v2++;
-		}
-		break;
+		case 16:
+		case 8:
+		case 4:
+			for (i = 0; i < len; ++i)
+			{
+				data[i] = v1[i] ^ v2[i];
+			}
+			break;
+
+		default:
+			while(len--)
+			{
+				*data++ = *v1++ ^ *v2++;
+			}
+			break;
 	}
 }
+
 static void CreateRSAPair60(struct s_reader *reader, const unsigned char *key)
 {
-unsigned char idata[96];
-int i;
-for(i=11; i>=0; i--) {
-unsigned char *d=&idata[i*8];
-memcpy(d,&key[13],8);
-*d^=i;
-IdeaDecrypt(d,8,key,0);
-xxxor(d,8,d,&key[13]);
-*d^=i;
-}
-BN_CTX *ctx5 = BN_CTX_new();
+	unsigned char idata[96];
+
+	int i;
+	for (i = 11; i >= 0; i--)
+	{
+		unsigned char *d=&idata[i*8];
+		memcpy(d,&key[13],8);
+		*d^=i;
+		IdeaDecrypt(d,8,key,0);
+		xxxor(d,8,d,&key[13]);
+		*d^=i;
+	}
+
+	BN_CTX *ctx5 = BN_CTX_new();
 #ifdef WITH_LIBCRYPTO
-BN_CTX_start(ctx5);
+	BN_CTX_start(ctx5);
 #endif
-BIGNUM *p = BN_CTX_get(ctx5);
-BIGNUM *q = BN_CTX_get(ctx5);
-BIGNUM *m = BN_CTX_get(ctx5);
-BIGNUM *e = BN_CTX_get(ctx5);
-BIGNUM *a = BN_CTX_get(ctx5);
-BIGNUM *r = BN_CTX_get(ctx5);
-// Calculate P
-idata[0] |= 0x80;
-idata[47] |= 1;
-BN_bin2bn(idata,48,p);
-BN_add_word(p,(key[21] << 5 ) | ((key[22] & 0xf0) >> 3));
-// Calculate Q
-idata[48] |= 0x80;
-idata[95] |= 1;
-BN_bin2bn(idata+48,48,q);
-BN_add_word(q,((key[22]&0xf)<<9) | (key[23]<<1));
-// Calculate M=P*Q
-BN_mul(m,p,q,ctx5);
-memset(reader->key60,0x00,0x60);
-BN_bn2bin(m, reader->key60 + (0x60 - BN_num_bytes(m)));
-rdr_log_dump_dbg(reader, D_READER, reader->key60, sizeof(reader->key60), "key60: ");
-// Calculate D
-BN_sub_word(p,1);
-BN_sub_word(q,1);
-BN_mul(e,p,q,ctx5);
-BN_bin2bn(public_exponent,3,a);
-BN_mod_inverse(r, a, e, ctx5);
-memset(reader->exp60,0x00,0x60);
-BN_bn2bin(r, reader->exp60 + (0x60 - BN_num_bytes(r)));
-rdr_log_dump_dbg(reader, D_READER, reader->exp60, sizeof(reader->exp60), "exp60: ");
-BN_CTX_end(ctx5);
-BN_CTX_free(ctx5);
+	BIGNUM *p = BN_CTX_get(ctx5);
+	BIGNUM *q = BN_CTX_get(ctx5);
+	BIGNUM *m = BN_CTX_get(ctx5);
+	BIGNUM *e = BN_CTX_get(ctx5);
+	BIGNUM *a = BN_CTX_get(ctx5);
+	BIGNUM *r = BN_CTX_get(ctx5);
+
+	// Calculate P
+	idata[0] |= 0x80;
+	idata[47] |= 1;
+	BN_bin2bn(idata,48,p);
+	BN_add_word(p,(key[21] << 5 ) | ((key[22] & 0xf0) >> 3));
+
+	// Calculate Q
+	idata[48] |= 0x80;
+	idata[95] |= 1;
+	BN_bin2bn(idata+48,48,q);
+	BN_add_word(q,((key[22]&0xf)<<9) | (key[23]<<1));
+
+	// Calculate M=P*Q
+	BN_mul(m,p,q,ctx5);
+	memset(reader->key60,0x00,0x60);
+	BN_bn2bin(m, reader->key60 + (0x60 - BN_num_bytes(m)));
+	rdr_log_dump_dbg(reader, D_READER, reader->key60, sizeof(reader->key60), "key60: ");
+
+	// Calculate D
+	BN_sub_word(p,1);
+	BN_sub_word(q,1);
+	BN_mul(e,p,q,ctx5);
+	BN_bin2bn(public_exponent,3,a);
+	BN_mod_inverse(r, a, e, ctx5);
+	memset(reader->exp60,0x00,0x60);
+	BN_bn2bin(r, reader->exp60 + (0x60 - BN_num_bytes(r)));
+	rdr_log_dump_dbg(reader, D_READER, reader->exp60, sizeof(reader->exp60), "exp60: ");
+	BN_CTX_end(ctx5);
+	BN_CTX_free(ctx5);
 }
+
 static void CreateRSAPair68(struct s_reader *reader, const unsigned char *key)
 {
-unsigned char idata[104];
-int i;
-for(i=12; i>=0; i--) {
-unsigned char *d=&idata[i*8];
-memcpy(d,&key[13],8);
-*d^=i;
-IdeaDecrypt(d,8,key,0);
-xxxor(d,8,d,&key[13]);
-*d^=i;
-}
-BN_CTX *ctx6 = BN_CTX_new();
+	unsigned char idata[104];
+
+	int i;
+	for (i = 12; i >= 0; i--)
+	{
+		unsigned char *d=&idata[i*8];
+		memcpy(d,&key[13],8);
+		*d^=i;
+		IdeaDecrypt(d,8,key,0);
+		xxxor(d,8,d,&key[13]);
+		*d^=i;
+	}
+
+	BN_CTX *ctx6 = BN_CTX_new();
 #ifdef WITH_LIBCRYPTO
-BN_CTX_start(ctx6);
+	BN_CTX_start(ctx6);
 #endif
-BIGNUM *p = BN_CTX_get(ctx6);
-BIGNUM *q = BN_CTX_get(ctx6);
-BIGNUM *m = BN_CTX_get(ctx6);
-BIGNUM *e = BN_CTX_get(ctx6);
-BIGNUM *a = BN_CTX_get(ctx6);
-BIGNUM *r = BN_CTX_get(ctx6);
-// Calculate P
-idata[0] |= 0x80;
-idata[51] |= 1;
-BN_bin2bn(idata,52,p);
-BN_add_word(p,(key[21] << 5 ) | ((key[22] & 0xf0) >> 3));
-// Calculate Q
-idata[52] |= 0x80;
-idata[103] |= 1;
-BN_bin2bn(idata+52,52,q);
-BN_add_word(q,((key[22]&0xf)<<9) | (key[23]<<1));
-// Calculate M=P*Q
-BN_mul(m,p,q,ctx6);
-memset(reader->key68,0x00,0x68);
-BN_bn2bin(m, reader->key68 + (0x68 - BN_num_bytes(m)));
-rdr_log_dump_dbg(reader, D_READER, reader->key68, sizeof(reader->key68), "key68: ");
-// Calculate D
-BN_sub_word(p,1);
-BN_sub_word(q,1);
-BN_mul(e,p,q,ctx6);
-BN_bin2bn(public_exponent,3,a);
-BN_mod_inverse(r, a, e, ctx6);
-memset(reader->exp68,0x00,0x68);
-BN_bn2bin(r, reader->exp68 + (0x68 - BN_num_bytes(r)));
-rdr_log_dump_dbg(reader, D_READER, reader->exp68, sizeof(reader->exp68), "exp68: ");
-BN_CTX_end(ctx6);
-BN_CTX_free(ctx6);
+	BIGNUM *p = BN_CTX_get(ctx6);
+	BIGNUM *q = BN_CTX_get(ctx6);
+	BIGNUM *m = BN_CTX_get(ctx6);
+	BIGNUM *e = BN_CTX_get(ctx6);
+	BIGNUM *a = BN_CTX_get(ctx6);
+	BIGNUM *r = BN_CTX_get(ctx6);
+
+	// Calculate P
+	idata[0] |= 0x80;
+	idata[51] |= 1;
+	BN_bin2bn(idata,52,p);
+	BN_add_word(p,(key[21] << 5 ) | ((key[22] & 0xf0) >> 3));
+
+	// Calculate Q
+	idata[52] |= 0x80;
+	idata[103] |= 1;
+	BN_bin2bn(idata+52,52,q);
+	BN_add_word(q,((key[22]&0xf)<<9) | (key[23]<<1));
+
+	// Calculate M=P*Q
+	BN_mul(m,p,q,ctx6);
+	memset(reader->key68,0x00,0x68);
+	BN_bn2bin(m, reader->key68 + (0x68 - BN_num_bytes(m)));
+	rdr_log_dump_dbg(reader, D_READER, reader->key68, sizeof(reader->key68), "key68: ");
+
+	// Calculate D
+	BN_sub_word(p,1);
+	BN_sub_word(q,1);
+	BN_mul(e,p,q,ctx6);
+	BN_bin2bn(public_exponent,3,a);
+	BN_mod_inverse(r, a, e, ctx6);
+	memset(reader->exp68,0x00,0x68);
+	BN_bn2bin(r, reader->exp68 + (0x68 - BN_num_bytes(r)));
+	rdr_log_dump_dbg(reader, D_READER, reader->exp68, sizeof(reader->exp68), "exp68: ");
+	BN_CTX_end(ctx6);
+	BN_CTX_free(ctx6);
 }
+
 static void dt05_20(struct s_reader *reader)
 {
 	uint8_t data_20_00[72];
@@ -738,29 +779,34 @@ static void dt05_20(struct s_reader *reader)
 	uint8_t data_20_fin[72];
 	uint8_t data_20_flag58[16];
 	rdr_log_dump_dbg(reader, D_READER, reader->tmprsa, sizeof(reader->tmprsa), "DT05_20 after RSA: ");
+
 	// copy signature
 	memcpy(sig_20_00, reader->tmprsa+24, 16);
+
 	// copy data
 	memcpy(data_20_00, reader->tmprsa+40, 72);
+
 	// IDEA encrypt 0x48 data
 	int i;
 	int offs = 0;
-	for(i=0; i<9; i++)
+	for (i = 0; i < 9; i++)
 	{
 		IDEA_KEY_SCHEDULE ks;
 		idea_set_encrypt_key(reader->key3310, &ks);
 		idea_ecb_encrypt(data_20_00+offs, data_20_id+offs, &ks);
 		offs+=8;
 	}
+
 	// xor
-	for (i=0; i<64; i++)
+	for (i = 0; i < 64; i++)
 	{
 		data_20_x[i] = data_20_00[i] ^ data_20_id[i+8];
 	}
 	rdr_log_dump_dbg(reader, D_READER, data_20_x, sizeof(data_20_x), "data_20_x: ");
+
 	// create final data block
-	memcpy(data_20_fin,data_20_id,8);
-	memcpy(data_20_fin+8,data_20_x,64);
+	memcpy(data_20_fin, data_20_id, 8);
+	memcpy(data_20_fin + 8, data_20_x, 64);
 	rdr_log_dump_dbg(reader, D_READER, data_20_fin, sizeof(data_20_fin), "data_20_fin: ");
 	uint8_t mdc_hash4[MDC2_DIGEST_LENGTH];
 	memset(mdc_hash4,0x00,MDC2_DIGEST_LENGTH);
@@ -776,20 +822,23 @@ static void dt05_20(struct s_reader *reader)
 	MDC2_Final(&(mdc_hash4[0]), &c4);
 	if(memcmp(mdc_hash4, sig_20_00, 16) == 0)
 	{
-	rdr_log(reader, "DT05_20 is correct");
+		rdr_log(reader, "DT05_20 is correct");
 	}
 	else
 	{
-	rdr_log(reader, "DT05_20 error - check MOD2");
+		rdr_log(reader, "DT05_20 error - check MOD2");
 	}
+
 	// Store 3des software key Flag58 CW overencrypt
 	memcpy(data_20_flag58, data_20_x+16, 16);
 	memcpy(reader->key3des, data_20_flag58, 16);
 	rdr_log_dump_dbg(reader, D_READER, reader->key3des, sizeof(reader->key3des), "Flag58 3DES Key: ");
+
 	// create rsa pair from final data
 	memcpy(reader->klucz68, data_20_fin, 0x18);
 	rdr_log_dump_dbg(reader, D_READER, reader->klucz68, sizeof(reader->klucz68), "klucz68: ");
 }
+
 static int32_t CAK7_cmd03_global(struct s_reader *reader)
 {
 	def_resp;
@@ -800,6 +849,7 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 		memcpy(klucz, reader->key3588, 24);
 		CreateRSAPair60(reader, klucz);
 	}
+
 	BN_CTX *ctx1 = BN_CTX_new();
 #ifdef WITH_LIBCRYPTO
 	BN_CTX_start(ctx1);
@@ -816,6 +866,7 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 	BN_bn2bin(bnPT1, reader->data + (0x60 - BN_num_bytes(bnPT1)));
 	BN_CTX_end(ctx1);
 	BN_CTX_free(ctx1);
+
 	memcpy(&reader->step2[0], d00ff, 4);
 	memcpy(&reader->step2[4], reader->cardid, 4);
 	memcpy(&reader->step2[8], reader->data, 0x60);
@@ -836,6 +887,7 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 	BN_bn2bin(bnPT2, reader->data + (0x68 - BN_num_bytes(bnPT2)));
 	BN_CTX_end(ctx2);
 	BN_CTX_free(ctx2);
+
 	memcpy(&reader->step3[0], d00ff, 4);
 	memcpy(&reader->step3[4], reader->data, 0x68);
 	rdr_log_dump_dbg(reader, D_READER, reader->step3, sizeof(reader->step3), "STEP 3:");
@@ -855,17 +907,10 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 	BN_bn2bin(bnPT3, reader->data + (0x6c - BN_num_bytes(bnPT3)));
 	BN_CTX_end(ctx3);
 	BN_CTX_free(ctx3);
-	uint8_t cmd03[] = {0xCC,0xCC,0xCC,0xCC,0x00,0x00,0x0A,0x03,0x6C,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC};
-	memcpy(&cmd03[9],reader->data,0x6c);
-	do_cak7_cmd(reader,cta_res,&cta_lr,cmd03,sizeof(cmd03),0x90);
+
+	uint8_t cmd03[] = {0xCC, 0xCC, 0xCC, 0xCC, 0x00, 0x00, 0x0A, 0x03, 0x6C, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC,0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC};
+	memcpy(&cmd03[9], reader->data, 0x6C);
+	do_cak7_cmd(reader, cta_res, &cta_lr, cmd03, sizeof(cmd03), 0x90);
 	if(cta_lr == 0)
 	{
 		rdr_log(reader, "card is not responding to CMD03 - check your data");
@@ -889,6 +934,7 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 	BN_bn2bin(bnPT, reader->result + (104 - BN_num_bytes(bnPT)));
 	BN_CTX_end(ctx);
 	BN_CTX_free(ctx);
+
 	//uint8_t stillencrypted[0x50];
 	memcpy(reader->stillencrypted,&reader->result[12],0x50);
 	//uint8_t resultrsa[0x50];
@@ -908,6 +954,7 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 	BN_bn2bin(bnPTs, reader->resultrsa + (0x50 - BN_num_bytes(bnPTs)));
 	BN_CTX_end(ctxs);
 	BN_CTX_free(ctxs);
+
 	uint8_t mdc_hash3[MDC2_DIGEST_LENGTH];
 	memset(mdc_hash3,0x00,MDC2_DIGEST_LENGTH);
 	MDC2_CTX c3;
@@ -918,6 +965,7 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 	memcpy(reader->cak7_aes_key,mdc_hash3,16);
 	char tmp7[128];
 	rdr_log(reader, "New AES: %s", cs_hexdump(1, reader->cak7_aes_key, 16, tmp7, sizeof(tmp7)));
+
 	return OK;
 }
 static int32_t CAK7_cmd03_unique(struct s_reader *reader)
@@ -939,6 +987,7 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	BN_bn2bin(bnPT1, reader->data + (0x60 - BN_num_bytes(bnPT1)));
 	BN_CTX_end(ctx1);
 	BN_CTX_free(ctx1);
+
 	memcpy(&reader->step2[0], d00ff, 4);
 	memcpy(&reader->step2[4], reader->cardid, 4);
 	memcpy(&reader->step2[8], reader->data, 0x60);
@@ -964,6 +1013,7 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	BN_bn2bin(bnPT2, reader->data + (0x68 - BN_num_bytes(bnPT2)));
 	BN_CTX_end(ctx2);
 	BN_CTX_free(ctx2);
+
 	memcpy(&reader->step3[0], d00ff, 4);
 	memcpy(&reader->step3[4], reader->data, 0x68);
 	rdr_log_dump_dbg(reader, D_READER, reader->step3, sizeof(reader->step3), "STEP 3:");
@@ -983,17 +1033,10 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	BN_bn2bin(bnPT3, reader->data + (0x6c - BN_num_bytes(bnPT3)));
 	BN_CTX_end(ctx3);
 	BN_CTX_free(ctx3);
-	uint8_t cmd03[] = {0xCC,0xCC,0xCC,0xCC,0x00,0x00,0x0A,0x03,0x6C,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC};
-	memcpy(&cmd03[9],reader->data,0x6c);
-	do_cak7_cmd(reader,cta_res,&cta_lr,cmd03,sizeof(cmd03),0x90);
+
+	uint8_t cmd03[] = {0xCC, 0xCC, 0xCC, 0xCC, 0x00, 0x00, 0x0A, 0x03, 0x6C, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC};
+	memcpy(&cmd03[9], reader->data, 0x6C);
+	do_cak7_cmd(reader, cta_res, &cta_lr, cmd03, sizeof(cmd03), 0x90);
 	if(cta_lr == 0)
 	{
 		rdr_log(reader, "card is not responding to CMD03 - check your data");
@@ -1017,6 +1060,7 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	BN_bn2bin(bnPT, reader->result + (96 - BN_num_bytes(bnPT)));
 	BN_CTX_end(ctx);
 	BN_CTX_free(ctx);
+
 	rdr_log_dump_dbg(reader, D_READER, reader->result, 96, "after RSA_3460: ");
 	//uint8_t stillencrypted[0x50];
 	memcpy(reader->stillencrypted,&reader->result[4],0x50);
@@ -1037,6 +1081,7 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	BN_bn2bin(bnPTs, reader->resultrsa + (0x50 - BN_num_bytes(bnPTs)));
 	BN_CTX_end(ctxs);
 	BN_CTX_free(ctxs);
+
 	uint8_t mdc_hash5[MDC2_DIGEST_LENGTH];
 	memset(mdc_hash5,0x00,MDC2_DIGEST_LENGTH);
 	MDC2_CTX c5;
@@ -1047,18 +1092,15 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	memcpy(reader->cak7_aes_key,mdc_hash5,16);
 	char tmp7[128];
 	rdr_log(reader, "New AES: %s", cs_hexdump(1, reader->cak7_aes_key, 16, tmp7, sizeof(tmp7)));
+
 	return OK;
 }
+
 static int32_t CAK7_GetCamKey(struct s_reader *reader)
 {
 	def_resp;
-	uint8_t cmd0e[] = {0xCC,0xCC,0xCC,0xCC,0x00,0x00,0x00,0x0E,0x83,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,
-	0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC,0xCC};
+	uint8_t cmd0e[] = {0xCC, 0xCC, 0xCC, 0xCC, 0x00, 0x00, 0x00, 0x0E, 0x83, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC, 0xCC};
+
 	if(!reader->nuid_length)
 	{
 		uint8_t cmd02[] = {0x02,0x7B};
@@ -1119,6 +1161,7 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 		rdr_log(reader, "OTP CSC No. of keys: %s", cs_hexdump(1, cmd0e + 136, 2, tmp, sizeof(tmp)));
 		rdr_log(reader, "OTA CSC No. of keys: %s", cs_hexdump(1, cmd0e + 138, 2, tmp, sizeof(tmp)));
 	}
+
 	if(reader->forcepair_length)
 	{
 		rdr_log(reader, "Forcing Pairing Type");
@@ -1131,8 +1174,10 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 			cmd0e[13] = 0x40;
 		}
 	}
+
 	memcpy(cmd0e + 14, reader->idird, 4);
 	memcpy(reader->irdId, reader->idird, 4);
+
 	if(reader->cmd0eprov_length)
 	{
 		memcpy(cmd0e + 18, reader->cmd0eprov, 2);
@@ -1141,19 +1186,23 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 	{
 		memcpy(cmd0e + 18, reader->prid[0] + 2, 2);
 	}
+
 	memcpy(cmd0e + 20, reader->key3588 + 24, 0x70);
+
 	if(reader->cak7_seq <= 15)
 	{
 		srand(time(NULL));
 	}
+
 	uint32_t data1r = rand() % 4294967294u;
-	reader->timestmp1[0]=(data1r>>24)&0xFF;
-	reader->timestmp1[1]=(data1r>>16)&0xFF;
-	reader->timestmp1[2]=(data1r>>8)&0xFF;
-	reader->timestmp1[3]=(data1r)&0xFF;
+	reader->timestmp1[0] = (data1r >> 24) & 0xFF;
+	reader->timestmp1[1] = (data1r >> 16) & 0xFF;
+	reader->timestmp1[2] = (data1r >>  8) & 0xFF;
+	reader->timestmp1[3] = (data1r      ) & 0xFF;
 	memcpy(cmd0e + 9, reader->timestmp1, 0x04);
 	rdr_log_dump_dbg(reader, D_READER, reader->timestmp1, 4, "DATA1  CMD0E:");
 	rdr_log_dump_dbg(reader, D_READER, reader->prid[0], 4, "SysID:");
+
 	do_cak7_cmd(reader,cta_res, &cta_lr, cmd0e, sizeof(cmd0e), 0x20);
 	if(cta_lr == 0)
 	{
@@ -1161,6 +1210,7 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 		return ERROR;
 	}
 	rdr_log_dump_dbg(reader, D_READER, cta_res, 0x20, "Decrypted answer to CMD02/0E:");
+
 	reader->needrestart =  (cta_res[22] << 16);
 	reader->needrestart += (cta_res[23] <<  8);
 	reader->needrestart += (cta_res[24]      );
@@ -1174,15 +1224,17 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 		uint32_t cmdleft = reader->needrestart - reader->cak7_seq;
 		rdr_log(reader, "%d CMDs left to FASTreinit", cmdleft);
 	}
+
 	reader->dword_83DBC =  (cta_res[18] << 24);
 	reader->dword_83DBC += (cta_res[19] << 16);
 	reader->dword_83DBC += (cta_res[20] <<  8);
 	reader->dword_83DBC += (cta_res[21]      );
 	calc_cak7_exponent(&reader->dword_83DBC, reader->cak7expo, 0x11);
 	rdr_log_dump_dbg(reader, D_READER, reader->cak7expo, 0x11, "CAK7 Exponent:");
-	memcpy(reader->cardid,cta_res + 14, 4);
+	memcpy(reader->cardid, cta_res + 14, 4);
 	rdr_log_dump_dbg(reader, D_READER, reader->cardid, 0x04, "CardSerial: ");
 	memcpy(reader->hexserial + 2, reader->cardid, 4);
+
 	unsigned long datal = (cta_res[9] << 24) + (cta_res[10] << 16) + (cta_res[11] << 8) + (cta_res[12]);
 	datal++;
 	reader->data2[0] = (datal >> 24) & 0xFF;
@@ -1190,11 +1242,12 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 	reader->data2[2] = (datal >>  8) & 0xFF;
 	reader->data2[3] = (datal      ) & 0xFF;
 	data1r++;
-	reader->timestmp2[0]=(data1r>>24)&0xFF;
-	reader->timestmp2[1]=(data1r>>16)&0xFF;
-	reader->timestmp2[2]=(data1r>>8)&0xFF;
-	reader->timestmp2[3]=(data1r)&0xFF;
-	memcpy(reader->ecmheader,cta_res + 18,4);
+	reader->timestmp2[0] = (data1r >> 24) & 0xFF;
+	reader->timestmp2[1] = (data1r >> 16) & 0xFF;
+	reader->timestmp2[2] = (data1r >>  8) & 0xFF;
+	reader->timestmp2[3] = (data1r      ) & 0xFF;
+	memcpy(reader->ecmheader, cta_res + 18,4);
+
 	if(reader->cak7_seq <= 15)
 	{
 		uint8_t mdc_hash2[MDC2_DIGEST_LENGTH];
@@ -1211,13 +1264,14 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 		rdr_log_dump_dbg(reader, D_READER, mdc_hash2, 16, "MDC_HASH: ");
 		if(memcmp(mdc_hash2 + 1, reader->ideakey1 + 1, 14) == 0)
 		{
-		rdr_log(reader, "DT05_10 is correct");
+			rdr_log(reader, "DT05_10 is correct");
 		}
 		else
 		{
-		rdr_log(reader, "DT05_10 error - check MOD1");
+			rdr_log(reader, "DT05_10 error - check MOD1");
 		}
 	}
+
 	BN_CTX *ctx0 = BN_CTX_new();
 #ifdef WITH_LIBCRYPTO
 	BN_CTX_start(ctx0);
@@ -1235,6 +1289,7 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 	BN_CTX_end(ctx0);
 	BN_CTX_free(ctx0);
 	rdr_log_dump_dbg(reader, D_READER, reader->timestmp2, 4, "DATA1  CMD03:");
+
 	memcpy(&reader->step1[0], d00ff, 4);
 	memcpy(&reader->step1[4], reader->data, 0x50);
 	memcpy(&reader->step1[4 + 0x50], reader->idird, 0x04);
@@ -1267,15 +1322,19 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 						return ERROR;
 				}
 		if(!CAK7_cmd03_unique(reader))
-		{return ERROR;}
+		{
+			return ERROR;
+		}
 	}
 	else
 	{
 		rdr_log(reader,"Unknown Pairing Type");
 		return ERROR;
 	}
+
 	return OK;
 }
+
 static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 {
 	get_atr;
@@ -1284,6 +1343,7 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	reader->hasunique = 0;
 	memset(reader->ecmheader, 0, 4);
 	cs_clear_entitlement(reader);
+
 	if(memcmp(atr + 8, "DNASP4", 6) == 0)
 	{
 		if((memcmp(atr + 8, "DNASP400", 8) == 0) && !reader->cak7_mode)
@@ -1305,42 +1365,52 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	{
 		return ERROR;
 	}
+
 	reader->nprov   = 1;
 	/*reader->nsa     = 0;
 	reader->nemm84  = 0;
 	reader->nemm83u = 0;
 	reader->nemm83s = 0;
 	reader->nemm87  = 0;*/
+
 	if(!reader->mod1_length)
 	{
 		rdr_log(reader, "no MOD1 defined");
 		return ERROR;
 	}
+
 	if(!reader->key3588_length)
 	{
-				rdr_log(reader, "no key3588 defined");
-				return ERROR;
-		}
-		if(!reader->data50_length)
-		{
-				rdr_log(reader, "no data50 defined");
-				return ERROR;
-		}
-		if(!reader->mod50_length)
-		{
-				rdr_log(reader, "no mod50 defined");
-				return ERROR;
-		}
-		if(!reader->idird_length)
-		{
-				rdr_log(reader, "no idird defined");
-				return ERROR;
-		}
+		rdr_log(reader, "no key3588 defined");
+		return ERROR;
+	}
+
+	if(!reader->data50_length)
+	{
+		rdr_log(reader, "no data50 defined");
+		return ERROR;
+	}
+
+	if(!reader->mod50_length)
+	{
+		rdr_log(reader, "no mod50 defined");
+		return ERROR;
+	}
+
+	if(!reader->idird_length)
+	{
+		rdr_log(reader, "no idird defined");
+		return ERROR;
+	}
+
 	CAK7GetDataType(reader, 0x02);
 	CAK7GetDataType(reader, 0x05);
 	if(!CAK7_GetCamKey(reader))
-	{return ERROR;}
+	{
+		return ERROR;
+	}
 	CAK7GetDataType(reader, 0x09);
+
 	char tmp[4 * 3 + 1];
 	reader->nsa     = 0;
 	reader->nemm84  = 0;
@@ -1348,6 +1418,7 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	reader->nemm83s = 0;
 	reader->nemm87  = 0;
 	CAK7GetDataType(reader, 0x04);
+
 	if(reader->forceemmg)
 	{
 		reader->emm82 = 1;
@@ -1385,9 +1456,11 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 		}
 		rdr_log(reader, "-----------------------------------------");
 	}
+
 	rdr_log(reader, "ready for requests");
 	return OK;
 }
+
 static int32_t nagra3_card_info(struct s_reader *reader)
 {
 	char tmp[4 * 3 + 1];
@@ -1403,8 +1476,10 @@ static int32_t nagra3_card_info(struct s_reader *reader)
 	CAK7GetDataType(reader, 0x03);
 	CAK7GetDataType(reader, 0x0C);
 	rdr_log(reader, "-----------------------------------------");
+
 	return OK;
 }
+
 static int32_t fastreinit(struct s_reader *reader)
 {
 	ATR newatr[ATR_MAX_SIZE];
@@ -1418,8 +1493,10 @@ static int32_t fastreinit(struct s_reader *reader)
 	{
 		return ERROR;
 	}
+
 	return OK;
 }
+
 static void nagra3_post_process(struct s_reader *reader)
 {
 	if(reader->cak7_seq >= reader->needrestart)
@@ -1447,9 +1524,11 @@ static void nagra3_post_process(struct s_reader *reader)
 		}
 	}
 }
+
 static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_ecm_answer *ea)
 {
 	def_resp;
+
 	if(reader->cak7type == 3)
 	{
 		if(er->ecm[2] > 0x61 && er->ecm[7] == 0x5C && er->ecm[100] == 0x0B)
@@ -1498,9 +1577,11 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 			}
 		}
 	}
+
 	uint8_t ecmreq[0xC0];
-	memset(ecmreq,0xCC,0xC0);
-	ecmreq[ 7] = 0x05;
+	memset(ecmreq, 0xCC, 0xC0);
+	ecmreq[7] = 0x05;
+
 	if(reader->headermode == 0)
 	{
 		ecmreq[ 9] = 0x00;
@@ -1517,6 +1598,7 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		ecmreq[12] = reader->ecmheader[2];
 		ecmreq[13] = reader->ecmheader[3];
 	}
+
 	if(reader->cak7type == 3)
 	{
 		ecmreq[8] = er->ecm[7] + 6;
@@ -1527,12 +1609,15 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 		ecmreq[8] = er->ecm[4] + 6;
 		memcpy(&ecmreq[14], er->ecm + 4, er->ecm[4] + 1);
 	}
+
 	if((er->ecm[2] == 0xAC) && (er->ecm[3] == 0x05))
 	{
 		ecmreq[15] = 0x0A;
 	}
+
 	do_cak7_cmd(reader, cta_res, &cta_lr, ecmreq, sizeof(ecmreq), 0xB0);
 	rdr_log_dump_dbg(reader, D_READER, cta_res, 0xB0, "Decrypted ECM Answer:");
+
 	if((cta_res[cta_lr - 2] != 0x90 && cta_res[cta_lr - 1] != 0x00) || cta_lr == 0)
 	{
 		rdr_log(reader, "(ECM) Reader will be restart now cause: %02X %02X card answer!!!", cta_res[cta_lr - 2], cta_res[cta_lr - 1]);
@@ -1608,11 +1693,14 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 	{
 		rdr_log(reader, "card got wrong ECM");
 	}
+
 	return ERROR;
 }
+
 static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 {
 	def_resp;
+
 	if(ep->emm[0] == 0x90)
 	{
 		rdr_log(reader, "OSCam got your BoxEMM");
@@ -1625,7 +1713,8 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 	{
 		uint8_t emmreq[0xC0];
 		memset(emmreq, 0xCC, 0xC0);
-		emmreq[ 7] = 0x05;
+		emmreq[7] = 0x05;
+
 		if(reader->headermode == 0)
 		{
 			emmreq[ 9] = 0x00;
@@ -1642,10 +1731,12 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			emmreq[12] = reader->ecmheader[2];
 			emmreq[13] = reader->ecmheader[3];
 		}
+
 		if(reader->cak7type == 3)
 		{
 			int32_t i;
 			uint8_t *prov_id_ptr;
+
 			switch(ep->type)
 			{
 				case SHARED:
@@ -1653,21 +1744,25 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 					prov_id_ptr = ep->emm + 3;
 					memcpy(&emmreq[14], ep->emm + 9, ep->emm[9] + 1);
 					break;
+
 				case UNIQUE:
 					emmreq[8] = ep->emm[12] + 6;
 					prov_id_ptr = ep->emm + 9;
 					memcpy(&emmreq[14], ep->emm + 12, ep->emm[12] + 1);
 					break;
+
 				case GLOBAL:
 					emmreq[8] = ep->emm[6] + 6;
 					prov_id_ptr = ep->emm + 3;
 					memcpy(&emmreq[14], ep->emm + 6, ep->emm[6] + 1);
 					break;
+
 				default:
 					rdr_log(reader, "EMM: Congratulations, you have discovered a new EMM on Merlin.");
 					rdr_log(reader, "This has not been decoded yet.");
 					return ERROR;
 			}
+
 			i = get_prov_index(reader, prov_id_ptr);
 			if(i == -1)
 			{
@@ -1680,7 +1775,9 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			emmreq[8] = ep->emm[9] + 6;
 			memcpy(&emmreq[14], ep->emm + 9, ep->emm[9] + 1);
 		}
+
 		do_cak7_cmd(reader, cta_res, &cta_lr, emmreq, sizeof(emmreq), 0xB0);
+
 		if((cta_res[cta_lr-2] != 0x90 && cta_res[cta_lr-1] != 0x00) || cta_lr == 0)
 		{
 			rdr_log(reader, "(EMM) Reader will be restart now cause: %02X %02X card answer!!!", cta_res[cta_lr - 2], cta_res[cta_lr - 1]);
@@ -1716,8 +1813,10 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			}
 		}
 	}
+
 	return OK;
 }
+
 const struct s_cardsystem reader_nagracak7 =
 {
 	.desc           = "nagra merlin",
@@ -1730,4 +1829,5 @@ const struct s_cardsystem reader_nagracak7 =
 	.get_emm_type   = nagra_get_emm_type,
 	.get_emm_filter = nagra_get_emm_filter,
 };
+
 #endif

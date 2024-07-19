@@ -920,3 +920,5 @@ if (WITH_EMU)
 		message (STATUS "  SoftCam.Key will be linked as well")
 	endif (WITH_SOFTCAM)
 endif (WITH_EMU)
+
+message (STATUS "")
