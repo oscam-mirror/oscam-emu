@@ -196,6 +196,7 @@ LOGSIZEMENU                   logpage/logpage_sizemenu.html                     
 
 READERCONFIG                  readerconfig/readerconfig.html
 READERCONFIGAIO               readerconfig/readerconfigaio.html                           CS_CACHEEX_AIO
+READERCONFIGIPV6BIT           readerconfig/readerconfig_ipv6bit.html                      IPV6SUPPORT
 READEREDITCACHEEXBIT          readerconfig/readerconfig_cacheexbit.html                   CS_CACHEEX
 READEREDITCACHEEXAIOBIT       readerconfig/readerconfig_cacheexaiobit.html                CS_CACHEEX_AIO
 READERCONFIGCAMD35BIT         readerconfig/readerconfig_camd35bit.html                    MODULE_CAMD35

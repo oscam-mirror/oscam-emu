@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.24.07-11811"
+#define CS_VERSION				"2.24.07-11812"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1765,7 +1765,8 @@ struct s_reader										// contains device info, reader info and card info
 	int32_t			tcp_ito;						// inactivity timeout
 	int32_t			tcp_rto;						// reconnect timeout
 	int32_t			tcp_reconnect_delay;			// max tcp connection block delay
-
+	uint8_t			ipv4force;
+	uint8_t			ipv6_connect_failed;
 	struct timeb	tcp_block_connect_till;			// time tcp connect ist blocked
 	int32_t			tcp_block_delay;				// incrementing block time
 	time_t			last_g;							// get (if last_s-last_g>tcp_rto - reconnect )
