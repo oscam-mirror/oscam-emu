@@ -4,8 +4,9 @@ SHELL = /bin/sh
 .SUFFIXES: .o .c
 .PHONY: all tests help README.build README.config simple default debug config menuconfig allyesconfig allnoconfig defconfig clean distclean
 
-VER     := $(shell ./config.sh --oscam-version)
-GIT_SHA := $(shell ./config.sh --oscam-commit)
+VER        := $(shell ./config.sh --oscam-version)
+GIT_SHA    := $(shell ./config.sh --oscam-commit)
+BUILD_DATE := $(shell date +"%d.%m.%Y %T")
 
 uname_S := $(shell sh -c 'uname -s 2>/dev/null || echo not')
 
@@ -65,6 +66,7 @@ endif
 override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
 override STD_DEFS := -D'CS_VERSION="$(VER)"'
 override STD_DEFS += -D'CS_GIT_COMMIT="$(GIT_SHA)"'
+override STD_DEFS += -D'CS_BUILD_DATE="$(BUILD_DATE)"'
 override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 
 CC = $(CROSS_DIR)$(CROSS)gcc
@@ -74,7 +76,7 @@ STRIP = $(CROSS_DIR)$(CROSS)strip
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
 
 # Compiler optimizations
-CCVERSION := $(shell $(CC) --version 2>/dev/null | head -n 1))
+CCVERSION := $(shell $(CC) --version 2>/dev/null | head -n 1)
 ifneq (,$(findstring clang,$(CCVERSION)))
 	CC_OPTS = -O2 -ggdb -pipe -ffunction-sections -fdata-sections -fomit-frame-pointer
 else
@@ -83,13 +85,25 @@ endif
 
 LDFLAGS = -Wl,--gc-sections
 
-#enable sse2 on x86, neon on arm
+# Enable sse2 on x86, neon on arm
 TARGETHELP := $(shell $(CC) --target-help 2>&1)
 ifneq (,$(findstring sse2,$(TARGETHELP)))
 override CFLAGS += -mmmx -msse -msse2 -msse3
 else ifneq (,$(findstring neon,$(TARGETHELP)))
 	ifeq "$(shell ./config.sh --enabled WITH_ARM_NEON)" "Y"
 		override CFLAGS += -mfpu=neon
+	endif
+endif
+
+# Enable upx compression
+UPX_VER = $(shell (upx --version 2>/dev/null || echo "n.a.") | head -n 1)
+COMP_LEVEL = --best
+ifdef USE_COMPRESS
+	ifeq ($(UPX_VER),n.a.)
+		override USE_COMPRESS =
+	else
+		UPX_INFO = $(shell echo '|  Packer   : $(UPX_VER) (compression level $(COMP_LEVEL))\n')
+		UPX_COMMAND_OSCAM = upx -q $(COMP_LEVEL) $(OSCAM_BIN)
 	endif
 endif
 
@@ -200,6 +214,7 @@ $(eval $(call prepare_use_flags,LIBCRYPTO,))
 $(eval $(call prepare_use_flags,LIBUSB,libusb))
 $(eval $(call prepare_use_flags,PCSC,pcsc))
 $(eval $(call prepare_use_flags,LIBDVBCSA,libdvbcsa))
+$(eval $(call prepare_use_flags,COMPRESS,upx))
 
 # Add PLUS_TARGET and EXTRA_TARGET to TARGET
 ifdef NO_PLUS_TARGET
@@ -431,7 +446,8 @@ all:
 	@-mkdir -p $(OBJDIR)/cscrypt $(OBJDIR)/csctapi $(OBJDIR)/minilzo $(OBJDIR)/webif
 	@-printf "\
 +-------------------------------------------------------------------------------\n\
-| OSCam ver: $(VER) sha: $(GIT_SHA) target: $(TARGET)\n\
+| OSCam Ver.: $(VER) sha: $(GIT_SHA) target: $(TARGET)\n\
+| Build Date: $(BUILD_DATE)\n\
 | Tools:\n\
 |  CROSS    = $(CROSS_DIR)$(CROSS)\n\
 |  CC       = $(CC)\n\
@@ -449,6 +465,7 @@ all:
 |  Readers  : $(shell ./config.sh --use-flags "$(USE_FLAGS)" --show-enabled readers | sed -e 's|READER_||g')\n\
 |  CardRdrs : $(shell ./config.sh --use-flags "$(USE_FLAGS)" --show-enabled card_readers | sed -e 's|CARDREADER_||g')\n\
 |  Compiler : $(CCVERSION)\n\
+$(UPX_INFO)\
 |  Config   : $(OBJDIR)/config.mak\n\
 |  Binary   : $(OSCAM_BIN)\n\
 +-------------------------------------------------------------------------------\n"
@@ -466,6 +483,7 @@ $(OSCAM_BIN): $(OSCAM_BIN).debug
 	$(SAY) "STRIP	$@"
 	$(Q)cp $(OSCAM_BIN).debug $(OSCAM_BIN)
 	$(Q)$(STRIP) $(OSCAM_BIN)
+	$(Q)$(UPX_COMMAND_OSCAM)
 
 $(LIST_SMARGO_BIN): utils/list_smargo.c
 	$(SAY) "BUILD	$@"
@@ -612,6 +630,8 @@ OSCam build system documentation\n\
    Use flags are used to request additional libraries or features to be used\n\
    by OSCam. Currently defined USE_xxx flags are:\n\
 \n\
+   USE_COMPRESS=1  - Request compressing oscam binary with upx.\n\
+\n\
    USE_LIBUSB=1    - Request linking with libusb. The variables that control\n\
                      USE_LIBUSB=1 build are:\n\
                          LIBUSB_FLAGS='$(DEFAULT_LIBUSB_FLAGS)'\n\
@@ -721,7 +741,8 @@ OSCam build system documentation\n\
                      Using USE_SSL=1 adds to '-ssl' to PLUS_TARGET.\n\
 \n\
    USE_LIBDVBCSA=1 - Request linking with libdvbcsa. USE_LIBDVBCSA is automatically\n\
-                     The variables that control USE_LIBDVBCSA=1 build are:\n\
+                     enabled if the build is configured with STREAMRELAY support. The\n\
+                     variables that control USE_LIBDVBCSA=1 build are:\n\
                          LIBDVBCSA_FLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
                          LIBDVBCSA_CFLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\
                          LIBDVBCSA_LDFLAGS='$(DEFAULT_LIBDVBCSA_FLAGS)'\n\

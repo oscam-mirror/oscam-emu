@@ -85,6 +85,33 @@
         JQ_BIN="$(which jq || printf $HOME/bin/jq)"
       fi
 
+  #installs upx for pipeline user
+  upx-installer:
+    - !reference [.helper, jq-installer]
+
+    - |
+      if ! UPX_BIN="$(which upx)" && [ ! -f $HOME/bin/upx ]; then
+        echo "Downloading upx binary to '$HOME/bin/upx'...";
+        case $(uname -m) in
+          i386|i686)     HOST_ARCH="i386" ;;
+          aarch64|arm64) HOST_ARCH="arm64" ;;
+          arm*)          HOST_ARCH="arm" ;;
+          *)             HOST_ARCH="amd64" ;;
+        esac;
+        rm -rf "/tmp/upx_$HOST_ARCH.tar.xz" 2>/dev/null;
+        UPX_TAG="$(git ls-remote --sort=-version:refname https://github.com/upx/upx.git --tags v*.*.* | grep -v 'alpha\|beta\|\-pre\|\-rc\|\^' | awk -F'/' 'NR==1 {print $NF}')";
+        UPX_URL="$(curl --silent "https://api.github.com/repos/upx/upx/releases/tags/$UPX_TAG" | $JQ_BIN -r '.assets | .[] | select( (.name | contains("'$HOST_ARCH'")) and (.name | endswith(".tar.xz"))) | .browser_download_url' | sed -e 's#\"##g')";
+        curl --progress-bar -L --output "/tmp/upx_$HOST_ARCH.tar.xz" "$UPX_URL";
+        CURDIR=$(echo $PWD);
+        cd $HOME/bin;
+        tar -xvf "/tmp/upx_$HOST_ARCH.tar.xz" $(tar -tf "/tmp/upx_$HOST_ARCH.tar.xz" | grep 'upx$') --strip-components=1
+        chmod +x $HOME/bin/upx;
+        UPX_BIN="$HOME/bin/upx";
+        cd $CURDIR;
+      else
+        UPX_BIN="$(which upx || printf $HOME/bin/upx)"
+      fi
+
   #installs download-secure-files for pipeline user
   download-secure-files-installer:
     - |
@@ -156,6 +183,10 @@
             CMAKE_OPT+=" -DHAVE_LIBDVBCSA=1";
             BIN_EXT+="-libdvbcsa";
         fi;
+        echo "Enabling UPX COMPRESSION...";
+        MAKE_OPT+=" USE_COMPRESS=1 COMP_LEVEL=--ultra-brute";
+        CMAKE_OPT+=" -DUSE_COMPRESS=1 -DCOMP_LEVEL=--ultra-brute";
+        BIN_EXT+="-upx";
       else
         [ "$REMOVE_TOOLCHAIN" == "True" ] && rm -rf $HOME/toolchains/${ARCH}_generic 2>/dev/null || true;
         mkdir $HOME/toolchains $HOME/toolchains/${ARCH}_generic 2>/dev/null || true;
@@ -216,17 +247,21 @@
         SET(CMAKE_CXX_COMPILER $(find -L "$HOME/toolchains/${ARCH}_generic/bin" -name "*-g++" -type f -print -quit))\nSET(CMAKE_SYSTEM_PROCESSOR ${ARCH})" > $HOME/toolchains/${ARCH}_generic/${ARCH}.cmake;
         CMAKE_OPT+=" -DCMAKE_TOOLCHAIN_FILE=$HOME/toolchains/${ARCH}_generic/${ARCH}.cmake";
       fi;
+    - !reference [.helper, upx-installer]
     - | #make build
+      PATH="$HOME/bin:$PATH"
       [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}
       ./config.sh --enable all --disable $DISABLE_OPT |& tee build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
       make OSCAM_BIN=build/${ARCH}/oscam-make-${ARCH}${BIN_EXT} $MAKE_OPT |& tee -a build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
       rm -f build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.debug 2>/dev/null
     - | #cmake build
+      PATH="$HOME/bin:$PATH"
       [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}; cd build/${ARCH}
       ../../config.sh --enable all --disable $DISABLE_OPT |& tee oscam-cmake-${ARCH}${BIN_EXT}.log
       cmake $CMAKE_OPT ../.. |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
       make |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
       [ -f oscam ] && mv oscam oscam-cmake-${ARCH}${BIN_EXT}
+      [ -f oscam-upx ] && mv oscam-upx oscam-cmake-${ARCH}${BIN_EXT}
       cd ../..
     - !reference [.helper, terminal-color]
     - | #evaluate build

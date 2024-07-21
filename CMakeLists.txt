@@ -198,6 +198,23 @@ endif (OSCamOperatingSystem MATCHES "Linux")
 set (CS_CONFDIR ${DEFAULT_CS_CONFDIR} CACHE STRING "Default path for the config files")
 add_definitions ("-DCS_CONFDIR=\"${CS_CONFDIR}\"")
 
+# upx compression
+execute_process (COMMAND upx --version RESULT_VARIABLE UPX_RET ERROR_QUIET COMMAND head -n 1 OUTPUT_VARIABLE UPX_VER OUTPUT_STRIP_TRAILING_WHITESPACE)
+set(COMP_LEVEL "--best" CACHE STRING "${COMP_LEVEL}")
+
+if (NOT UPX_RET EQUAL 0)
+	set (UPX_VER "n.a.")
+endif (NOT UPX_RET EQUAL 0)
+
+if (NOT USE_COMPRESS OR USE_COMPRESS EQUAL 0)
+	message (STATUS "COMPRESSION is disabled")
+elseif (USE_COMPRESS EQUAL 1 AND NOT UPX_RET EQUAL 0)
+	set (USE_COMPRESS "0")
+	message ( STATUS "COMPRESSION requested but upx binary NOT FOUND  COMPILING WHITOUT UPX COMPRESSION !!!")
+else (NOT USE_COMPRESS OR USE_COMPRESS EQUAL 0)
+	set (USE_COMPRESS_FLAG "USE_COMPRESS")
+	message (STATUS "COMPRESSION is added by You, upx compress binary after compiling")
+endif (NOT USE_COMPRESS OR USE_COMPRESS EQUAL 0)
 
 #----------------------- subdirectories ------------------------------
 
@@ -490,7 +507,7 @@ GENERATE_OSCAM_CONFIG("${CMAKE_CURRENT_SOURCE_DIR}/config.h")
 # Build config.mak and related files
 # FIXME: Create USE_FLAGS and pass them to config.sh using --use-flags
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --objdir ${CMAKE_CURRENT_BINARY_DIR} --use-flags  "${USE_STAPI} ${USE_STAPI5} /
-${USE_COOLAPI} ${USE_SU980} ${USE_AZBOX} ${USE_MCA} ${USE_SSL} ${USE_LIBCRYPTO} ${USE_LIBUSB} ${USE_PCSC}" --make-config.mak)
+${USE_COOLAPI} ${USE_SU980} ${USE_AZBOX} ${USE_MCA} ${USE_SSL} ${USE_LIBCRYPTO} ${USE_LIBUSB} ${USE_PCSC} ${USE_COMPRESS_FLAG}" --make-config.mak)
 # Generate webif/pages.c
 execute_process (COMMAND make --no-print-directory --quiet -C ${CMAKE_CURRENT_SOURCE_DIR}/webif)
 
@@ -546,9 +563,16 @@ add_library (${csoscam} STATIC ${csoscam_srcs} ${csoscam_hdrs})
 
 #----------------------- the executable ------------------------------
 
-set (exe_name "oscam")
+if (NOT USE_COMPRESS EQUAL 1)
+	set (exe_name "oscam")
+else (NOT USE_COMPRESS EQUAL 1)
+	set (exe_name "oscam-upx")
+endif (NOT USE_COMPRESS EQUAL 1)
 add_executable (${exe_name} ${exe_srcs} ${exe_hdrs})
 target_link_libraries (${exe_name} ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt minilzo)
+if (USE_COMPRESS EQUAL 1)
+	add_custom_command(TARGET ${exe_name} POST_BUILD COMMAND upx -q ${COMP_LEVEL} ${exe_name} COMMENT "Executing upx compression...")
+endif (USE_COMPRESS EQUAL 1)
 if(HAVE_LIBRT AND HAVE_LIBUSB)
 	if (LIBUSBDIR)
 		set (libusb_link "imp_libusb")
@@ -682,6 +706,8 @@ execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-version C
 add_definitions ("-D'CS_VERSION=\"${CS_VERSION}\"'")
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --oscam-commit COMMAND tr -d '\n' OUTPUT_VARIABLE CS_GIT_COMMIT)
 add_definitions ("-D'CS_GIT_COMMIT=\"${CS_GIT_COMMIT}\"'")
+string(TIMESTAMP CS_BUILD_DATE "%d.%m.%Y %H:%M:%S")
+add_definitions ("-D'CS_BUILD_DATE=\"${CS_BUILD_DATE}\"'")
 
 execute_process(COMMAND ${CMAKE_C_COMPILER} -dumpmachine COMMAND tr -d '\n' OUTPUT_VARIABLE CS_TARGET)
 add_definitions ("-D'CS_TARGET=\"${CS_TARGET}\"'")
@@ -866,6 +892,10 @@ message (STATUS "  operating system: ${OSCamOperatingSystem}")
 message (STATUS "  target system: ${CS_TARGET}")
 message (STATUS "  revision: ${CS_VERSION}")
 message (STATUS "  commit: ${CS_GIT_COMMIT}")
+message (STATUS "  build date: ${CS_BUILD_DATE}")
+if (USE_COMPRESS EQUAL 1)
+	message (STATUS "  packer: ${UPX_VER} (compression level ${COMP_LEVEL})")
+endif (USE_COMPRESS EQUAL 1)
 if (HAVE_LIBCRYPTO)
 	message (STATUS "  use system libcrypto functions")
 else (HAVE_LIBCRYPTO)
