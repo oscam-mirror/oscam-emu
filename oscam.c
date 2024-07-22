@@ -369,6 +369,9 @@ static void write_versionfile(bool use_stdout)
 	fprintf(fp, "Build Date:     %s\n", CS_BUILD_DATE);
 	fprintf(fp, "Version:        %s@%s\n", CS_VERSION, CS_GIT_COMMIT);
 	fprintf(fp, "Compiler:       %s\n", CS_TARGET);
+#ifdef USE_COMPRESS
+	fprintf(fp, "Compression:    %s, level %s\n", COMP_VERSION, COMP_LEVEL);
+#endif
 	fprintf(fp, "Box Type:       %s (%s)\n", boxtype_get(), boxname_get());
 	fprintf(fp, "PID:            %d\n", getppid());
 	fprintf(fp, "TempDir:        %s\n", cs_tmpdir);
