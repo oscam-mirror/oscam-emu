@@ -137,9 +137,8 @@ static bool use_srvid2 = false;
 #define MNU_GBX_FSTAINF     27
 #define MNU_GBX_FEXPINF     28
 #define MNU_GBX_INFOLOG     29
-#define MNU_CFG_FSOFTCAMKEY 30
 
-#define MNU_CFG_TOTAL_ITEMS 31 // sum of items above. Use it for "All inactive" in function calls too.
+#define MNU_CFG_TOTAL_ITEMS 30 // sum of items above. Use it for "All inactive" in function calls too.
 
 static void set_status_info_var(struct templatevars *vars, char *varname, int no_data, char *fmt, double value)
 {

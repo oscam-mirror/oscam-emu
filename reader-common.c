@@ -15,7 +15,6 @@
 #include "reader-common.h"
 //#include "csctapi/atr.h"
 #include "csctapi/icc_async.h"
-#include "readers.h" // required by the EMU reader
 
 extern const struct s_cardsystem *cardsystems[];
 extern char *RDR_CD_TXT[];
