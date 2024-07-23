@@ -5672,6 +5672,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 	if(filtertype == TYPE_ECM)
 	{
 		uint32_t chid = 0x10000;
+		int8_t pvu_skip = 0;
 		ECM_REQUEST *er;
 
 		if(len != 0) // len = 0 receiver encountered an internal bufferoverflow!
@@ -5719,7 +5720,7 @@ void dvbapi_process_input(int32_t demux_id, int32_t filter_num, uint8_t *buffer,
 			}
 #endif
 			// wait for odd / even ecm change (only not for irdeto!)
-			if(curpid->table == buffer[0] && !caid_is_irdeto(curpid->CAID))
+			if((curpid->table == buffer[0] && !caid_is_irdeto(curpid->CAID)) || pvu_skip)
 			{
 				if(!(er = get_ecmtask()))
 				{
