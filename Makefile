@@ -71,6 +71,7 @@ override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 
 CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
+UPX = $(shell which upx 2>/dev/null || true)
 
 # Compiler warnings
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
@@ -96,15 +97,17 @@ else ifneq (,$(findstring neon,$(TARGETHELP)))
 endif
 
 # Enable upx compression
-UPX_VER = $(shell (upx --version 2>/dev/null || echo "n.a.") | head -n 1)
+UPX_VER = $(shell ($(UPX) --version 2>/dev/null || echo "n.a.") | head -n 1)
 COMP_LEVEL = --best
 ifdef USE_COMPRESS
 	ifeq ($(UPX_VER),n.a.)
 		override USE_COMPRESS =
+		UPX_COMMAND_OSCAM = $(SAY) "UPX	Disabled due to missing upx binary in PATH!";
 	else
 		override STD_DEFS += -D'USE_COMPRESS="$(USE_COMPRESS)"' -D'COMP_LEVEL="$(COMP_LEVEL)"' -D'COMP_VERSION="$(UPX_VER)"'
+		UPX_INFO_TOOL = $(shell echo '|  UPX      = $(UPX)\n')
 		UPX_INFO = $(shell echo '|  Packer   : $(UPX_VER) (compression level $(COMP_LEVEL))\n')
-		UPX_COMMAND_OSCAM = upx -q $(COMP_LEVEL) $(OSCAM_BIN)
+		UPX_COMMAND_OSCAM = $(UPX) -q $(COMP_LEVEL) $(OSCAM_BIN) | grep '^[[:space:]]*[[:digit:]]* ->' | xargs | cat | xargs -0 printf 'UPX \t%s'
 	endif
 endif
 
@@ -452,6 +455,7 @@ all:
 | Tools:\n\
 |  CROSS    = $(CROSS_DIR)$(CROSS)\n\
 |  CC       = $(CC)\n\
+$(UPX_INFO_TOOL)\
 | Settings:\n\
 |  CONF_DIR = $(CONF_DIR)\n\
 |  CC_OPTS  = $(strip $(CC_OPTS))\n\
