@@ -596,6 +596,9 @@ add_library (${csreaders} STATIC ${csreaders_srcs} ${csreaders_hdrs})
 #----------------------- other oscam files ------------------------------
 
 set (csoscam "csoscam")
+if (NOT WITH_SIGNING EQUAL 1)
+	list(FILTER csoscam_srcs EXCLUDE REGEX ".*oscam-signing\\..*$")
+endif (NOT WITH_SIGNING EQUAL 1)
 add_library (${csoscam} STATIC ${csoscam_srcs} ${csoscam_hdrs})
 
 #----------------------- the executable ------------------------------
