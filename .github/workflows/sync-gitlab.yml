@@ -10,29 +10,33 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+    - name: checkout oscam-gitlab
+      uses: actions/checkout@v4
       with:
         ref: oscam-gitlab
+        fetch-depth: 0
+        token: ${{ secrets.ACTIONS_TOKEN }}
 
     - name: git config
       run: |
         git config --global user.name "oscam-emu"
         git config --global user.email "oscam-emu@users.noreply.github.com"
 
-    - name: sync oscam-gitlab
+    - name: sync oscam-gitlab with upstream
       run: |
         git remote add --track master streamboard https://git.streamboard.tv/common/oscam.git
         git fetch streamboard
+        ahead=$(git rev-list streamboard/master..HEAD --count)
+        if [ $ahead -gt 0 ]; then
+            force='--force'
+            printf "\n$ahead commit(s) ahead upstream -> reset branch and force push changes\n"
+            git reset --hard HEAD~$ahead
+        fi
         git merge streamboard/master
-        git push --follow-tags origin
+        git push --follow-tags origin $force
 
-    - name: auto-merge oscam-gitlab
-      run: |
-          git fetch --unshallow
-          git checkout --track origin/master
-          if git merge --no-ff oscam-gitlab -m "Auto-Merge branch 'oscam-gitlab'"; then
-            git push --follow-tags origin
-          else
-            printf "\nfiles with merge conficts:\n"
-            git diff --check
-          fi
+  merge:
+    uses: ./.github/workflows/merge-gitlab.yml
+    secrets: inherit
+    needs:
+      - sync

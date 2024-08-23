@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - name: checkout oscam-patched
+    - name: checkout master
       uses: actions/checkout@v4
       with:
         fetch-depth: 0
@@ -29,7 +29,7 @@ jobs:
       run: |
         git diff origin/oscam-gitlab -- > emu/oscam-emu.patch :^.github
 
-    - name: commit changes
+    - name: commit oscam-emu.patch
       run: |
         cd emu
         git config --global user.name "oscam-emu"
