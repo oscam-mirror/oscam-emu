@@ -320,7 +320,7 @@
 
     - |
       echo "Calculating new TAG and VERSION values..."
-      TAG_API_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}/projects/$CI_PROJECT_ID/repository/tags"
+      TAG_API_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}/projects/$CI_PROJECT_ID/repository/tags?order_by=version&sort=desc"
       curr_tag="$(curl --silent "$TAG_API_URL" | $JQ_BIN -r '.[0].name')"
       new_tag=$(($curr_tag + 1))
       new_ver="$(date +%y.%m)-$new_tag"
