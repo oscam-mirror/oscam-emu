@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.24.08-11820"
+#define CS_VERSION				"2.24.08-11821"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -2454,6 +2454,7 @@ struct s_config
 #endif
 	int8_t			stream_relay_enabled;
 	uint32_t		stream_relay_buffer_time;
+	int8_t			stream_relay_reconnect_count;
 	CAIDTAB			stream_relay_ctab;			// use the stream server for these caids
 #ifdef WITH_NEUTRINO
 #define DEFAULT_STREAM_SOURCE_PORT 31339 //Neutrino

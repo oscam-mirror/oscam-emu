@@ -1317,6 +1317,7 @@ static char *send_oscam_config_streamrelay(struct templatevars *vars, struct uri
 #endif
 	tpl_printf(vars, TPLADD, "STREAM_RELAY_PORT", "%d", cfg.stream_relay_port);
 	tpl_printf(vars, TPLADD, "STREAM_RELAY_BUFFER_TIME", "%d", cfg.stream_relay_buffer_time);
+	tpl_printf(vars, TPLADD, "STREAM_RELAY_RECONNECT_COUNT", "%d", cfg.stream_relay_reconnect_count);
 
 #ifdef WITH_EMU
 	tpl_printf(vars, TPLADD, "TMP", "STREAMEMMENABLEDSELECTED%d", cfg.emu_stream_emm_enabled);
