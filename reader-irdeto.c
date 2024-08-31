@@ -563,6 +563,7 @@ int32_t irdeto_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_e
 	if(csystem_data->t0 == 1)
 	{
 		int32_t crc = 63;
+		anspadd = 8;
 		sc_T0Ecm[4] = er->ecm[2] - 2;
 		crc ^= 0x01;
 		crc ^= 0x05;
@@ -582,22 +583,102 @@ int32_t irdeto_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_e
 		irdeto_do_cmd(reader, cta_cmd, 0, cta_res, &cta_lr);
 		int32_t anslength = cta_res[cta_lr - 1];
 
-		switch(anslength)
-		{
-			case 0x09:
-				sc_T0_Cmd[4] = anslength;
-				reader_chk_cmd(sc_T0_Cmd, anslength + 2);
-				rdr_log(reader, "Maybe you don't have the entitlements for this channel");
-				return ERROR;
-
-			default:
-				break;
-		}
-
 		sc_T0_Cmd[4] = anslength;
-		cta_lr = 0;
-		reader_chk_cmd(sc_T0_Cmd, anslength + 2);
-		anspadd = 8;
+
+		int32_t try = 1;
+		int32_t ret;
+		do
+		{
+			if(try > 1)
+			{
+				snprintf(ea->msglog, MSGLOGSIZE, "%.22s reader_chk_cmd try nr %i", reader->label, try);
+			}
+
+			reader_chk_cmd(sc_T0_Cmd, anslength + 2);
+			if((cta_res[2] == 0x9D) && (cta_res[3] == 0x00))
+			{
+				ret = 0;
+			}
+			else
+			{
+				ret = 1;
+			}
+			ret = ret || (cta_lr == 11);
+			if(ret)
+			{
+				switch(cta_res[2])
+				{
+					case 0x26: // valid for V6 and V7 cards *26 rare case card gets locked if bad EMM being written
+					{
+						snprintf(ea->msglog, MSGLOGSIZE, "%.19s cardstatus: LOCKED", reader->label);
+						return E_CORRUPT;
+					}
+
+					case 0x27: // valid for V6 and V7 cards Time sync EMMs
+					{
+						snprintf(ea->msglog, MSGLOGSIZE, "%.23s need global EMMs first", reader->label);
+						return E_CORRUPT;
+					}
+
+					case 0x33: // valid for all cards *33 comes in 2 cases Either Card Requires to be init with Dynamic RSA AKA cmd28/A0 or Pairing Enabled
+					{
+						snprintf(ea->msglog, MSGLOGSIZE, "%.26s dynamic RSA init or pairing enabled", reader->label);
+						return ERROR;
+					}
+
+					case 0x35: // valid for V6 and V7 cards Time sync EMMs
+					{
+						snprintf(ea->msglog, MSGLOGSIZE, "%.23s need global EMMs first", reader->label);
+						return E_CORRUPT;
+					}
+
+					case 0x90: // valid for all cards
+					{
+						snprintf(ea->msglog, MSGLOGSIZE,"%.26s unsubscribed channel or chid missing", reader->label);
+						return ERROR;
+					}
+
+					case 0x92: // valid for all cards
+					{
+						snprintf(ea->msglog, MSGLOGSIZE,"%.22s regional chid missing", reader->label);
+						return ERROR;
+					}
+
+					case 0x9E: // valid for all cards *9E comes in 2 cases if card not fully updated OR if pairing Enabled
+					{
+						if(cta_res[3] == 0x65)
+						{
+							snprintf(ea->msglog, MSGLOGSIZE,"%.24s chipset pairing enabled", reader->label);
+							return ERROR;
+						}
+						else
+						{
+							snprintf(ea->msglog, MSGLOGSIZE,"%.11s needs EMMs", reader->label);
+							return E_CORRUPT;
+						}
+					}
+
+					case 0xA0: // valid for all cards
+					{
+						snprintf(ea->msglog, MSGLOGSIZE,"%.17s surflock enabled", reader->label);
+						return E_CORRUPT;
+					}
+
+					default: // all other error status
+					{
+						snprintf(ea->msglog, MSGLOGSIZE, "%.16s reader_chk_cmd [%d] %02x %02x", reader->label, cta_lr, cta_res[2], cta_res[3]);
+						break;
+					}
+				}
+			}
+			try++;
+		}
+		while((try < 3) && (ret));
+
+		if(ret)
+		{
+			return ERROR;
+		}
 	}
 	else
 	{
@@ -615,7 +696,7 @@ int32_t irdeto_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_e
 			}
 
 			ret = (irdeto_do_cmd(reader, cta_cmd, 0x9D00, cta_res, &cta_lr));
-			ret = ret || (cta_lr < 24);
+			ret = ret || (cta_lr == 2);
 			if(ret)
 			{
 				switch(cta_res[cta_lr - 2])
