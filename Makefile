@@ -72,6 +72,7 @@ override STD_DEFS += -D'CS_CONFDIR="$(CONF_DIR)"'
 CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
 UPX = $(shell which upx 2>/dev/null || true)
+SSL = $(shell which openssl 2>/dev/null || true)
 
 # Compiler warnings
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
@@ -125,19 +126,21 @@ ifeq "$(shell ./config.sh --enabled WITH_SIGNING)" "Y"
 		SIGN_PRIVKEY   = $(shell ./config.sh --cert-file privkey)
 		SIGN_MARKER    = $(shell ./config.sh --sign-marker)
 		SIGN_PUBKEY    = $(OBJDIR)/signing/pkey
-		SIGN_HASH      = $(OBJDIR)/signing/sha1
-		SIGN_DIGEST    = $(OBJDIR)/signing/sha256
+		SIGN_HASH      = $(OBJDIR)/signing/sha256
+		SIGN_DIGEST    = $(OBJDIR)/signing/digest
 		SIGN_SUBJECT   = $(shell ./config.sh --cert-info | head -n 1)
 		SIGN_SIGALGO   = $(shell ./config.sh --cert-info | tail -n 1)
 		SIGN_VALID     = $(shell ./config.sh --cert-info | head -n 4 | tail -n 1)
 		SIGN_PUBALGO   = $(shell ./config.sh --cert-info | head -n 5 | tail -n 1)
 		SIGN_PUBBIT    = $(shell ./config.sh --cert-info | head -n 6 | tail -n 1)
-		SIGN_INFO      = $(shell echo '|  Signing  : $(SIGN_PUBALGO), $(SIGN_PUBBIT), $(SIGN_SIGALGO),\n|             Valid $(SIGN_VALID), $(SIGN_SUBJECT)\n')
-		SIGN_COMMAND_OSCAM += sha1sum $@ | awk '{ print $$1 }' | tr -d '\n' > $(SIGN_HASH);
-		SIGN_COMMAND_OSCAM += printf 'SIGN	SHA1('; stat -c %s $(SIGN_HASH) | tr -d '\n'; printf '): '; cat $(SIGN_HASH); printf ' -> ';
-		SIGN_COMMAND_OSCAM += openssl x509 -pubkey -noout -in $(SIGN_CERT)         -out $(SIGN_PUBKEY);
-		SIGN_COMMAND_OSCAM += openssl dgst -sha256      -sign $(SIGN_PRIVKEY)      -out $(SIGN_DIGEST) $(SIGN_HASH);
-		SIGN_COMMAND_OSCAM += openssl dgst -sha256    -verify $(SIGN_PUBKEY) -signature $(SIGN_DIGEST) $(SIGN_HASH) | tr -d '\n';
+		SIGN_VER       = ${shell ($(SSL) version 2>/dev/null || echo "n.a.") | head -n 1 | awk -F'(' '{ print $$1 }' | xargs}
+		SIGN_INFO      = $(shell echo '|  Signing  : $(SIGN_VER)\n|             $(SIGN_PUBALGO), $(SIGN_PUBBIT), $(SIGN_SIGALGO),\n|             Valid $(SIGN_VALID), $(SIGN_SUBJECT)\n')
+		SIGN_INFO_TOOL = $(shell echo '|  SSL      = $(SSL)\n')
+		SIGN_COMMAND_OSCAM += sha256sum $@ | awk '{ print $$1 }' | tr -d '\n' > $(SIGN_HASH);
+		SIGN_COMMAND_OSCAM += printf 'SIGN	SHA256('; stat -c %s $(SIGN_HASH) | tr -d '\n'; printf '): '; cat $(SIGN_HASH); printf ' -> ';
+		SIGN_COMMAND_OSCAM += $(SSL) x509 -pubkey -noout -in $(SIGN_CERT)         -out $(SIGN_PUBKEY);
+		SIGN_COMMAND_OSCAM += $(SSL) dgst -sha256      -sign $(SIGN_PRIVKEY)      -out $(SIGN_DIGEST) $(SIGN_HASH);
+		SIGN_COMMAND_OSCAM += $(SSL) dgst -sha256    -verify $(SIGN_PUBKEY) -signature $(SIGN_DIGEST) $(SIGN_HASH) | tr -d '\n';
 		SIGN_COMMAND_OSCAM += printf '$(SIGN_MARKER)' | cat - $(SIGN_DIGEST) >> $@;
 		SIGN_COMMAND_OSCAM += printf ' <- DIGEST('; stat -c %s $(SIGN_DIGEST) | tr -d '\n'; printf ')\n';
 	endif
@@ -490,6 +493,7 @@ all:
 |  CC       = $(CC)\n\
 |  STRIP    = $(STRIP)\n\
 $(UPX_INFO_TOOL)\
+$(SIGN_INFO_TOOL)\
 | Settings:\n\
 |  CONF_DIR = $(CONF_DIR)\n\
 |  CC_OPTS  = $(strip $(CC_OPTS))\n\

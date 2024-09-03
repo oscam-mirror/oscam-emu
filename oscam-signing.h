@@ -34,7 +34,7 @@ struct o_sign_info
 	int		sign_digest_size;
 	int		hash_digest_size;
 	int		hash_size;
-	char	*hash_sha1;
+	char	*hash_sha256;
 };
 
 extern struct o_sign_info osi;

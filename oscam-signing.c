@@ -2,7 +2,7 @@
 
 #include "globals.h"
 #include "oscam-signing.h"
-#include "cscrypt/sha1.h"
+#include "cscrypt/sha256.h"
 #include "oscam-string.h"
 #include "oscam-time.h"
 #include "oscam-files.h"
@@ -281,14 +281,14 @@ int verifyBin(const char *binfile, EVP_PKEY *pubkey)
 	osi.sign_digest_size = 0;
 	osi.hash_digest_size = 0;
 	osi.hash_size = 0;
-	osi.hash_sha1 = NULL;
+	osi.hash_sha256 = NULL;
 	EVP_MD_CTX *mctx = NULL;
 	DIGEST sign = {NULL, 0};
 
 	// Get binfile hash digest and encrypted signature
 	DIGEST hash = hashBinary(binfile, &sign);
 
-	// hash sha1
+	// hash sha256
 	osi.sign_digest_size = sign.size;
 	if (hash.data != NULL)
 	{
@@ -296,9 +296,9 @@ int verifyBin(const char *binfile, EVP_PKEY *pubkey)
 		hex_encode(hash.data, shaVal, hash.size);
 		osi.hash_digest_size = hash.size;
 		osi.hash_size = cs_strlen(shaVal);
-		if (cs_malloc(&osi.hash_sha1, osi.hash_size + 1))
+		if (cs_malloc(&osi.hash_sha256, osi.hash_size + 1))
 		{
-			cs_strncpy(osi.hash_sha1, strtolower(shaVal), osi.hash_size + 1);
+			cs_strncpy(osi.hash_sha256, strtolower(shaVal), osi.hash_size + 1);
 		}
 		free(hash.data);
 
@@ -319,13 +319,13 @@ int verifyBin(const char *binfile, EVP_PKEY *pubkey)
 					cs_log("Error: EVP_VerifyInit() failed");
 				}
 
-				// Update verification with hash_sha1
+				// Update verification with hash_sha256
 				if (!EVP_VerifyUpdate(mctx, shaVal, cs_strlen(shaVal)))
 				{
 					cs_log("Error: EVP_VerifyUpdate() failed");
 				}
 
-				// Finalize verification hash_sha1 against signature and public key
+				// Finalize verification hash_sha256 against signature and public key
 				bResult = EVP_VerifyFinal(mctx, sign.data, sign.size, pubkey);
 				osi.is_verified = (bResult == 1 ? true : false);
 			}
@@ -344,7 +344,7 @@ DIGEST hashBinary(const char *binfile, DIGEST *sign)
 	size_t file_size = 0;
 	size_t offset = 0;
 	size_t signature_size = 0;
-	char *data = NULL, *ptr = NULL, *p = NULL;
+	unsigned char *data = NULL, *ptr = NULL, *p = NULL;
 
 	if (cs_malloc(&fi, sizeof(struct stat)))
 	{
@@ -381,17 +381,19 @@ DIGEST hashBinary(const char *binfile, DIGEST *sign)
 				offset = file_size;
 			}
 
-			// SHA1 hash of binary content without encrypted signature part
-			SHA_CTX ctx;
-			SHA1_Init(&ctx);
-			SHA1_Update(&ctx, data, offset);
+			// SHA256 hash of binary content without encrypted signature part
+			mbedtls_sha256_context ctx;
+			mbedtls_sha256_init(&ctx);
+			mbedtls_sha256_starts(&ctx, 0);
+			mbedtls_sha256_update(&ctx, data, offset);
 			munmap(data, file_size);
 			close(fd);
 
 			// Return calculated digest
-			arRetval.data = (unsigned char *)OPENSSL_malloc(SHA_DIGEST_LENGTH);
-			arRetval.size = SHA_DIGEST_LENGTH;
-			SHA1_Final(arRetval.data, &ctx);
+			arRetval.data = (unsigned char *)OPENSSL_malloc(SHA256_DIGEST_LENGTH);
+			arRetval.size = SHA256_DIGEST_LENGTH;
+			mbedtls_sha256_finish(&ctx, arRetval.data);
+			mbedtls_sha256_free(&ctx);
 		}
 	}
 
