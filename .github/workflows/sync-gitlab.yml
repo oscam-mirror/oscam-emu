@@ -35,7 +35,7 @@ jobs:
         git merge streamboard/master
         git push --follow-tags origin $force
 
-  merge:
+  reuse:
     uses: ./.github/workflows/merge-gitlab.yml
     secrets: inherit
     needs:
