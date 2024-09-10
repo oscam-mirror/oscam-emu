@@ -147,11 +147,11 @@
       git config user.name "pipeline-user"
       git config user.email "pipeline-user@users.noreply.git.streamboard.tv"
 
-  #runs oscam make/cmake test builds (needs variable ARCH: native|aarch64|armv7|mips32el|powerpc|sh4 to be set in the calling job)
+  #runs oscam make/cmake test builds (needs variable ARCH: native|aarch64|armv7|mips32el|powerpc|sh4|android12 to be set in the calling job)
   oscam-build:
     - | #autodetect build options
       export LC_ALL=C
-      unset MAKE_OPT CMAKE_OPT BIN_EXT
+      unset CFLAGS MAKE_OPT CMAKE_OPT BIN_EXT
       DISABLE_OPT="WITH_NEUTRINO"
       if [ "$ARCH" == "native" ]; then
         echo "List some debug information...";
@@ -195,6 +195,11 @@
             curl --progress-bar -L "https://simplebuild.dedyn.io/toolchains/gitlab/Toolchain-${ARCH}_generic.tar.xz" | tar -xJ -C $HOME/toolchains/${ARCH}_generic;
             touch $HOME/toolchains/${ARCH}_generic/download.ok;
         fi;
+        if [ "$ARCH" == "android12" ]; then
+            DISABLE_OPT+=" CLOCKFIX";
+            CFLAGS="-march=armv7-a -mtune=cortex-a9 -mfloat-abi=softfp -mfpu=vfpv3-d16 -U__ANDROID_API__ -DANDROID -D__ANDROID_API__=31 -fpic -fno-addrsig -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wno-unused-but-set-variable -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -Wno-ignored-optimization-argument";
+            MAKE_OPT+=" LIB_RT= LIB_PTHREAD=";
+        fi;
         if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "aes.h" -type f -print -quit)" ]; then
             DISABLE_OPT+=" WITH_SSL";
             CMAKE_OPT+=" -DUSE_SSL=0";
@@ -226,7 +231,7 @@
             CMAKE_OPT+=" -DHAVE_LIBUSB=0";
         else
             echo "Enabling LIBUSB...";
-            MAKE_OPT+=" USE_LIBUSB=1";
+            MAKE_OPT+=" USE_LIBUSB=1$([ "$ARCH" == "android12" ] && printf ' LIBUSB_LIB=-lusb-1.0' || printf '')";
             CMAKE_OPT+=" -DHAVE_LIBUSB=1";
             BIN_EXT+="-libusb";
         fi;
@@ -252,16 +257,21 @@
       PATH="$HOME/bin:$PATH"
       [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}
       ./config.sh --enable all --disable $DISABLE_OPT |& tee build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
-      make OSCAM_BIN=build/${ARCH}/oscam-make-${ARCH}${BIN_EXT} $MAKE_OPT |& tee -a build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
+      make OSCAM_BIN=build/${ARCH}/oscam-make-${ARCH}${BIN_EXT} "EXTRA_CFLAGS=$CFLAGS" $MAKE_OPT |& tee -a build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
       rm -f build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.debug 2>/dev/null
     - | #cmake build
       PATH="$HOME/bin:$PATH"
       [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}; cd build/${ARCH}
-      ../../config.sh --enable all --disable $DISABLE_OPT |& tee oscam-cmake-${ARCH}${BIN_EXT}.log
-      cmake $CMAKE_OPT ../.. |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
-      make |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
-      [ -f oscam ] && mv oscam oscam-cmake-${ARCH}${BIN_EXT}
-      [ -f oscam-upx ] && mv oscam-upx oscam-cmake-${ARCH}${BIN_EXT}
+      if [ "$ARCH" == "android12" ]; then
+        echo "skipped" > oscam-cmake-${ARCH}${BIN_EXT}.log;
+        echo "Skipping cmake build for $ARCH!";
+      else
+          ../../config.sh --enable all --disable $DISABLE_OPT |& tee oscam-cmake-${ARCH}${BIN_EXT}.log
+          cmake $CMAKE_OPT ../.. |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
+          make |& tee -a oscam-cmake-${ARCH}${BIN_EXT}.log
+          [ -f oscam ] && mv oscam oscam-cmake-${ARCH}${BIN_EXT}
+          [ -f oscam-upx ] && mv oscam-upx oscam-cmake-${ARCH}${BIN_EXT}
+      fi;
       cd ../..
     - !reference [.helper, terminal-color]
     - | #evaluate build
@@ -270,7 +280,7 @@
         exit 1;
       fi;
 
-  #runs a simple oscam startup test (needs variables OSCAM_BUILD: make|cmake and ARCH: native|aarch64|armv7|mips32el|powerpc|sh4 to be set in the calling job)
+  #runs a simple oscam startup test (needs variables OSCAM_BUILD: make|cmake and ARCH: native|aarch64|armv7|mips32el|powerpc|sh4|android12 to be set in the calling job)
   oscam-startup-test:
     - !reference [.helper, download-secure-files-installer]
     - !reference [.helper, terminal-color]
