@@ -197,7 +197,7 @@
         fi;
         if [ "$ARCH" == "android12" ]; then
             DISABLE_OPT+=" CLOCKFIX";
-            CFLAGS="-march=armv7-a -mtune=cortex-a9 -mfloat-abi=softfp -mfpu=vfpv3-d16 -U__ANDROID_API__ -DANDROID -D__ANDROID_API__=31 -fpic -fno-addrsig -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wno-unused-but-set-variable -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -Wno-ignored-optimization-argument";
+            CFLAGS="-march=armv7-a -mtune=cortex-a9 -mfloat-abi=softfp -mfpu=vfpv3-d16 -U__ANDROID_API__ -DANDROID -D__ANDROID_API__=31 -fpic -fno-addrsig -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -Wno-ignored-optimization-argument";
             MAKE_OPT+=" LIB_RT= LIB_PTHREAD=";
         fi;
         if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "aes.h" -type f -print -quit)" ]; then

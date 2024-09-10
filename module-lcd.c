@@ -51,7 +51,7 @@ static void refresh_lcd_file(void)
 	while(running)
 	{
 		now = time((time_t *)0);
-		int16_t cnt = 0, idx = 0, count_r = 0, count_p = 0, count_u = 0;
+		int16_t idx = 0, count_r = 0, count_p = 0, count_u = 0;
 		FILE *fpsave;
 
 		if((fpsave = fopen(temp_file, "w")))
@@ -243,7 +243,6 @@ static void refresh_lcd_file(void)
 		}
 
 		cs_sleepms(cfg.lcd_write_intervall * 1000);
-		cnt++;
 
 		if(rename(temp_file, targetfile) < 0)
 			{ cs_log("An error occured while writing oscam.lcd file %s.", targetfile); }
