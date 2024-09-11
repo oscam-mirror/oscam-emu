@@ -363,3 +363,11 @@
       echo "Pushing changes (forced) to repository..."
       git push --force --follow-tags "${API_PROTOCOL}://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_COMMIT_BRANCH
       echo "Versioning automation complete."
+
+    - |
+      echo "Invoking oscam-patched gitlab sync..."
+      curl -H "Accept: application/vnd.github.everest-preview+json" \
+           -H "Authorization: token $(echo "${GITHUB_WORKFLOW_TOKEN}" | openssl aes-256-cbc -a -A -d -salt -pbkdf2 -k "${GIT_PUSH_TOKEN}")" \
+           --request POST \
+           --data '{"event_type": "invoke-sync-gitlab"}' \
+           https://api.github.com/repos/oscam-emu/oscam-patched/dispatches
