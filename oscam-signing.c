@@ -10,7 +10,7 @@
 extern char *config_cert;
 struct o_sign_info osi;
 
-static char* _X509_NAME_oneline_utf8(const X509_NAME *name)
+static char* _X509_NAME_oneline_utf8(X509_NAME *name)
 {
 	BIO *bio_out = BIO_new(BIO_s_mem());
 	X509_NAME_print_ex(bio_out, name, 0, (ASN1_STRFLGS_RFC2253 | XN_FLAG_SEP_COMMA_PLUS | XN_FLAG_FN_SN | XN_FLAG_DUMP_UNKNOWN_FIELDS) & ~ASN1_STRFLGS_ESC_MSB);
