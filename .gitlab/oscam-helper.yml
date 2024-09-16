@@ -386,7 +386,8 @@
       TAG_API_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}/projects/$CI_PROJECT_ID/merge_requests"
       for iid in $(curl --silent "${TAG_API_URL}?state=opened" | $JQ_BIN '.[] | .iid'); do
         printf "${TC_FNT_BLUE}MR"'!'"${iid} -> ${TC_FNT_GREEN}"
-        curl --request PUT \
+        curl --silent \
+             --request PUT \
              --header "PRIVATE-TOKEN: ${GIT_PUSH_TOKEN}" \
              --url "${TAG_API_URL}/${iid}/rebase"
         echo -e "${TC_FNT_DEFAULT}"
@@ -398,8 +399,8 @@
       export LC_ALL=C
       echo "Invoking oscam-patched gitlab sync..."
       curl --silent \
+           --request POST \
            --header "Accept: application/vnd.github.everest-preview+json" \
            --header "Authorization: token $(echo "${GITHUB_WORKFLOW_TOKEN}" | openssl aes-256-cbc -a -A -d -salt -pbkdf2 -k "${GIT_PUSH_TOKEN}")" \
-           --request POST \
            --data '{"event_type": "invoke-sync-gitlab"}' \
-           https://api.github.com/repos/oscam-emu/oscam-patched/dispatches
+           --url "https://api.github.com/repos/oscam-emu/oscam-patched/dispatches"
