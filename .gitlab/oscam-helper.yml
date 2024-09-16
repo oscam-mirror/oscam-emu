@@ -330,11 +330,21 @@
 
     - |
       echo "Calculating new TAG and VERSION values..."
-      TAG_API_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}/projects/$CI_PROJECT_ID/repository/tags?order_by=version&sort=desc"
-      curr_tag="$(curl --silent "$TAG_API_URL" | $JQ_BIN -r '.[0].name')"
-      new_tag=$(($curr_tag + 1))
-      new_ver="$(date +%y.%m)-$new_tag"
-      echo "New TAG: $new_tag"
+      TAG_API_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}/projects/$CI_PROJECT_ID/repository/tags"
+      curr_tag="$(curl --silent "${TAG_API_URL}?order_by=version&sort=desc" | $JQ_BIN -r '.[0].name,.[0].commit.id')"
+      curr_tag_rev="$(echo $curr_tag | awk '{print $1}')"
+      curr_tag_sha="$(echo $curr_tag | awk '{print $2}')"
+      if [ $(git ls-remote --heads --tags origin | grep -ci ${curr_tag_sha}) -eq 0 ]; then
+        echo "Removing unreferenced TAG $curr_tag_rev due to forced push...";
+        curl --request DELETE \
+             --header "PRIVATE-TOKEN: ${GIT_PUSH_TOKEN}" \
+             --url "${TAG_API_URL}/${curr_tag_rev}"
+        new_tag_rev=$curr_tag_rev
+      else
+        new_tag_rev=$(($curr_tag_rev + 1))
+      fi;
+      new_ver="$(date +%y.%m)-$new_tag_rev"
+      echo "New TAG: $new_tag_rev"
       echo "New VERSION: $new_ver"
 
     - !reference [.helper, set-git-properties]
@@ -348,26 +358,48 @@
       sha=$(git rev-parse HEAD)
 
     - |
-      if [ "$(curl --silent "${TAG_API_URL}/${new_tag}" | $JQ_BIN -r '.name')" == "$new_tag" ]; then
-        echo "Removing existing TAG $new_tag...";
+      if [ "$(curl --silent "${TAG_API_URL}/${new_tag_rev}" | $JQ_BIN -r '.name')" == "$new_tag_rev" ]; then
+        echo "Removing existing TAG $new_tag_rev...";
         curl --request DELETE \
              --header "PRIVATE-TOKEN: ${GIT_PUSH_TOKEN}" \
-             --url "${TAG_API_URL}/${new_tag}"
+             --url "${TAG_API_URL}/${new_tag_rev}"
       fi;
 
     - |
-      echo "Creating new tag:$new_tag on sha:$sha..."
-      git tag --annotate "$new_tag" -m "Revision $new_tag" "$sha"
+      echo "Creating new tag:$new_tag_rev on sha:$sha..."
+      git tag --annotate "$new_tag_rev" -m "Revision $new_tag_rev" "$sha"
 
     - |
       echo "Pushing changes (forced) to repository..."
       git push --force --follow-tags "${API_PROTOCOL}://pipeline-user:${GIT_PUSH_TOKEN}@${CI_REPOSITORY_URL#*@}" HEAD:$CI_COMMIT_BRANCH
       echo "Versioning automation complete."
 
+  #rebase open merge requests
+  rebase-mrs:
     - |
+      export LC_ALL=C
+      echo "Rebasing all open merge requests..."
+
+    - !reference [.helper, jq-installer]
+
+    - |
+      TAG_API_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}/projects/$CI_PROJECT_ID/merge_requests"
+      for iid in $(curl --silent "${TAG_API_URL}?state=opened" | $JQ_BIN '.[] | .iid'); do
+        printf "${TC_FNT_BLUE}MR"'!'"${iid} -> ${TC_FNT_GREEN}"
+        curl --request PUT \
+             --header "PRIVATE-TOKEN: ${GIT_PUSH_TOKEN}" \
+             --url "${TAG_API_URL}/${iid}/rebase"
+        echo -e "${TC_FNT_DEFAULT}"
+      done
+
+  #invoke sync-gitlab worklow on oscam-patched github repository
+  sync-oscam-patched:
+    - |
+      export LC_ALL=C
       echo "Invoking oscam-patched gitlab sync..."
-      curl -H "Accept: application/vnd.github.everest-preview+json" \
-           -H "Authorization: token $(echo "${GITHUB_WORKFLOW_TOKEN}" | openssl aes-256-cbc -a -A -d -salt -pbkdf2 -k "${GIT_PUSH_TOKEN}")" \
+      curl --silent \
+           --header "Accept: application/vnd.github.everest-preview+json" \
+           --header "Authorization: token $(echo "${GITHUB_WORKFLOW_TOKEN}" | openssl aes-256-cbc -a -A -d -salt -pbkdf2 -k "${GIT_PUSH_TOKEN}")" \
            --request POST \
            --data '{"event_type": "invoke-sync-gitlab"}' \
            https://api.github.com/repos/oscam-emu/oscam-patched/dispatches

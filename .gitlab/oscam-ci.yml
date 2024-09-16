@@ -13,6 +13,7 @@ stages:
   - build
   - test
   - new-version
+  - sync
 
 info:
   stage: .pre
@@ -112,3 +113,25 @@ auto-version:
   script:
     - !reference [.helper, tag-version]
   allow_failure: false
+
+rebase-merge-requests:
+  stage: sync
+  tags:
+    - sync
+  needs: [auto-version]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $GITLAB_USER_NAME != 'pipeline-user'
+  script:
+    - !reference [.helper, rebase-mrs]
+  allow_failure: true
+
+invoke-github-action:
+  stage: sync
+  tags:
+    - sync
+  needs: [auto-version]
+  rules:
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $GITLAB_USER_NAME != 'pipeline-user'
+  script:
+    - !reference [.helper, sync-oscam-patched]
+  allow_failure: true
