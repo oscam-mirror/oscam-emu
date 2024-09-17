@@ -148,10 +148,16 @@ int32_t stapi_open(void)
 	{
 		snprintf(pfad, sizeof(pfad), "%s%s", PROCDIR, entries[n]->d_name);
 		if(stat(pfad, &buf) != 0)
-			{ continue; }
+		{
+			free(entries[n]);
+			continue;
+		}
 
 		if(!(buf.st_mode & S_IFDIR && strncmp(entries[n]->d_name, ".", 1) != 0))
-			{ continue; }
+		{
+			free(entries[n]);
+			continue;
+		}
 
 		int32_t do_open = 0;
 		struct s_dvbapi_priority *p;
@@ -169,6 +175,7 @@ int32_t stapi_open(void)
 		if(!do_open)
 		{
 			cs_log("PTI: %s skipped", entries[n]->d_name);
+			free(entries[n]);
 			continue;
 		}
 
@@ -176,6 +183,7 @@ int32_t stapi_open(void)
 		if(ErrorCode != 0)
 		{
 			cs_log("STPTI_Open ErrorCode: %d", ErrorCode);
+			free(entries[n]);
 			continue;
 		}
 
@@ -184,6 +192,7 @@ int32_t stapi_open(void)
 
 		cs_strncpy(dev_list[i].name, entries[n]->d_name, sizeof(dev_list[i].name));
 		cs_log("PTI: %s open %d", entries[n]->d_name, i);
+		free(entries[n]);
 
 		ErrorCode = oscam_stapi_SignalAllocate(dev_list[i].SessionHandle, &dev_list[i].SignalHandle);
 		if(ErrorCode != 0)
