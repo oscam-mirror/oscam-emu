@@ -195,7 +195,7 @@ int32_t stapi_open(void)
 		for(p = dvbapi_priority; p != NULL; p = p->next)
 		{
 			if(p->type != 's') { continue; }
-			if(strcmp(entries[n]->d_name, entries[n]->devname) == 0)
+			if(strcmp(entries[n]->d_name, p->devname) == 0)
 			{
 				do_open = 1;
 				break;
