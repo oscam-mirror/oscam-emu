@@ -108,7 +108,7 @@ ifdef USE_COMPRESS
 		override STD_DEFS += -D'USE_COMPRESS="$(USE_COMPRESS)"' -D'COMP_LEVEL="$(COMP_LEVEL)"' -D'COMP_VERSION="$(UPX_VER)"'
 		UPX_INFO_TOOL = $(shell echo '|  UPX      = $(UPX)\n')
 		UPX_INFO = $(shell echo '|  Packer   : $(UPX_VER) (compression level $(COMP_LEVEL))\n')
-		UPX_COMMAND_OSCAM = $(UPX) -q $(COMP_LEVEL) $(OSCAM_BIN) | grep '^[[:space:]]*[[:digit:]]* ->' | xargs | cat | xargs -0 printf 'UPX \t%s'
+		UPX_COMMAND_OSCAM = $(UPX) -q $(COMP_LEVEL) $@ | grep '^[[:space:]]*[[:digit:]]* ->' | xargs | cat | xargs -0 printf 'UPX \t%s';
 	endif
 endif
 
@@ -125,6 +125,7 @@ ifeq "$(shell ./config.sh --enabled WITH_SIGNING)" "Y"
 
 		SIGN_PRIVKEY   = $(shell ./config.sh --cert-file privkey)
 		SIGN_MARKER    = $(shell ./config.sh --sign-marker)
+		SIGN_UPXMARKER = $(shell ./config.sh --upx-marker)
 		SIGN_PUBKEY    = $(OBJDIR)/signing/pkey
 		SIGN_HASH      = $(OBJDIR)/signing/sha256
 		SIGN_DIGEST    = $(OBJDIR)/signing/digest
@@ -141,8 +142,16 @@ ifeq "$(shell ./config.sh --enabled WITH_SIGNING)" "Y"
 		SIGN_COMMAND_OSCAM += $(SSL) x509 -pubkey -noout -in $(SIGN_CERT)         -out $(SIGN_PUBKEY);
 		SIGN_COMMAND_OSCAM += $(SSL) dgst -sha256      -sign $(SIGN_PRIVKEY)      -out $(SIGN_DIGEST) $(SIGN_HASH);
 		SIGN_COMMAND_OSCAM += $(SSL) dgst -sha256    -verify $(SIGN_PUBKEY) -signature $(SIGN_DIGEST) $(SIGN_HASH) | tr -d '\n';
+		SIGN_COMMAND_OSCAM += [ -f $(OBJDIR)/signing/upx.aa ] && cat $(OBJDIR)/signing/upx.aa > $@;
 		SIGN_COMMAND_OSCAM += printf '$(SIGN_MARKER)' | cat - $(SIGN_DIGEST) >> $@;
+		SIGN_COMMAND_OSCAM += [ -f $(OBJDIR)/signing/upx.ab ] && cat $(OBJDIR)/signing/upx.ab >> $@;
 		SIGN_COMMAND_OSCAM += printf ' <- DIGEST('; stat -c %s $(SIGN_DIGEST) | tr -d '\n'; printf ')\n';
+		ifdef USE_COMPRESS
+			ifneq ($(UPX_VER),n.a.)
+				UPX_COMMAND_OSCAM  += split --bytes=$$(grep -oba '$(SIGN_UPXMARKER)' $@ | tail -1 | awk -F':' '{ print $$1 }') $@ $(OBJDIR)/signing/upx.;
+				UPX_COMMAND_OSCAM  += $(SIGN_COMMAND_OSCAM)
+			endif
+		endif
 	endif
 endif
 
@@ -528,8 +537,8 @@ $(OSCAM_BIN): $(OSCAM_BIN).debug
 	$(SAY) "STRIP	$@"
 	$(Q)cp $(OSCAM_BIN).debug $(OSCAM_BIN)
 	$(Q)$(STRIP) $(OSCAM_BIN)
-	$(Q)$(UPX_COMMAND_OSCAM)
 	$(Q)$(SIGN_COMMAND_OSCAM)
+	$(Q)$(UPX_COMMAND_OSCAM)
 
 $(LIST_SMARGO_BIN): utils/list_smargo.c
 	$(SAY) "BUILD	$@"

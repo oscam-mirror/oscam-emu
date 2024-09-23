@@ -117,6 +117,7 @@ Usage: `basename $0` [parameters]
       private key filename - relative/absolute path to private key file
 
  -sm, --sign-marker           Get Oscam binary signature marker.
+ -um, --upx-marker            Get Oscam binary upx marker.
  -v, --oscam-version          Display OSCam version.
  -r, --oscam-revision         Display OSCam SVN revision. //DEPRECATED, will be removed in later versions
  -c, --oscam-commit           Display OSCam GIT short commit sha 8-digits.
@@ -891,6 +892,11 @@ do
 	'-sm'|'--sign-marker')
 		obsm=`grep '^#define OBSM' oscam-signing.h | cut -d\" -f2`
 		echo $obsm
+		break
+	;;
+	'-um'|'--upx-marker')
+		upxm=`grep '^#define UPXM' oscam-signing.h | cut -d\" -f2`
+		echo $upxm
 		break
 	;;
 	'-v'|'--oscam-version')

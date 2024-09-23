@@ -7,6 +7,7 @@
 #endif
 
 #define OBSM "!OBSM!" //Oscam Binary Signature Marker
+#define UPXM "UPX!" //UPX Marker
 #define CA_FILE_NAME "ca-certificates.crt" //System Certificate Trust Store Filename
 #define CA_SYSTEM_LOCATION "/etc/ssl/certs" //System Certificate Trust Store Location
 
