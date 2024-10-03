@@ -3181,6 +3181,31 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	if(rdr->detect_seca_nagra_tunneled_card)
 		{ tpl_addVar(vars, TPLADD, "NAGRADETECTSECACARDCHECKED", "checked"); }
 
+#ifdef READER_TONGFANG
+	if(rdr->tongfang3_calibsn)
+		{ tpl_printf(vars, TPLADD, "TONGFANGCALIBSN", "%08X", rdr->tongfang3_calibsn); }
+
+	if(rdr->tongfang_boxid)
+		{ tpl_printf(vars, TPLADD, "TONGFANGBOXID", "%08X", rdr->tongfang_boxid); }
+
+	if(rdr->tongfang3_deskey_length > 0)
+	{
+		for(i = 0; i < rdr->tongfang3_deskey_length ; i++)
+		{
+			tpl_printf(vars, TPLAPPEND, "TONGFANGDESKEY", "%02X", rdr->tongfang3_deskey[i]);
+		}
+	}
+
+	if(rdr->stbid_length > 0)
+	{
+		for(i = 0; i < rdr->stbid_length ; i++)
+		{
+			tpl_printf(vars, TPLAPPEND, "STBID", "%02X", rdr->stbid[i]);
+		}
+	}
+
+#endif
+
 #ifdef MODULE_CCCAM
 	tpl_printf(vars, TPLADD, "CCCMAXHOPS",   "%d", rdr->cc_maxhops);
 	tpl_printf(vars, TPLADD, "CCCMINDOWN",   "%d", rdr->cc_mindown);

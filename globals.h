@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.24.09-11838"
+#define CS_VERSION				"2.24.10-11839"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1677,6 +1677,16 @@ struct s_reader										// contains device info, reader info and card info
 	int32_t			l_port;
 	CAIDTAB			ctab;
 	uint32_t		boxid;
+#ifdef READER_TONGFANG
+	uint32_t		tongfang_version;
+	uint8_t			tongfang3_commkey[8];
+	uint32_t		tongfang3_calibsn;
+	uint32_t		tongfang_boxid;
+	uint8_t			tongfang3_deskey[8];
+	uint8_t			tongfang3_deskey_length;
+	uint8_t			stbid[8];
+	uint8_t			stbid_length;
+#endif
 	int8_t			cak7_mode;
 	uint8_t			cak7type;
 	uint8_t			cwpkcaid[2];
@@ -2666,6 +2676,7 @@ static inline bool caid_is_betacrypt(uint16_t caid) { return caid >> 8 == 0x17; 
 static inline bool caid_is_nagra(uint16_t caid) { return caid >> 8 == 0x18; }
 static inline bool caid_is_bulcrypt(uint16_t caid) { return caid == 0x5581 || caid == 0x4AEE; }
 static inline bool caid_is_dre(uint16_t caid) { return caid == 0x4AE0 || caid == 0x4AE1 || caid == 0x2710;}
+static inline bool caid_is_tongfang(uint16_t caid) { return caid == 0x4A02; }
 const char *get_cardsystem_desc_by_caid(uint16_t caid);
 
 #ifdef WITH_EMU

@@ -230,6 +230,112 @@ static void boxid_fn(const char *token, char *value, void *setting, FILE *f)
 		{ fprintf_conf(f, token, "\n"); }
 }
 
+#ifdef READER_TONGFANG
+static void tongfang3_calibsn_fn(const char *token, char *value, void *setting, FILE *f)
+{
+	struct s_reader *rdr = setting;
+	if(value)
+	{
+		rdr->tongfang3_calibsn = strlen(value) ? a2i(value, 4) : 0;
+		return;
+	}
+	if(rdr->tongfang3_calibsn)
+		fprintf_conf(f, token, "%08X\n", rdr->tongfang3_calibsn);
+	else if(cfg.http_full_cfg)
+		{ fprintf_conf(f, token, "\n"); }
+}
+
+static void tongfang_boxid_fn(const char *token, char *value, void *setting, FILE *f)
+{
+	struct s_reader *rdr = setting;
+	if(value)
+	{
+		rdr->tongfang_boxid = cs_strlen(value) ? a2i(value, 4) : 0;
+		return;
+	}
+	if(rdr->tongfang_boxid)
+		{ fprintf_conf(f, token, "%08X\n", rdr->tongfang_boxid); }
+	else if(cfg.http_full_cfg)
+		{ fprintf_conf(f, token, "\n"); }
+}
+
+static void stbid_fn(const char *token, char *value, void *setting, FILE *f)
+{
+	struct s_reader *rdr = setting;
+	if(value)
+	{
+		int32_t len = cs_strlen(value);
+		if(len != 16)
+		{
+			rdr->stbid_length = 0;
+			memset(rdr->stbid, 0, 8);
+		}
+		else
+		{
+			if(key_atob_l(value, rdr->stbid, len))
+			{
+				fprintf(stderr, "reader stbid parse error, %s=%s\n", token, value);
+				rdr->stbid_length = 0;
+				memset(rdr->stbid, 0, sizeof(rdr->stbid));
+			}
+			else
+			{
+				rdr->stbid_length = len/2;
+			}
+		}
+		return;
+	}
+	int32_t len = rdr->stbid_length;
+	if(len > 0)
+	{
+		char tmp[len * 2 + 1];
+		fprintf_conf(f, "stbid", "%s\n", cs_hexdump(0, rdr->stbid, len, tmp, sizeof(tmp)));
+	}
+	else if(cfg.http_full_cfg)
+	{
+		fprintf_conf(f, "stbid", "\n");
+	}
+}
+
+static void tongfang3_deskey_fn(const char *token, char *value, void *setting, FILE *f)
+{
+	struct s_reader *rdr = setting;
+	if(value)
+	{
+		int32_t len = cs_strlen(value);
+		if(len != 16)
+		{
+			rdr->tongfang3_deskey_length = 0;
+			memset(rdr->tongfang3_deskey, 0, 8);
+		}
+		else
+		{
+			if(key_atob_l(value, rdr->tongfang3_deskey, len))
+			{
+				fprintf(stderr, "reader tongfang3_deskey parse error, %s=%s\n", token, value);
+				rdr->tongfang3_deskey_length = 0;
+				memset(rdr->tongfang3_deskey, 0, sizeof(rdr->tongfang3_deskey));
+			}
+			else
+			{
+				rdr->tongfang3_deskey_length = len/2;
+			}
+		}
+		return;
+	}
+	int32_t len = rdr->tongfang3_deskey_length;
+	if(len > 0)
+	{
+		char tmp[len * 2 + 1];
+		fprintf_conf(f, "tongfang3_deskey", "%s\n", cs_hexdump(0, rdr->tongfang3_deskey, len, tmp, sizeof(tmp)));
+	}
+	else if(cfg.http_full_cfg)
+	{
+		fprintf_conf(f, "tongfang3_deskey", "\n");
+	}
+}
+#endif
+
 static void cwpkkey_fn(const char *token, char *value, void *setting, FILE *f)
 {
 	struct s_reader *rdr = setting;
@@ -1016,6 +1122,12 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_FUNC("caid"                           , OFS(ctab),                            reader_caid_fn),
 	DEF_OPT_FUNC("atr"                            , 0,                                    atr_fn),
 	DEF_OPT_FUNC("boxid"                          , 0,                                    boxid_fn),
+#ifdef  READER_TONGFANG
+	DEF_OPT_FUNC("tongfang3_calibsn"              , 0,                                    tongfang3_calibsn_fn),
+	DEF_OPT_FUNC("tongfang_boxid"                 , 0,                                    tongfang_boxid_fn),
+	DEF_OPT_FUNC("stbid"                          , 0,                                    stbid_fn),
+	DEF_OPT_FUNC("tongfang3_deskey"               , 0,                                    tongfang3_deskey_fn),
+#endif
 	DEF_OPT_FUNC("boxkey"                         , 0,                                    boxkey_fn),
 	DEF_OPT_FUNC("rsakey"                         , 0,                                    rsakey_fn),
 	DEF_OPT_FUNC("cwpkkey"                        , 0,                                    cwpkkey_fn),
@@ -1188,6 +1300,9 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 #endif
 #ifdef READER_CONAX
 		"cwpkkey",
+#endif
+#if defined(READER_TONGFANG)
+		"tongfang3_calibsn", "tongfang_boxid", "stbid", "tongfang3_deskey",
 #endif
 #ifdef WITH_AZBOX
 		"mode",
