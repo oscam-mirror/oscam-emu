@@ -1302,7 +1302,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 		"cwpkkey",
 #endif
 #if defined(READER_TONGFANG)
-		"tongfang3_calibsn", "tongfang_boxid", "stbid", "tongfang3_deskey",
+		"tongfang3_deskey", "tongfang3_calibsn", "stbid", "tongfang_boxid",
 #endif
 #ifdef WITH_AZBOX
 		"mode",
