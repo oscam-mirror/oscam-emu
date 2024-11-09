@@ -256,22 +256,16 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 			case 0x84:
 				memset(ep->hexserial, 0x00, 0x08);
 				memcpy(ep->hexserial, ep->emm + 5, 3);
-				if ((ep->emm[2] == 0x77) && (ep->emm[3] == 0x00))
-				{
-					ep->type = SHARED;
-					i = get_prov_idx(rdr, ep->emm + 3);
-
-					if(i == -1)
-					{
-						return 0;
-					}
-
-					return (!memcmp(rdr->sa[i], ep->hexserial, 3));
-				}
-				else if ((ep->emm[3] == 0x00) && ((ep->emm[4] == 0x71) || (ep->emm[4] == 0x32) || (ep->emm[4] == 0xEC) || (ep->emm[4] == 0xAC)) && (ep->emm[5] == 0x00) && (ep->emm[6] == 0x00) && (ep->emm[7] == 0x00) && (ep->emm[8] == 0x04) && (ep->emm[9] == 0x84))
+				i = get_prov_idx(rdr, ep->emm + 3);
+				if((ep->emm[3] == 0x00) && (ep->emm[5] == 0x00) && (ep->emm[6] == 0x00) && (ep->emm[7] == 0x00) && (ep->emm[8] == 0x04) && (ep->emm[9] == 0x84))
 				{
 					ep->type = GLOBAL;
 					return 1;
+				}
+				if(i != -1)
+				{
+					ep->type = SHARED;
+					return (!memcmp(rdr->sa[i], ep->hexserial, 3));
 				}
 				return 0;
 
@@ -599,12 +593,24 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 			filters[idx].enabled = 1;
 			filters[idx].filter[0] = 0x82;
 			filters[idx].mask[0] = 0xFF;
+			filters[idx].filter[1] = 0x00;
+			filters[idx].filter[2] = 0x00;
+			filters[idx].filter[3] = 0x00;
+			filters[idx].filter[4] = 0x00;
+			filters[idx].filter[5] = 0x00;
+			memset(&filters[idx].mask[1], 0xFF, 5);
 			idx++;
 
 			filters[idx].type = EMM_GLOBAL;
 			filters[idx].enabled = 1;
 			filters[idx].filter[0] = 0x84;
 			filters[idx].mask[0] = 0xFF;
+			filters[idx].filter[1] = 0x00;
+			filters[idx].mask[1] = 0xFF;
+			filters[idx].filter[3] = 0x00;
+			filters[idx].filter[4] = 0x00;
+			filters[idx].filter[5] = 0x00;
+			memset(&filters[idx].mask[3], 0xFF, 3);
 			idx++;
 
 			filters[idx].type = EMM_GLOBAL;

@@ -119,7 +119,6 @@ Usage: `basename $0` [parameters]
  -sm, --sign-marker           Get Oscam binary signature marker.
  -um, --upx-marker            Get Oscam binary upx marker.
  -v, --oscam-version          Display OSCam version.
- -r, --oscam-revision         Display OSCam SVN revision. //DEPRECATED, will be removed in later versions
  -c, --oscam-commit           Display OSCam GIT short commit sha 8-digits.
 
  -O, --detect-osx-sdk-version Find where OS X SDK is located
@@ -903,12 +902,6 @@ do
 		version=`grep '^#define CS_VERSION' globals.h | cut -d\" -f2`
 		emuversion=`grep EMU_VERSION module-emulator-osemu.h | awk '{ print $3 }'`
 		echo $version-$emuversion
-		break
-	;;
-	'-r'|'--oscam-revision') #//DEPRECATED, will be removed in later versions
-		revision=`grep '^#define CS_VERSION' globals.h | awk -F'-|"' '{print $3}'`
-		emuversion=`grep EMU_VERSION module-emulator-osemu.h | awk '{ print $3 }'`
-		echo $revision-$emuversion
 		break
 	;;
 	'-c'|'--oscam-commit')

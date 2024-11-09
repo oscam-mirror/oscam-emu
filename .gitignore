@@ -19,6 +19,6 @@ webif/is_defined.txt
 tests.bin
 tests.bin.debug
 
-# Emu files
+# Patch files
 *.patch
-SoftCam.*
+*.diff

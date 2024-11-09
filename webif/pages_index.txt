@@ -264,6 +264,8 @@ SAVETEMPLATES                 savetemplates/savetemplates.html
 
 SCANUSB                       scanusb/scanusb.html
 SCANUSBBIT                    scanusb/scanusb_usbbit.html
+SCANUDEVBIT                   scanusb/scanusb_udevbit.html
+SCANPCSCBIT                   scanusb/scanusb_pcscbit.html                                CARDREADER_PCSC
 
 SCRIPT                        script/script.html
 

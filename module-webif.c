@@ -7210,32 +7210,53 @@ static char *send_oscam_scanusb(struct templatevars * vars)
 	setActiveMenu(vars, MNU_READERS);
 #if !defined(__CYGWIN__)
 	FILE *fp;
-	char path[1035];
+	char line[100];
+	uint8_t i;
+	char header[11], txt[13], entry[10], bit[8], scan[12], error[120];
 
-	fp = popen("lsusb -v | egrep '^Bus|^ *iSerial|^ *iProduct'", "r");
-	if(!fgets(path, sizeof(path) - 1, fp) || !fp)
+//						key    tool                 package       match   command
+	char *elems[] = {  "USB", "lsusb",             "usbutils",   "Bus ", "lsusb -v | egrep '^Bus|^ *iSerial|^ *iProduct'"
+					, "UDEV", "/dev/serial/by-id", "udev",       "<-",   "find /dev/serial/by-id -type l -exec readlink -fn {} ';' -exec echo ' <- {}' \\;"
+#ifdef CARDREADER_PCSC
+					, "PCSC", "pcsc_scan",         "pcsc-tools", ":",    "pcsc_scan -r"
+#endif
+					};
+
+	for (i = 0; i < (sizeof(elems) / sizeof(elems[0])); i+=5)
 	{
-		tpl_addVar(vars, TPLADD, "USBENTRY", "<b>lsusb:</b> Failed to run or not installed!");
-		tpl_addVar(vars, TPLADD, "USBBIT", tpl_getTpl(vars, "SCANUSBBIT"));
-	}
-	else
-	{
-		do{
-			tpl_addVar(vars, TPLADD, "USBENTRYCLASS", "");
-			if(strstr(path, "Bus "))
-			{
-				tpl_addVar(vars, TPLADD, "USBENTRY", path);
-				tpl_addVar(vars, TPLADD, "USBENTRYCLASS", "CLASS=\"scanusbsubhead\"");
-			}
-			else
-			{
-				tpl_printf(vars, TPLADD, "USBENTRY", "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%s", path);
-			}
-			tpl_addVar(vars, TPLAPPEND, "USBBIT", tpl_getTpl(vars, "SCANUSBBIT"));
+		snprintf(header, sizeof(header), "%sHEADER", elems[i]); //key
+		snprintf(txt, sizeof(txt), "%s Devices", elems[i]); //key
+		snprintf(entry, sizeof(entry), "%sENTRY", elems[i]); //key
+		snprintf(bit, sizeof(bit), "%sBIT", elems[i]); //key
+		snprintf(scan, sizeof(scan), "SCAN%sBIT", elems[i]); //key
+		snprintf(error, sizeof(error), "<b>%s:</b> Failed to run or %s package not installed!", elems[i + 1], elems[i + 2]); //tool + package
+
+		tpl_addVar(vars, TPLADD, header, txt);
+		fp = popen(elems[i + 4], "r"); //command
+		if(!fgets(line, sizeof(line) - 1, fp) || !fp)
+		{
+			tpl_addVar(vars, TPLADD, entry, error);
+			tpl_addVar(vars, TPLADD, bit, tpl_getTpl(vars, scan));
 		}
-		while(fgets(path, sizeof(path) - 1, fp) != NULL);
+		else
+		{
+			do{
+				tpl_addVar(vars, TPLADD, "USBENTRYCLASS", "");
+				if(strstr(line, elems[i + 3])) //match
+				{
+					tpl_addVar(vars, TPLADD, entry, line);
+					tpl_addVar(vars, TPLADD, "USBENTRYCLASS", "CLASS=\"scanusbsubhead\"");
+				}
+				else
+				{
+					tpl_printf(vars, TPLADD, entry, "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;%s", line);
+				}
+				tpl_addVar(vars, TPLAPPEND, bit, tpl_getTpl(vars, scan));
+			}
+			while(fgets(line, sizeof(line) - 1, fp) != NULL);
+		}
+		pclose(fp);
 	}
-	pclose(fp);
 #else
 	tpl_addMsg(vars, "Function not supported in CYGWIN environment");
 #endif

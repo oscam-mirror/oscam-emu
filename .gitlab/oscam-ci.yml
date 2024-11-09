@@ -46,7 +46,7 @@ oscam-build:
     - build
   parallel:
     matrix:
-      - ARCH: [native,aarch64,armv7,mips32el,powerpc,sh4,android12]
+      - ARCH: [native,ancient,latest,aarch64,armv7,mips32el,powerpc,sh4,android12]
   rules:
     - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
     - if: $CI_PIPELINE_SOURCE == 'schedule'
