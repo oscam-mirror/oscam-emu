@@ -16,8 +16,8 @@ jobs:
 
     - name: git config
       run: |
-        git config --global user.name "oscam-emu"
-        git config --global user.email "oscam-emu@users.noreply.github.com"
+        git config --global user.name "oscam-emu-bot"
+        git config --global user.email "187860193+oscam-emu-bot@users.noreply.github.com"
 
     - name: merge oscam-gitlab into master
       run: |

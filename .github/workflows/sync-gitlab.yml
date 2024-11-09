@@ -1,8 +1,7 @@
 name: sync gitlab
 
 on:
-  schedule:
-    - cron: '0 0 * * *'
+  workflow_call:
   workflow_dispatch:
   repository_dispatch:
     types: invoke-sync-gitlab
@@ -21,20 +20,20 @@ jobs:
 
     - name: git config
       run: |
-        git config --global user.name "oscam-emu"
-        git config --global user.email "oscam-emu@users.noreply.github.com"
+        git config --global user.name "oscam-emu-bot"
+        git config --global user.email "187860193+oscam-emu-bot@users.noreply.github.com"
 
     - name: sync oscam-gitlab with upstream
       run: |
-        git remote add --track master streamboard https://git.streamboard.tv/common/oscam.git
-        git fetch streamboard
-        ahead=$(git rev-list streamboard/master..HEAD --count)
+        git remote add --track master mirror https://github.com/oscam-mirror/oscam.git
+        git fetch mirror
+        ahead=$(git rev-list mirror/master..HEAD --count)
         if [ $ahead -gt 0 ]; then
             force='--force'
             printf "\n$ahead commit(s) ahead upstream -> reset branch and force push changes\n"
             git reset --hard HEAD~$ahead
         fi
-        git merge streamboard/master
+        git merge mirror/master
         git push --follow-tags origin $force
 
   reuse:

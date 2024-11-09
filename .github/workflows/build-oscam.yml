@@ -1,14 +1,14 @@
-name: build oscam
+name: build oscam-emu
 
 on:
   push:
     branches:
-      master
+      - master
     paths-ignore:
       - '.github/**'
   pull_request:
     branches:
-      master
+      - master
     paths-ignore:
       - '.github/**'
   workflow_dispatch:

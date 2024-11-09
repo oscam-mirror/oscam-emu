@@ -18,22 +18,23 @@ jobs:
       with:
         fetch-depth: 0
 
-    - name: checkout oscam-emu
+    - name: checkout oscam-emu-patch
       uses: actions/checkout@v4
       with:
-        repository: oscam-emu/oscam-emu
+        repository: oscam-mirror/oscam-emu-patch
         token: ${{ secrets.ACTIONS_TOKEN }}
         path: emu
 
     - name: create patch
       run: |
-        git diff origin/oscam-gitlab -- > emu/oscam-emu.patch :^.github
+        git diff origin/oscam-gitlab -- > emu/oscam-emu.patch :^.github :^.gitlab
+        sed -i "1s/^/patch version: $(./config.sh --oscam-version) ($(./config.sh --oscam-commit))\npatch date: $(date "+%Y-%m-%d %H:%M:%S")\n---\n/" emu/oscam-emu.patch
 
     - name: commit oscam-emu.patch
       run: |
         cd emu
-        git config --global user.name "oscam-emu"
-        git config --global user.email "oscam-emu@users.noreply.github.com"
+        git config --global user.name "oscam-emu-bot"
+        git config --global user.email "187860193+oscam-emu-bot@users.noreply.github.com"
         if ! git diff --quiet HEAD; then
           git commit -am "Update patch"
           git push
