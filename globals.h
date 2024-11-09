@@ -368,9 +368,9 @@
 /* ===========================
  *			constants
  * =========================== */
-#define SCM_URL					"https://github.com/oscam-emu/oscam-patched"
+#define SCM_URL					"https://github.com/oscam-mirror/oscam-emu"
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
-#define BOARD_URL				"https://board.streamboard.tv"
+#define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
 #define CS_VERSION				"2.24.11-11847"
 #endif

@@ -1,10 +1,10 @@
 OSCam-Emu: Open Source CAM with Emulator
 ========================================
-[![build](https://github.com/oscam-emu/oscam-patched/actions/workflows/build.yml/badge.svg)](https://github.com/oscam-emu/oscam-patched/actions/workflows/build.yml)
+[![build](https://github.com/oscam-mirror/oscam-emu/actions/workflows/build-oscam.yml/badge.svg)](https://github.com/oscam-mirror/oscam-emu/actions/workflows/build-oscam.yml) [![sync](https://github.com/oscam-mirror/oscam-emu/actions/workflows/sync-gitlab.yml/badge.svg)](https://github.com/oscam-mirror/oscam-emu/actions/workflows/sync-gitlab.yml) [![patch](https://github.com/oscam-mirror/oscam-emu/actions/workflows/create-patch.yml/badge.svg)](https://github.com/oscam-mirror/oscam-emu/actions/workflows/create-patch.yml)
 
 Wiki
 ====
-https://github.com/oscam-emu/oscam-patched/wiki
+https://git.streamboard.tv/common/oscam/-/wikis/home
 
 License
 =======
@@ -36,20 +36,20 @@ Version history
 ===============
 
 OSCam-Emu history is accessible through GitHub history at:
-   https://github.com/oscam-emu/oscam-patched/commits/master/
+   https://github.com/oscam-mirror/oscam-emu/commits/master/
 
 
 Repositories
 ============
 
 GIT repository:
-   git clone https://github.com/oscam-emu/oscam-patched.git
+   git clone https://github.com/oscam-mirror/oscam-emu.git
 
 
 Building OSCam-Emu from source
 ==========================
 
-https://github.com/oscam-emu/oscam-patched/wiki/Building-OSCam-Emu
+https://git.streamboard.tv/common/oscam/-/wikis/BuildingOscam
 
 For more information and examples on using the build system, please
 see README.build and README.config files.
@@ -86,12 +86,10 @@ OSCam-Emu supports building with the following external dependencies:
   - AZBOX support      - 'make USE_AZBOX=1'
 
 For STAPI support you need to download liboscam_stapi.a library and place
-it in stapi directory under oscam/ root dir. liboscam_stapi.a can be downloaded
-from: https://board.streamboard.tv
+it in stapi directory under oscam/ root dir.
 
 For STAPI5 support you need to download liboscam_stapi5.a library and place
-it in stapi directory under oscam/ root dir. liboscam_stapi5.a can be downloaded
-from: https://board.streamboard.tv
+it in stapi directory under oscam/ root dir.
 
 For more information and examples on using the build system, run `make help`.
 
@@ -102,11 +100,11 @@ Help and Support
 man pages and configuration examples are in Distribution/doc directory.
 
 You may visit our GitHub system for tracking and filling bug reports.
-   https://github.com/oscam-emu/oscam-patched/issues/new
+   https://github.com/oscam-mirror/oscam-emu/issues/new
 
 If you experience any problems with OSCam, feel free to post in our support
 forum under (mainly German and English language) at:
-   https://board.streamboard.tv/forum/
+   https://github.com/oscam-mirror/oscam-emu/discussions
 
 Configuration wiki:
-   https://github.com/oscam-emu/oscam-patched/wiki/OSCam-Emu-configuration
+   https://wiki.streamboard.tv/wiki/OSCam/de/Config/oscam.conf
