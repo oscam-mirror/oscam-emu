@@ -24,19 +24,11 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 		switch(ep->emm[0])
 		{
 			case 0x82:
+				ep->type = UNIQUE;
 				memset(ep->hexserial, 0, 8);
 				memcpy(ep->hexserial, ep->emm + 3, 6);
-				if(!memcmp(rdr->hexserial, ep->hexserial, 6))
-				{
-					ep->type = UNIQUE;
-					return 1;
-				}
-				else if ((ep->emm[3] == 0x00) && (ep->emm[4] == 0x00) && (ep->emm[5] == 0x00) && (ep->emm[6] == 0x00) && (ep->emm[7] == 0x00) && (ep->emm[8] == 0xD3) && (ep->emm[9] == 0x87))
-				{
-					ep->type = GLOBAL;
-					return 1;
-				}
-				return 0;
+
+				return (!memcmp(rdr->hexserial, ep->hexserial, 6));
 
 			case 0x84:
 				ep->type = SHARED;

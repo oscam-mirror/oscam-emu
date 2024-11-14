@@ -125,7 +125,7 @@ rebase-merge-requests:
     - !reference [.helper, rebase-mrs]
   allow_failure: true
 
-invoke-github-action:
+invoke-api-actions:
   stage: sync
   tags:
     - sync
@@ -133,5 +133,5 @@ invoke-github-action:
   rules:
     - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH && $GITLAB_USER_NAME != 'pipeline-user'
   script:
-    - !reference [.helper, sync-oscam-patched]
+    - !reference [.helper, invoke-api]
   allow_failure: true

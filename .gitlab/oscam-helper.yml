@@ -257,6 +257,7 @@
       PATH="$HOME/bin:$PATH"
       [ ! -d build/${ARCH} ] && mkdir -p build/${ARCH}
       ./config.sh --enable all --disable $DISABLE_OPT |& tee build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
+      [ "$ARCH" == "ancient" ] && ./config.sh --create-cert rsa 4096 ca "Test's OSCam Distribution" |& tee -a build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
       make OSCAM_BIN=build/${ARCH}/oscam-make-${ARCH}${BIN_EXT} "EXTRA_CFLAGS=$CFLAGS" $MAKE_OPT |& tee -a build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.log
       rm -f build/${ARCH}/oscam-make-${ARCH}${BIN_EXT}.debug 2>/dev/null
     - | #cmake build
@@ -393,14 +394,14 @@
         echo -e "${TC_FNT_DEFAULT}"
       done
 
-  #invoke sync-gitlab worklow on oscam-patched github repository
-  sync-oscam-patched:
+  #invoke worklow on external repositories via e.g. github api
+  invoke-api:
     - |
       export LC_ALL=C
-      echo "Invoking oscam-patched gitlab sync..."
-      curl --silent \
-           --request POST \
-           --header "Accept: application/vnd.github.everest-preview+json" \
-           --header "Authorization: token $(echo "${GITHUB_WORKFLOW_TOKEN}" | openssl aes-256-cbc -a -A -d -salt -pbkdf2 -k "${GIT_PUSH_TOKEN}")" \
-           --data '{"event_type": "invoke-sync-gitlab"}' \
-           --url "https://api.github.com/repos/oscam-emu/oscam-patched/dispatches"
+      echo "Invoking github api..."
+      #curl --silent \
+      #     --request POST \
+      #     --header "Accept: application/vnd.github.everest-preview+json" \
+      #     --header "Authorization: token $(echo "${GITHUB_WORKFLOW_TOKEN}" | openssl aes-256-cbc -a -A -d -salt -pbkdf2 -k "${GIT_PUSH_TOKEN}")" \
+      #     --data '{"event_type": "some-defined-endpoint"}' \
+      #     --url "https://api.github.com/repos/some-org-or-user/some-repository/dispatches"

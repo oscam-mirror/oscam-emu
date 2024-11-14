@@ -73,6 +73,8 @@ CC = $(CROSS_DIR)$(CROSS)gcc
 STRIP = $(CROSS_DIR)$(CROSS)strip
 UPX = $(shell which upx 2>/dev/null || true)
 SSL = $(shell which openssl 2>/dev/null || true)
+STAT = $(shell which gnustat 2>/dev/null || which stat 2>/dev/null)
+SPLIT = $(shell which gsplit 2>/dev/null || which split 2>/dev/null)
 
 # Compiler warnings
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
@@ -107,8 +109,8 @@ ifdef USE_COMPRESS
 	else
 		override STD_DEFS += -D'USE_COMPRESS="$(USE_COMPRESS)"' -D'COMP_LEVEL="$(COMP_LEVEL)"' -D'COMP_VERSION="$(UPX_VER)"'
 		UPX_SPLIT_PREFIX   = $(OBJDIR)/signing/upx.
-		UPX_INFO_TOOL      = $(shell echo '|  UPX      = $(UPX)\n')
-		UPX_INFO           = $(shell echo '|  Packer   : $(UPX_VER) (compression level $(COMP_LEVEL))\n')
+		UPX_INFO_TOOL      = $(shell echo "|  UPX      = $(UPX)\n")
+		UPX_INFO           = $(shell echo "|  Packer   : $(UPX_VER) (compression level $(COMP_LEVEL))\n")
 		UPX_COMMAND_OSCAM  = $(UPX) -q $(COMP_LEVEL) $@ | grep '^[[:space:]]*[[:digit:]]* ->' | xargs | cat | xargs -0 printf 'UPX \t%s';
 	endif
 endif
@@ -136,20 +138,21 @@ ifeq "$(shell ./config.sh --enabled WITH_SIGNING)" "Y"
 		SIGN_PUBALGO   = $(shell ./config.sh --cert-info | head -n 5 | tail -n 1)
 		SIGN_PUBBIT    = $(shell ./config.sh --cert-info | head -n 6 | tail -n 1)
 		SIGN_VER       = ${shell ($(SSL) version 2>/dev/null || echo "n.a.") | head -n 1 | awk -F'(' '{ print $$1 }' | xargs}
-		SIGN_INFO      = $(shell echo '|  Signing  : $(SIGN_VER)\n|             $(SIGN_PUBALGO), $(SIGN_PUBBIT), $(SIGN_SIGALGO),\n|             Valid $(SIGN_VALID), $(SIGN_SUBJECT)\n')
-		SIGN_INFO_TOOL = $(shell echo '|  SSL      = $(SSL)\n')
+		SIGN_INFO      = $(shell echo "|  Signing  : $(SIGN_VER)\n|             $(SIGN_PUBALGO), $(SIGN_PUBBIT), $(SIGN_SIGALGO),\n|             Valid $(SIGN_VALID), $(SIGN_SUBJECT)\n")
+		SIGN_INFO_TOOL = $(shell echo "|  SSL      = $(SSL)\n")
+		override STD_DEFS += -DCERT_ALGO_$(shell ./config.sh --cert-info | head -n 5 | tail -n 1 | awk -F':|-' '{ print toupper($$2) }' | xargs)
 		SIGN_COMMAND_OSCAM += sha256sum $@ | awk '{ print $$1 }' | tr -d '\n' > $(SIGN_HASH);
-		SIGN_COMMAND_OSCAM += printf 'SIGN	SHA256('; stat -c %s $(SIGN_HASH) | tr -d '\n'; printf '): '; cat $(SIGN_HASH); printf ' -> ';
+		SIGN_COMMAND_OSCAM += printf 'SIGN	SHA256('; $(STAT) -c %s $(SIGN_HASH) | tr -d '\n'; printf '): '; cat $(SIGN_HASH); printf ' -> ';
 		SIGN_COMMAND_OSCAM += $(SSL) x509 -pubkey -noout -in $(SIGN_CERT)         -out $(SIGN_PUBKEY);
 		SIGN_COMMAND_OSCAM += $(SSL) dgst -sha256      -sign $(SIGN_PRIVKEY)      -out $(SIGN_DIGEST) $(SIGN_HASH);
 		SIGN_COMMAND_OSCAM += $(SSL) dgst -sha256    -verify $(SIGN_PUBKEY) -signature $(SIGN_DIGEST) $(SIGN_HASH) | tr -d '\n';
 		SIGN_COMMAND_OSCAM += [ -f $(UPX_SPLIT_PREFIX)aa ] && cat $(UPX_SPLIT_PREFIX)aa > $@;
 		SIGN_COMMAND_OSCAM += printf '$(SIGN_MARKER)' | cat - $(SIGN_DIGEST) >> $@;
 		SIGN_COMMAND_OSCAM += [ -f $(UPX_SPLIT_PREFIX)ab ] && cat $(UPX_SPLIT_PREFIX)ab >> $@;
-		SIGN_COMMAND_OSCAM += printf ' <- DIGEST('; stat -c %s $(SIGN_DIGEST) | tr -d '\n'; printf ')\n';
+		SIGN_COMMAND_OSCAM += printf ' <- DIGEST('; $(STAT) -c %s $(SIGN_DIGEST) | tr -d '\n'; printf ')\n';
 		ifdef USE_COMPRESS
 			ifneq ($(UPX_VER),n.a.)
-				UPX_COMMAND_OSCAM  += split --bytes=$$(grep -oba '$(SIGN_UPXMARKER)' $@ | tail -1 | awk -F':' '{ print $$1 }') $@ $(UPX_SPLIT_PREFIX);
+				UPX_COMMAND_OSCAM  += $(SPLIT) --bytes=$$(grep -oba '$(SIGN_UPXMARKER)' $@ | tail -1 | awk -F':' '{ print $$1 }') $@ $(UPX_SPLIT_PREFIX);
 				UPX_COMMAND_OSCAM  += $(SIGN_COMMAND_OSCAM)
 			endif
 		endif
