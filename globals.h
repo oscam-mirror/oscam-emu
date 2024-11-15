@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.24.11-11850"
+#define CS_VERSION				"2.24.11-11851"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1714,13 +1714,18 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			hexserial[8];
 	int32_t			nprov;
 	int32_t			nsa;
+	int32_t			nemm82u;
 	int32_t			nemm84;
+	int32_t			nemm84s;
 	int32_t			nemm83u;
 	int32_t			nemm83s;
 	int32_t			nemm87;
 	uint8_t			prid[CS_MAXPROV][8];
 	uint8_t			sa[CS_MAXPROV][4];				// viaccess & seca
+	uint8_t			emm82u[CS_MAXPROV][7];
 	uint8_t			emm84[CS_MAXPROV][3];
+	uint8_t			emm84s[CS_MAXPROV][6];
+	uint8_t			emm83;
 	uint8_t			emm83u[CS_MAXPROV][6];
 	uint8_t			emm83s[CS_MAXPROV][6];
 	uint8_t			emm87[CS_MAXPROV][6];

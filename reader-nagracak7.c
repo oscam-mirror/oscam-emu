@@ -235,6 +235,48 @@ static void addemmfilter(struct s_reader *reader, uint8_t *cta_res)
 	}
 }
 
+static void addemmfilterseca(struct s_reader *reader, uint8_t *cta_res)
+{
+	if(cta_res[0] == 0x83)
+	{
+		reader->emm83 = 1;
+	}
+	else if(cta_res[0] == 0x82 && cta_res[1] == 0x00 && cta_res[2] == 0x00)
+	{
+		int i;
+		bool toadd = true;
+		for(i = 0; i < reader->nemm82u; i++)
+		{
+			if(!memcmp(cta_res, reader->emm82u[i], 7))
+			{
+				toadd = false;
+			}
+		}
+		if(toadd && (memcmp(cta_res + 3, "\x00\x00\x00\x00", 4)))
+		{
+			memcpy(reader->emm82u[reader->nemm82u], cta_res, 7);
+			reader->nemm82u += 1;
+		}
+	}
+	else if(cta_res[0] == 0x84)
+	{
+		int i;
+		bool toadd = true;
+		for(i = 0; i < reader->nemm84s; i++)
+		{
+			if(!memcmp(cta_res, reader->emm84s[i], 6))
+			{
+				toadd = false;
+			}
+		}
+		if(toadd && (memcmp(cta_res + 3, "\x00\x00\x00", 3)))
+		{
+			memcpy(reader->emm84s[reader->nemm84s], cta_res, 6);
+			reader->nemm84s += 1;
+		}
+	}
+}
+
 static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_res, uint16_t cta_lr)
 {
 	char ds[27], de[27];
@@ -323,7 +365,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				check[0] = reader->cak7_emm_caid & 0xFF;
 
 				int p;
-				for(p=23; p < (cta_lr - 6); p++)
+				for(p = 23; p < (cta_lr - 6); p++)
 				{
 					if(!memcmp(cta_res + p, check, 2))
 					{
@@ -331,6 +373,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						if(reader->cak7type == 3)
 						{
 							addSAseca(reader, cta_res + p + 5);
+							addemmfilterseca(reader, cta_res + p + 5);
 						}
 						else
 						{
@@ -496,7 +539,6 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						start_date = 1;
 						expire_date = 0xA69EFB7F;
 				}
-
 				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
@@ -608,10 +650,12 @@ static void calc_cak7_exponent(uint32_t *dinit, uint8_t *out, uint8_t len)
 		uint32_t nR0 = (uint32_t)* dinit;
 		int nR3 = nR4 + 3;
 		nR5 += 4;
+
 		if(nR3 > len)
 		{
 			break;
 		}
+
 		out[nR5 - 1] = ((nR0      ) & 0xFF);
 		out[nR5 - 2] = ((nR0 >>  8) & 0xFF);
 		out[nR5 - 3] = ((nR0 >> 16) & 0xFF);
@@ -676,7 +720,7 @@ static void CreateRSAPair60(struct s_reader *reader, const unsigned char *key)
 	unsigned char idata[96];
 
 	int i;
-	for (i = 11; i >= 0; i--)
+	for(i = 11; i >= 0; i--)
 	{
 		unsigned char *d = &idata[i * 8];
 		memcpy(d, &key[13], 8);
@@ -701,7 +745,7 @@ static void CreateRSAPair60(struct s_reader *reader, const unsigned char *key)
 	idata[ 0] |= 0x80;
 	idata[47] |= 1;
 	BN_bin2bn(idata, 48, p);
-	BN_add_word(p, (key[21] << 5) | ((key[22] & 0xf0) >> 3));
+	BN_add_word(p, (key[21] << 5) | ((key[22] & 0xF0) >> 3));
 
 	// Calculate Q
 	idata[48] |= 0x80;
@@ -758,7 +802,7 @@ static void CreateRSAPair68(struct s_reader *reader, const unsigned char *key)
 	idata[ 0] |= 0x80;
 	idata[51] |= 1;
 	BN_bin2bn(idata, 52, p);
-	BN_add_word(p, (key[21] << 5) | ((key[22] & 0xf0) >> 3));
+	BN_add_word(p, (key[21] << 5) | ((key[22] & 0xF0) >> 3));
 
 	// Calculate Q
 	idata[ 52] |= 0x80;
@@ -793,6 +837,7 @@ static void dt05_20(struct s_reader *reader)
 	uint8_t data_20_x[64];
 	uint8_t data_20_fin[72];
 	uint8_t data_20_flag58[16];
+
 	rdr_log_dump_dbg(reader, D_READER, reader->tmprsa, sizeof(reader->tmprsa), "DT05_20 after RSA: ");
 
 	// copy signature
@@ -813,7 +858,7 @@ static void dt05_20(struct s_reader *reader)
 	}
 
 	// xor
-	for (i = 0; i < 64; i++)
+	for(i = 0; i < 64; i++)
 	{
 		data_20_x[i] = data_20_00[i] ^ data_20_id[i + 8];
 	}
@@ -985,6 +1030,7 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 
 	return OK;
 }
+
 static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 {
 	def_resp;
@@ -1082,7 +1128,6 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	BN_bn2bin(bnPT, reader->result + (96 - BN_num_bytes(bnPT)));
 	BN_CTX_end(ctx);
 	BN_CTX_free(ctx);
-
 	rdr_log_dump_dbg(reader, D_READER, reader->result, 96, "after RSA_3460: ");
 	//uint8_t stillencrypted[0x50];
 	memcpy(reader->stillencrypted, &reader->result[4], 0x50);
@@ -1341,16 +1386,19 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 			rdr_log(reader, "no mod2 defined");
 			return ERROR;
 		}
+
 		if(!reader->key3460_length)
 		{
 			rdr_log(reader, "no key3460 defined");
 			return ERROR;
 		}
+
 		if(!reader->key3310_length)
 		{
 			rdr_log(reader, "no key3310 defined");
 			return ERROR;
 		}
+
 		if(!CAK7_cmd03_unique(reader))
 		{
 			return ERROR;
@@ -1358,7 +1406,7 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 	}
 	else
 	{
-		rdr_log(reader,"Unknown Pairing Type");
+		rdr_log(reader, "Unknown Pairing Type");
 		return ERROR;
 	}
 
@@ -1383,13 +1431,13 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 		else
 		{
 			memcpy(reader->rom, atr + 8, 15);
-			rdr_log(reader,"Rom revision: %.15s", reader->rom);
+			rdr_log(reader, "Rom revision: %.15s", reader->rom);
 		}
 	}
 	else if(memcmp(atr + 11, "DNASP4", 6) == 0)
 	{
 		memcpy(reader->rom, atr + 11, 15);
-		rdr_log(reader,"Rom revision: %.15s", reader->rom);
+		rdr_log(reader, "Rom revision: %.15s", reader->rom);
 	}
 	else
 	{
@@ -1398,7 +1446,9 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 
 	reader->nprov   = 1;
 	/*reader->nsa     = 0;
+	reader->nemm82u = 0;
 	reader->nemm84  = 0;
+	reader->nemm84s = 0;
 	reader->nemm83u = 0;
 	reader->nemm83s = 0;
 	reader->nemm87  = 0;*/
@@ -1443,7 +1493,9 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 
 	char tmp[4 * 3 + 1];
 	reader->nsa     = 0;
+	reader->nemm82u = 0;
 	reader->nemm84  = 0;
+	reader->nemm84s = 0;
 	reader->nemm83u = 0;
 	reader->nemm83s = 0;
 	reader->nemm87  = 0;
@@ -1453,11 +1505,13 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 	{
 		reader->emm82 = 1;
 	}
+
 	int i;
 	for(i = 1; i < reader->nprov; i++)
 	{
 		rdr_log(reader, "Prv.ID: %s", cs_hexdump(1, reader->prid[i], 4, tmp, sizeof(tmp)));
 	}
+
 	if(reader->cak7type != 3)
 	{
 		rdr_log(reader, "-----------------------------------------");
@@ -1483,6 +1537,27 @@ static int32_t nagra3_card_init(struct s_reader *reader, ATR *newatr)
 		for(i = 0; i < reader->nemm87; i++)
 		{
 			rdr_log(reader, "|emm87 : %s             |", cs_hexdump(1, reader->emm87[i], 6, tmp7, sizeof(tmp7)));
+		}
+		rdr_log(reader, "-----------------------------------------");
+	}
+
+	if(reader->cak7type != 1)
+	{
+		rdr_log(reader, "-----------------------------------------");
+		rdr_log(reader, "|       EMM Filters (PRIVATE!!)         |");
+		rdr_log(reader, "+---------------------------------------+");
+		if(reader->emm83 == 1)
+		{
+			rdr_log(reader, "|emm83                                  |");
+		}
+		char tmp7[48];
+		for(i = 0; i < reader->nemm82u; i++)
+		{
+			rdr_log(reader, "|emm82U: %s          |", cs_hexdump(1, reader->emm82u[i], 7, tmp7, sizeof(tmp7)));
+		}
+		for(i = 0; i < reader->nemm84s; i++)
+		{
+			rdr_log(reader, "|emm84S: %s             |", cs_hexdump(1, reader->emm84s[i], 6, tmp7, sizeof(tmp7)));
 		}
 		rdr_log(reader, "-----------------------------------------");
 	}
@@ -1668,13 +1743,13 @@ static int32_t nagra3_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, str
 
 		if(cta_res[78] == 0x01 || reader->forcecwswap)
 		{
-			memcpy(_cwe0,&cta_res[52], 0x08);
-			memcpy(_cwe1,&cta_res[28], 0x08);
+			memcpy(_cwe0, &cta_res[52], 0x08);
+			memcpy(_cwe1, &cta_res[28], 0x08);
 		}
 		else
 		{
-			memcpy(_cwe0,&cta_res[28], 0x08);
-			memcpy(_cwe1,&cta_res[52], 0x08);
+			memcpy(_cwe0, &cta_res[28], 0x08);
+			memcpy(_cwe1, &cta_res[52], 0x08);
 		}
 
 		if(cta_res[27] == 0x5C)
@@ -1814,7 +1889,7 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 
 		do_cak7_cmd(reader, cta_res, &cta_lr, emmreq, sizeof(emmreq), 0xB0);
 
-		if((cta_res[cta_lr-2] != 0x90 && cta_res[cta_lr-1] != 0x00) || cta_lr == 0)
+		if((cta_res[cta_lr - 2] != 0x90 && cta_res[cta_lr - 1] != 0x00) || cta_lr == 0)
 		{
 			rdr_log(reader, "(EMM) Reader will be restart now cause: %02X %02X card answer!!!", cta_res[cta_lr - 2], cta_res[cta_lr - 1]);
 			reader->card_status = CARD_NEED_INIT;
