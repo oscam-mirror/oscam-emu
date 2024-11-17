@@ -909,7 +909,7 @@ do
 		break
 	;;
 	'-c'|'--oscam-commit')
-		sha=`git log 2>/dev/null | sed -n 1p | cut -d ' ' -f2 | cut -c1-8`
+		sha=`git log --no-merges 2>/dev/null | sed -n 1p | cut -d ' ' -f2 | cut -c1-8`
 		echo $sha
 		break
 	;;

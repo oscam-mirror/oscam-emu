@@ -28,7 +28,7 @@ jobs:
     - name: create patch
       run: |
         git diff origin/oscam-gitlab -- > emu/oscam-emu.patch :^.github :^.gitlab
-        sed -i "1s/^/patch version: $(./config.sh --oscam-version) ($(./config.sh --oscam-commit))\npatch date: $(date "+%Y-%m-%d %H:%M:%S")\n---\n/" emu/oscam-emu.patch
+        sed -i "1s/^/patch version: $(./config.sh --oscam-version) ($(./config.sh --oscam-commit))\npatch date: $(date "+%Y-%m-%d %H:%M:%S %Z (%:z)")\n---\n/" emu/oscam-emu.patch
 
     - name: commit oscam-emu.patch
       run: |
