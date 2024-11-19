@@ -62,6 +62,7 @@ void calculate_cak7_cmd(struct s_reader *reader, uint8_t *cmdin,uint8_t cmdlen,u
 {
 	uint32_t crc = ccitt32_crc(cmdin+4, cmdlen-4);
 	i2b_buf(4, crc, cmdin);
+	rdr_log_dump_dbg(reader, D_READER, cmdin, cmdlen, "preparing data for writing to cardreader");
 	AesCtx ctx;
 	AesCtxIni(&ctx, reader->cak7_aes_iv, &reader->cak7_aes_key[16], KEY128, CBC);
 	AesEncrypt(&ctx, cmdin, cmdout, cmdlen);
@@ -88,7 +89,6 @@ void do_cak7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta
 	data[4]=(reader->cak7_seq>>16)&0xFF;
 	data[5]=(reader->cak7_seq>>8)&0xFF;
 	data[6]=(reader->cak7_seq)&0xFF;
-	rdr_log_dump_dbg(reader, D_READER, data, inlen, "preparing data for writing to cardreader");
 	calculate_cak7_cmd(reader,data,inlen,&req[5]);
 	rdr_log_dump_dbg(reader, D_READER, req, sizeof(req), "write to cardreader");
 	if(!ICC_Async_CardWrite(reader, req, sizeof(req), cta_res, p_cta_lr))
@@ -99,6 +99,7 @@ void do_cak7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta
 			{
 				uint8_t resp[] = {0x00,0xC0,0x00,0x00,0x00};
 				memcpy(resp + 4,&cta_res[*p_cta_lr - 1],1);
+				rdr_log_dump_dbg(reader, D_READER, resp, sizeof(resp), "write to cardreader");
 				if(!ICC_Async_CardWrite(reader, resp, sizeof(resp), cta_res, p_cta_lr))
 				{
 					AesCtx ctx;
@@ -113,12 +114,14 @@ void do_cak7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta
 			else if(cta_res[*p_cta_lr - 2] == 0x6F && cta_res[*p_cta_lr - 1] == 0x01)
 			{
 				rdr_log(reader, "card answered 6F01 - trying one more time");
+				rdr_log_dump_dbg(reader, D_READER, req, sizeof(req), "write to cardreader");
 				if(!ICC_Async_CardWrite(reader, req, sizeof(req), cta_res, p_cta_lr))
 				{
 					if(cta_res[*p_cta_lr - 2]  == 0x61)
 					{
 						uint8_t resp[] = {0x00,0xC0,0x00,0x00,0x00};
 						memcpy(resp + 4,&cta_res[*p_cta_lr - 1],1);
+						rdr_log_dump_dbg(reader, D_READER, resp, sizeof(resp), "write to cardreader");
 						if(!ICC_Async_CardWrite(reader, resp, sizeof(resp), cta_res, p_cta_lr))
 						{
 							AesCtx ctx;
@@ -146,6 +149,7 @@ void do_cak7_cmd(struct s_reader *reader,unsigned char *cta_res, uint16_t *p_cta
 			if(cta_res[*p_cta_lr - 2] == 0x6F && cta_res[*p_cta_lr - 1] == 0x01)
 			{
 				rdr_log(reader, "card answered 6F01 - trying one more time");
+				rdr_log_dump_dbg(reader, D_READER, req, sizeof(req), "write to cardreader");
 				if(!ICC_Async_CardWrite(reader, req, sizeof(req), cta_res, p_cta_lr))
 				{
 					if(cta_res[*p_cta_lr - 2] == 0x6F && cta_res[*p_cta_lr - 1] == 0x01)
@@ -345,7 +349,7 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		// Parse_ATR and InitCard need to be included in lock because they change parity of serial port
 		if(crdr_ops->lock)
 		{
-		crdr_ops->lock(reader);
+			crdr_ops->lock(reader);
 		}
 		int32_t ret1 = Parse_ATR(reader, atr, deprecated);
 		if(crdr_ops->unlock)
@@ -401,6 +405,7 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		changerom_handshake[21] = 0x10;
 
 		reader->cak7type = 1;
+		rdr_log_dump_dbg(reader, D_READER, changerom_handshake, sizeof(changerom_handshake), "write to cardreader");
 		if(!ICC_Async_CardWrite(reader, changerom_handshake, sizeof(changerom_handshake), cta_res, &cta_lr))
 		{
 			if(cta_res[cta_lr-2] == cta_res1_ok && cta_res[cta_lr-1] == cta_res2_ok)

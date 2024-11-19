@@ -353,6 +353,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
+
 			if((reader->caid == 0x1856) && (cta_res[21] == 0x01))
 			{
 				uint16_t chid = 0;
@@ -366,7 +367,8 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
-			if(reader->protocol_type == ATR_PROTOCOL_TYPE_T0)
+
+			if((reader->protocol_type == ATR_PROTOCOL_TYPE_T0) && (cta_res[21] == 0x01))
 			{
 				uint16_t chid = 0;
 				uint32_t id = b2i(0x02, cta_res + 19);
@@ -379,6 +381,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
 			}
+
 			return OK;
 		}
 
@@ -1893,6 +1896,7 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		}
 
 		do_cak7_cmd(reader, cta_res, &cta_lr, emmreq, sizeof(emmreq), 0xB0);
+		rdr_log_dump_dbg(reader, D_READER, cta_res, 0xB0, "Decrypted EMM Answer:");
 
 		if((cta_res[cta_lr - 2] != 0x90 && cta_res[cta_lr - 1] != 0x00) || cta_lr == 0)
 		{
@@ -1913,6 +1917,18 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 					add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
 				}
 			}
+			else if(cta_res[4] == 0x80)
+			{
+				rdr_log_dbg(reader, D_READER, "EMM forced card to reinit");
+				reader->card_status = CARD_NEED_INIT;
+				add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+			}
+			else if(cta_res[13] == 0x02)
+			{
+				rdr_log_dbg(reader, D_READER, "Revision update - card reinit necessary");
+				reader->card_status = CARD_NEED_INIT;
+				add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
+			}
 			else if((cta_res[4] & 64) == 64)
 			{
 				rdr_log(reader, "negotiating new Session Key");
@@ -1926,6 +1942,11 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 						add_job(reader->client, ACTION_READER_RESTART, NULL, 0);
 					}
 				}
+			}
+			else if(cta_res[8] == 0x0E)
+			{
+				rdr_log_dbg(reader, D_READER, "card got wrong EMM");
+				return OK;
 			}
 		}
 	}
