@@ -94,6 +94,10 @@ static void addSA(struct s_reader *reader, uint8_t *cta_res)
 		bool toadd = true;
 		if(reader->evensa)
 		{
+			if(cta_res[0] == 0x87)
+			{
+				cta_res[4] = 0x00;
+			}
 			unsigned long sax = (cta_res[3] << 16) + (cta_res[2] << 8) + (cta_res[1]);
 			if(sax % 2 != 0)
 			{
@@ -126,6 +130,17 @@ static void addSAseca(struct s_reader *reader, uint8_t *cta_res)
 	if(cta_res[0] == 0x84)
 	{
 		addProvider(reader, cta_res + 1);
+		if(reader->evensa)
+		{
+			unsigned long sax = (cta_res[3] << 16) + (cta_res[4] << 8) + (cta_res[5]);
+			if(sax % 2 != 0)
+			{
+				sax--;
+				cta_res[3] = (sax >> 16) & 0xFF;
+				cta_res[4] = (sax >>  8) & 0xFF;
+				cta_res[5] = (sax      ) & 0xFF;
+			}
+		}
 		if(memcmp(cta_res + 3, "\x00\x00\x00", 3))
 		{
 			int i;
@@ -211,6 +226,7 @@ static void addemmfilter(struct s_reader *reader, uint8_t *cta_res)
 		bool toadd = true;
 		if(reader->evensa)
 		{
+			cta_res[4] = 0x00;
 			unsigned long sax = (cta_res[3] << 16) + (cta_res[2] << 8) + (cta_res[1]);
 			if(sax % 2 != 0)
 			{
@@ -262,6 +278,17 @@ static void addemmfilterseca(struct s_reader *reader, uint8_t *cta_res)
 	{
 		int i;
 		bool toadd = true;
+		if(reader->evensa)
+		{
+			unsigned long sax = (cta_res[3] << 16) + (cta_res[4] << 8) + (cta_res[5]);
+			if(sax % 2 != 0)
+			{
+				sax--;
+				cta_res[3] = (sax >> 16) & 0xFF;
+				cta_res[4] = (sax >>  8) & 0xFF;
+				cta_res[5] = (sax      ) & 0xFF;
+			}
+		}
 		for(i = 0; i < reader->nemm84s; i++)
 		{
 			if(!memcmp(cta_res, reader->emm84s[i], 6))
@@ -377,28 +404,6 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						}
 						else
 						{
-							if ((reader->cak7_emm_caid == 0x1884) && (((cta_res + p + 5)[0] == 0x83) || ((cta_res + p + 5)[0] == 0x87)) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
-							{
-								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
-								{
-									(cta_res + p + 5)[1] -= 0x01;
-								}
-							}
-							if ((reader->cak7_emm_caid == 0x187E) && ((cta_res + p + 5)[0] == 0x83) && ((cta_res + p + 5)[2] == reader->cardid[1]) && ((cta_res + p + 5)[3] == reader->cardid[0]) && ((cta_res + p + 5)[4] == 0x00))
-							{
-								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
-								{
-									(cta_res + p + 5)[1] -= 0x01;
-								}
-							}
-							if ((reader->cak7_emm_caid == 0x187E) && ((cta_res + p + 5)[0] == 0x87))
-							{
-								(cta_res + p + 5)[4] = 0x00;
-								if ((((cta_res + p + 5)[1] & 0x0F) != 0x00) && (((cta_res + p + 5)[1] & 0x0F) != 0x02) && (((cta_res + p + 5)[1] & 0x0F) != 0x04) && (((cta_res + p + 5)[1] & 0x0F) != 0x06) && (((cta_res + p + 5)[1] & 0x0F) != 0x08) && (((cta_res + p + 5)[1] & 0x0F) != 0x0A) && (((cta_res + p + 5)[1] & 0x0F) != 0x0C) && (((cta_res + p + 5)[1] & 0x0F) != 0x0E))
-								{
-									(cta_res + p + 5)[1] -= 0x01;
-								}
-							}
 							if ((reader->cak7_emm_caid == 0x186A) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x00))
 							{
 								(cta_res + p + 5)[2] = 0xAC;
