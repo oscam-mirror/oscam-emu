@@ -1255,7 +1255,6 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_INT8("resetalways"                    , OFS(resetalways),                     0),
 	DEF_OPT_INT8("deprecated"                     , OFS(deprecated),                      0),
 	DEF_OPT_INT8("audisabled"                     , OFS(audisabled),                      0),
-	DEF_OPT_INT8("autype"                         , OFS(autype),                          0),
 	DEF_OPT_FUNC("auprovid"                       , 0,                                    auprovid_fn),
 	DEF_OPT_INT8("ndsversion"                     , OFS(ndsversion),                      0),
 	DEF_OPT_FUNC("ratelimitecm"                   , 0,                                    ratelimitecm_fn),
@@ -1313,7 +1312,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	// These are written only when the reader is network reader
 	static const char *network_only_settings[] =
 	{
-		"user", "inactivitytimeout", "reconnecttimeout", "autype",
+		"user", "inactivitytimeout", "reconnecttimeout",
 		0
 	};
 	if(is_network_reader(reader))

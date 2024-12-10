@@ -2684,9 +2684,6 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		tpl_addVar(vars, TPLADD, "AUDISABLEDVALUE", (rdr->audisabled == 1) ? "1" : "0");
 	}
 
-	tpl_printf(vars, TPLADD, "TMP", "AUTYPE%d", rdr->autype);
-	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
-
 	// AUprovid
 	if(rdr->auprovid)
 		{ tpl_printf(vars, TPLADD, "AUPROVID", "%06X", rdr->auprovid); }
