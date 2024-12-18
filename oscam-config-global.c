@@ -641,16 +641,23 @@ void cache_fixups_fn(void *UNUSED(var))
 
 static bool cache_should_save_fn(void *UNUSED(var))
 {
-	return cfg.delay > 0 || cfg.max_cache_time != 15
+	return cfg.delay > CS_DELAY || cfg.max_cache_time != DEFAULT_MAX_CACHE_TIME
 #ifdef CS_CACHEEX
 #ifdef CS_CACHEEX_AIO
-			|| cfg.cacheex_lg_only_tab.nfilts || cfg.cacheex_lg_only_in_tab.nfilts || cfg.cacheex_lg_only_remote_settings || cfg.cacheex_lg_only_in_aio_only || cfg.cacheex_push_lg_groups || cfg.cacheex_filter_caidtab_aio.cevnum || cfg.cacheex_filter_caidtab.cevnum || cfg.cacheex_localgenerated_only_caidtab.ctnum || cfg.cacheex_localgenerated_only_in_caidtab.ctnum || cfg.cacheex_localgenerated_only_in || cfg.cacheex_localgenerated_only || cfg.cacheex_dropdiffs || cfg.cw_cache_settings.cwchecknum || cfg.cw_cache_size > 0 || cfg.cw_cache_memory > 0 || cfg.cacheex_wait_timetab.cevnum || cfg.cacheex_enable_stats > 0 || cfg.csp_port || cfg.csp.filter_caidtab.cevnum || cfg.csp.allow_request == 0 || cfg.csp.allow_reforward > 0
-#else
-			|| cfg.cacheex_wait_timetab.cevnum || cfg.cacheex_enable_stats > 0 || cfg.csp_port || cfg.csp.filter_caidtab.cevnum || cfg.csp.allow_request == 0 || cfg.csp.allow_reforward > 0
+			|| cfg.cw_cache_size > 0 || cfg.cw_cache_memory > 0 || cfg.cw_cache_settings.cwchecknum || cfg.ecm_cache_size > 0
+			|| cfg.ecm_cache_memory > 0 || cfg.ecm_cache_droptime > 0 || cfg.cacheex_dropdiffs > 0 || cfg.cacheex_push_lg_groups
+			|| cfg.cacheex_lg_only_remote_settings != 1 || cfg.cacheex_localgenerated_only > 0 || cfg.cacheex_localgenerated_only_caidtab.ctnum
+			|| cfg.cacheex_lg_only_tab.nfilts || cfg.cacheex_lg_only_in_aio_only > 0 || cfg.cacheex_localgenerated_only_in > 0
+			|| cfg.cacheex_localgenerated_only_in_caidtab.ctnum || cfg.cacheex_lg_only_in_tab.nfilts || cfg.cacheex_filter_caidtab.cevnum
+			|| cfg.cacheex_filter_caidtab_aio.cevnum || cfg.cacheex_nopushafter_tab.cvnum || cfg.waittime_block_start > 0 || cfg.waittime_block_time > 0
 #endif
+			|| cfg.max_hitcache_time != DEFAULT_MAX_HITCACHE_TIME || cfg.cacheex_wait_timetab.cevnum || cfg.cacheex_mode1_delay_tab.cvnum
+			|| cfg.cacheex_enable_stats > 0 || cfg.csp_port > 0 || IP_ISSET(cfg.csp_srvip) || cfg.csp.filter_caidtab.cevnum || cfg.csp.allow_request != 1
+			|| cfg.csp.allow_reforward > 0 || cfg.cacheex_cwcheck_tab.cwchecknum || cfg.wait_until_ctimeout > 0 || cfg.csp.block_fakecws > 0
 #endif
 #ifdef CW_CYCLE_CHECK
-			|| cfg.cwcycle_check_enable || cfg.cwcycle_check_caidtab.ctnum || cfg.maxcyclelist != 500 || cfg.keepcycletime || cfg.onbadcycle || cfg.cwcycle_dropold || cfg.cwcycle_sensitive || cfg.cwcycle_allowbadfromffb || cfg.cwcycle_usecwcfromce
+			|| cfg.cwcycle_check_enable || cfg.cwcycle_check_caidtab.ctnum || cfg.maxcyclelist != 500 || cfg.keepcycletime != 15 || cfg.onbadcycle != 1
+			|| cfg.cwcycle_dropold != 1 || cfg.cwcycle_sensitive != 4 || cfg.cwcycle_allowbadfromffb > 0 || cfg.cwcycle_usecwcfromce > 0
 #endif
 			;
 }
@@ -659,59 +666,59 @@ static const struct config_list cache_opts[] =
 {
 	DEF_OPT_SAVE_FUNC(cache_should_save_fn),
 	DEF_OPT_FIXUP_FUNC(cache_fixups_fn),
-	DEF_OPT_UINT32("delay"                , OFS(delay)                  , CS_DELAY),
-	DEF_OPT_INT32("max_time"              , OFS(max_cache_time)         , DEFAULT_MAX_CACHE_TIME),
+	DEF_OPT_UINT32("delay"                            , OFS(delay)                                 , CS_DELAY),
+	DEF_OPT_INT32("max_time"                          , OFS(max_cache_time)                        , DEFAULT_MAX_CACHE_TIME),
 #ifdef CS_CACHEEX
 #ifdef CS_CACHEEX_AIO
-	DEF_OPT_UINT32("cw_cache_size"        , OFS(cw_cache_size)          , 0),
-	DEF_OPT_UINT32("cw_cache_memory"      , OFS(cw_cache_memory)        , 0),
-	DEF_OPT_FUNC("cw_cache_settings"      , OFS(cw_cache_settings)    	, cacheex_cwcheck_tab_fn),
-	DEF_OPT_UINT32("ecm_cache_size"       , OFS(ecm_cache_size)         , 0),
-	DEF_OPT_UINT32("ecm_cache_memory"     , OFS(ecm_cache_memory)       , 0),
-	DEF_OPT_INT32("ecm_cache_droptime"    , OFS(ecm_cache_droptime)     , 0),
+	DEF_OPT_UINT32("cw_cache_size"                    , OFS(cw_cache_size)                         , 0),
+	DEF_OPT_UINT32("cw_cache_memory"                  , OFS(cw_cache_memory)                       , 0),
+	DEF_OPT_FUNC("cw_cache_settings"                  , OFS(cw_cache_settings)                     , cacheex_cwcheck_tab_fn),
+	DEF_OPT_UINT32("ecm_cache_size"                   , OFS(ecm_cache_size)                        , 0),
+	DEF_OPT_UINT32("ecm_cache_memory"                 , OFS(ecm_cache_memory)                      , 0),
+	DEF_OPT_INT32("ecm_cache_droptime"                , OFS(ecm_cache_droptime)                    , 0),
 #endif
-	DEF_OPT_INT32("max_hit_time"          , OFS(max_hitcache_time)      , DEFAULT_MAX_HITCACHE_TIME),
-	DEF_OPT_FUNC("wait_time"              , OFS(cacheex_wait_timetab)   , cacheex_valuetab_fn),
-	DEF_OPT_FUNC("cacheex_mode1_delay"    , OFS(cacheex_mode1_delay_tab), caidvaluetab_fn),
-	DEF_OPT_UINT8("cacheexenablestats"    , OFS(cacheex_enable_stats)   , 0),
+	DEF_OPT_INT32("max_hit_time"                      , OFS(max_hitcache_time)                     , DEFAULT_MAX_HITCACHE_TIME),
+	DEF_OPT_FUNC("wait_time"                          , OFS(cacheex_wait_timetab)                  , cacheex_valuetab_fn),
+	DEF_OPT_FUNC("cacheex_mode1_delay"                , OFS(cacheex_mode1_delay_tab)               , caidvaluetab_fn),
+	DEF_OPT_UINT8("cacheexenablestats"                , OFS(cacheex_enable_stats)                  , 0),
 #ifdef CS_CACHEEX_AIO
-	DEF_OPT_UINT8("cacheex_dropdiffs"     , OFS(cacheex_dropdiffs)      , 0),
-	DEF_OPT_FUNC("cacheex_push_lg_groups" , OFS(cacheex_push_lg_groups)	, group_fn),
-	DEF_OPT_UINT8("cacheex_lg_only_remote_settings", OFS(cacheex_lg_only_remote_settings), 1),
-	DEF_OPT_UINT8("cacheex_localgenerated_only", OFS(cacheex_localgenerated_only), 0),
-	DEF_OPT_FUNC("cacheex_localgenerated_only_caid", OFS(cacheex_localgenerated_only_caidtab), check_caidtab_fn),
-	DEF_OPT_FUNC_X("cacheex_lg_only_tab"   , OFS(cacheex_lg_only_tab)   , ftab_fn, FTAB_ACCOUNT),
-	DEF_OPT_UINT8("cacheex_lg_only_in_aio_only", OFS(cacheex_lg_only_in_aio_only), 0),
-	DEF_OPT_UINT8("cacheex_localgenerated_only_in", OFS(cacheex_localgenerated_only_in), 0),
+	DEF_OPT_UINT8("cacheex_dropdiffs"                 , OFS(cacheex_dropdiffs)                     , 0),
+	DEF_OPT_FUNC("cacheex_push_lg_groups"             , OFS(cacheex_push_lg_groups)                , group_fn),
+	DEF_OPT_UINT8("cacheex_lg_only_remote_settings"   , OFS(cacheex_lg_only_remote_settings)       , 1),
+	DEF_OPT_UINT8("cacheex_localgenerated_only"       , OFS(cacheex_localgenerated_only)           , 0),
+	DEF_OPT_FUNC("cacheex_localgenerated_only_caid"   , OFS(cacheex_localgenerated_only_caidtab)   , check_caidtab_fn),
+	DEF_OPT_FUNC_X("cacheex_lg_only_tab"              , OFS(cacheex_lg_only_tab)                   , ftab_fn, FTAB_ACCOUNT),
+	DEF_OPT_UINT8("cacheex_lg_only_in_aio_only"       , OFS(cacheex_lg_only_in_aio_only)           , 0),
+	DEF_OPT_UINT8("cacheex_localgenerated_only_in"    , OFS(cacheex_localgenerated_only_in)        , 0),
 	DEF_OPT_FUNC("cacheex_localgenerated_only_in_caid", OFS(cacheex_localgenerated_only_in_caidtab), check_caidtab_fn),
-	DEF_OPT_FUNC_X("cacheex_lg_only_in_tab", OFS(cacheex_lg_only_in_tab), ftab_fn, FTAB_ACCOUNT),
-	DEF_OPT_FUNC("cacheex_ecm_filter"     , OFS(cacheex_filter_caidtab) , cacheex_hitvaluetab_fn),
-	DEF_OPT_FUNC("cacheex_ecm_filter_aio" , OFS(cacheex_filter_caidtab_aio) , cacheex_hitvaluetab_fn),
+	DEF_OPT_FUNC_X("cacheex_lg_only_in_tab"           , OFS(cacheex_lg_only_in_tab)                , ftab_fn, FTAB_ACCOUNT),
+	DEF_OPT_FUNC("cacheex_ecm_filter"                 , OFS(cacheex_filter_caidtab)                , cacheex_hitvaluetab_fn),
+	DEF_OPT_FUNC("cacheex_ecm_filter_aio"             , OFS(cacheex_filter_caidtab_aio)            , cacheex_hitvaluetab_fn),
 #endif
-	DEF_OPT_INT32("csp_port"              , OFS(csp_port)               , 0),
-	DEF_OPT_FUNC("csp_serverip"           , OFS(csp_srvip)              , serverip_fn),
-	DEF_OPT_FUNC("csp_ecm_filter"         , OFS(csp.filter_caidtab)     , cacheex_hitvaluetab_fn),
-	DEF_OPT_UINT8("csp_allow_request"     , OFS(csp.allow_request)      , 1),
-	DEF_OPT_UINT8("csp_allow_reforward"   , OFS(csp.allow_reforward)    , 0),
-	DEF_OPT_FUNC("cacheex_cw_check"       , OFS(cacheex_cwcheck_tab)    , cacheex_cwcheck_tab_fn),
-	DEF_OPT_UINT8("wait_until_ctimeout"   , OFS(wait_until_ctimeout)    , 0),
-	DEF_OPT_UINT8("csp_block_fakecws"     , OFS(csp.block_fakecws)      , 0),
+	DEF_OPT_INT32("csp_port"                          , OFS(csp_port)                              , 0),
+	DEF_OPT_FUNC("csp_serverip"                       , OFS(csp_srvip)                             , serverip_fn),
+	DEF_OPT_FUNC("csp_ecm_filter"                     , OFS(csp.filter_caidtab)                    , cacheex_hitvaluetab_fn),
+	DEF_OPT_UINT8("csp_allow_request"                 , OFS(csp.allow_request)                     , 1),
+	DEF_OPT_UINT8("csp_allow_reforward"               , OFS(csp.allow_reforward)                   , 0),
+	DEF_OPT_FUNC("cacheex_cw_check"                   , OFS(cacheex_cwcheck_tab)                   , cacheex_cwcheck_tab_fn),
+	DEF_OPT_UINT8("wait_until_ctimeout"               , OFS(wait_until_ctimeout)                   , 0),
+	DEF_OPT_UINT8("csp_block_fakecws"                 , OFS(csp.block_fakecws)                     , 0),
 #ifdef CS_CACHEEX_AIO
-	DEF_OPT_FUNC("cacheex_nopushafter"    , OFS(cacheex_nopushafter_tab), caidvaluetab_fn),
-	DEF_OPT_UINT8("waittime_block_start"  , OFS(waittime_block_start)   , 0),
-	DEF_OPT_INT32("waittime_block_time"   , OFS(waittime_block_time)    , 0),
+	DEF_OPT_FUNC("cacheex_nopushafter"                , OFS(cacheex_nopushafter_tab)               , caidvaluetab_fn),
+	DEF_OPT_UINT8("waittime_block_start"              , OFS(waittime_block_start)                  , 0),
+	DEF_OPT_INT32("waittime_block_time"               , OFS(waittime_block_time)                   , 0),
 #endif
 #endif
 #ifdef CW_CYCLE_CHECK
-	DEF_OPT_INT8("cwcycle_check_enable"   , OFS(cwcycle_check_enable)   , 0),
-	DEF_OPT_FUNC("cwcycle_check_caid"     , OFS(cwcycle_check_caidtab)  , check_caidtab_fn),
-	DEF_OPT_INT32("cwcycle_maxlist"       , OFS(maxcyclelist)           , 500),
-	DEF_OPT_INT32("cwcycle_keeptime"      , OFS(keepcycletime)          , 15),
-	DEF_OPT_INT8("cwcycle_onbad"          , OFS(onbadcycle)             , 1),
-	DEF_OPT_INT8("cwcycle_dropold"        , OFS(cwcycle_dropold)        , 1),
-	DEF_OPT_INT8("cwcycle_sensitive"      , OFS(cwcycle_sensitive)      , 4),
-	DEF_OPT_INT8("cwcycle_allowbadfromffb", OFS(cwcycle_allowbadfromffb), 0),
-	DEF_OPT_INT8("cwcycle_usecwcfromce"   , OFS(cwcycle_usecwcfromce)   , 0),
+	DEF_OPT_INT8("cwcycle_check_enable"               , OFS(cwcycle_check_enable)                  , 0),
+	DEF_OPT_FUNC("cwcycle_check_caid"                 , OFS(cwcycle_check_caidtab)                 , check_caidtab_fn),
+	DEF_OPT_INT32("cwcycle_maxlist"                   , OFS(maxcyclelist)                          , 500),
+	DEF_OPT_INT32("cwcycle_keeptime"                  , OFS(keepcycletime)                         , 15),
+	DEF_OPT_INT8("cwcycle_onbad"                      , OFS(onbadcycle)                            , 1),
+	DEF_OPT_INT8("cwcycle_dropold"                    , OFS(cwcycle_dropold)                       , 1),
+	DEF_OPT_INT8("cwcycle_sensitive"                  , OFS(cwcycle_sensitive)                     , 4),
+	DEF_OPT_INT8("cwcycle_allowbadfromffb"            , OFS(cwcycle_allowbadfromffb)               , 0),
+	DEF_OPT_INT8("cwcycle_usecwcfromce"               , OFS(cwcycle_usecwcfromce)                  , 0),
 #endif
 	DEF_LAST_OPT
 };
