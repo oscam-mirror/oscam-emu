@@ -1510,6 +1510,7 @@ static void *stream_client_handler(void *arg)
 	{
 		SAFE_SETSPECIFIC(getclient, cl);
 		cl->typ = 'c';
+		free_client(cl);
 	}
 	set_thread_name(__func__);
 
