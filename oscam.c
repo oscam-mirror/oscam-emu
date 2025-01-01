@@ -1793,6 +1793,9 @@ int32_t main(int32_t argc, char *argv[])
 #ifdef HAVE_DVBAPI
 		module_dvbapi,
 #endif
+#ifdef MODULE_STREAMRELAY
+		module_streamrelay,
+#endif
 		0
 	};
 
@@ -1891,10 +1894,6 @@ int32_t main(int32_t argc, char *argv[])
 
 #ifdef MODULE_SERIAL
 	twin_read();
-#endif
-
-#ifdef MODULE_STREAMRELAY
-	init_stream_server();
 #endif
 
 	for(i = 0; i < CS_MAX_MOD; i++)
