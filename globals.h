@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.25.01-11865"
+#define CS_VERSION				"2.25.01-11866"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1651,7 +1651,7 @@ struct s_reader										// contains device info, reader info and card info
 	int8_t			forceemmg;
 	int8_t			cwpkota;
 	int8_t			headermode;
-
+	struct timeb	last_refresh;
 #endif
 #ifdef CS_CACHEEX
 	CECSP			cacheex;						// CacheEx Settings

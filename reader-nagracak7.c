@@ -1426,6 +1426,10 @@ static int32_t nagra3_card_info(struct s_reader *reader)
 	CAK7GetDataType(reader, IRDINFO);
 	CAK7GetDataType(reader, TIERS);
 	rdr_log(reader, "-----------------------------------------");
+	struct timeb now;
+	cs_ftime(&now);
+	reader->last_refresh = now;
+
 	return OK;
 }
 
@@ -1781,6 +1785,16 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 			{
 				rdr_log_dbg(reader, D_READER, "card got wrong EMM");
 				return OK;
+			}
+
+			struct timeb now;
+			cs_ftime(&now);
+			int64_t gone_now = comp_timeb(&now, &reader->emm_last);
+			int64_t gone_refresh = comp_timeb(&reader->emm_last, &reader->last_refresh);
+			if(((gone_now > (int64_t)3600*1000) && (gone_now < (int64_t)365*24*3600*1000)) || ((gone_refresh > (int64_t)12*3600*1000) && (gone_refresh < (int64_t)365*24*3600*1000)))
+			{
+				reader->last_refresh = now;
+				add_job(reader->client, ACTION_READER_CARDINFO, NULL, 0); // refresh entitlement since it might have been changed!
 			}
 		}
 	}
