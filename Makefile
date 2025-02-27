@@ -203,9 +203,11 @@ endif
 # Since FreeBSD 8 (released in 2010) they are using their own
 # libusb that is API compatible to libusb but with different soname
 ifeq ($(uname_S),FreeBSD)
+	DEFAULT_SSL_FLAGS = -I/usr/include
 	DEFAULT_LIBUSB_LIB = -lusb
-endif
-ifeq ($(uname_S),Darwin)
+	DEFAULT_PCSC_FLAGS = -I/usr/local/include/PCSC
+	DEFAULT_PCSC_LIB = -L/usr/local/lib -lpcsclite
+else ifeq ($(uname_S),Darwin)
 	DEFAULT_SSL_FLAGS = -I/usr/local/opt/openssl/include
 	DEFAULT_SSL_LIB = -L/usr/local/opt/openssl/lib -lssl
 	DEFAULT_LIBCRYPTO_LIB = -L/usr/local/opt/openssl/lib -lcrypto
