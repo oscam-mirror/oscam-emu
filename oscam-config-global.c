@@ -397,6 +397,9 @@ static const struct config_list global_opts[] =
 	DEF_OPT_INT8("double_check"                    , OFS(double_check)                  , 0),
 	DEF_OPT_INT8("disablecrccws"                   , OFS(disablecrccws)                 , 0),
 	DEF_OPT_FUNC("disablecrccws_only_for"          , OFS(disablecrccws_only_for)        , chk_ftab_fn),
+#ifdef CS_CACHEEX_AIO
+	DEF_OPT_INT8("cacheex_srcname_webif"           , OFS(cacheex_srcname_webif)         , 0),
+#endif
 	DEF_LAST_OPT
 };
 

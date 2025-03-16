@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.25.03-11871"
+#define CS_VERSION				"2.25.03-11872"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -2197,6 +2197,9 @@ struct s_config
 	char			*mailfile;
 	int8_t			disablecrccws;					// 1=disable cw checksum test. 0=enable checksum check
 	FTAB			disablecrccws_only_for;			// ignore checksum for selected caid provid
+#ifdef CS_CACHEEX_AIO
+	uint8_t			cacheex_srcname_webif;			// show cacheex-srcname not cache3 in log
+#endif
 	uint8_t			logtostdout;
 	uint8_t			logtosyslog;
 	int8_t			logduplicatelines;
