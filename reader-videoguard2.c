@@ -290,20 +290,13 @@ static void vg2_read_tiers(struct s_reader *reader)
 					memset(&timeinfo, 0, sizeof(struct tm));
 					time_t start_t = 0, end_t;
 
-					if(cta_res[1] > 0x23)
+					if(cta_res[1] > 0x24)
 					{
 						rev_date_calc_tm(&cta_res[38], &timeinfo, csystem_data->card_baseyear);
 						start_t = mktime(&timeinfo);
 					}
 
-					if(reader->caid == 0x098E || reader->caid == 0x09C7 || reader->caid == 0x09EF)
-					{
-						rev_date_calc_tm(&cta_res[34], &timeinfo, csystem_data->card_baseyear + 16);
-					}
-					else
-					{
-						rev_date_calc_tm(&cta_res[34], &timeinfo, csystem_data->card_baseyear);
-					}
+					rev_date_calc_tm(&cta_res[34], &timeinfo, csystem_data->card_baseyear);
 					end_t = mktime(&timeinfo);
 
 					for(word = 0; word < 32; word += 2)
@@ -431,14 +424,7 @@ static void vg2_read_tiers(struct s_reader *reader)
 				// add entitlements to list
 				struct tm timeinfo;
 				memset(&timeinfo, 0, sizeof(struct tm));
-				if(reader->caid == 0x098E || reader->caid == 0x09C7 || reader->caid == 0x09EF)
-				{
-					rev_date_calc_tm(&cta_res[4], &timeinfo, csystem_data->card_baseyear + 16);
-				}
-				else
-				{
-					rev_date_calc_tm(&cta_res[4], &timeinfo, csystem_data->card_baseyear);
-				}
+				rev_date_calc_tm(&cta_res[4], &timeinfo, csystem_data->card_baseyear);
 				cs_add_entitlement(reader, reader->caid, b2ll(4, reader->prid[0]), tier_id, 0, 0, mktime(&timeinfo), 4, 1);
 
 				if(!stopemptytier)
