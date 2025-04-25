@@ -183,7 +183,7 @@ form table a {
 li.menu a,li.menu a:hover,
 li.menu_selected a,li.menu_selected a:hover {
 	color:#000
-	}
+}
 li.menu:hover, li.menu_selected,
 li.configmenu:hover, li.configmenu_selected {
 	background-color:#e8e8e8;
@@ -1004,10 +1004,10 @@ div.colorPicker-swatch {
 	background-color:#A00
 }
 .pollingenabled:hover {
- 	background-color:#F00
+	background-color:#F00
 }
 .pollingdisabled:hover {
- 	background-color:#F00
+	background-color:#F00
 }
 #poll button {
 	margin-bottom:1px;
@@ -1138,5 +1138,5 @@ only screen and (min-device-width : 320px) and (max-device-width : 568px) and (o
 	}
 	textarea.editor {
 		height:508px
- 	}
+	}
 }
