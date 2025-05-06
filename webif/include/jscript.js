@@ -1915,18 +1915,15 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 
 			case AddTextType.keyIndex:
 
-				if (!isV13V14V15) {
+				if (!isV14V15) {
 					text += ' - <b>' + ret + '</b>';
 				}
 
 				switch (ret) {
 					case '01':
-						text += ' - <b>V13</b>';
-						break;
-					case '02':
 						text += ' - <b>V14</b>';
 						break;
-					case '03':
+					case '02':
 						text += ' - <b>V15</b>';
 						break;
 					default:

@@ -7536,7 +7536,7 @@ void delayer(ECM_REQUEST *er, uint32_t delay)
 #ifdef WITH_EXTENDED_CW
 bool caid_is_csa_alt(uint16_t caid)
 {
-	return caid == 0x09c4 || caid == 0x098c || caid==0x098d;
+	return caid == 0x098c || caid==0x098d;
 }
 
 bool select_csa_alt(ECM_REQUEST *er)

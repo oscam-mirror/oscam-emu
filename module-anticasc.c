@@ -379,7 +379,6 @@ int8_t get_caid_weight(ECM_REQUEST *er)
 		case 0x1702:
 		case 0x1722:
 		case 0x1833:
-		case 0x09C4:
 			switch(er->srvid)
 			{
 				case 0x0022: // Disney Channel
