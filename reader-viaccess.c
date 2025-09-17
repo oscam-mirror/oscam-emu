@@ -12,171 +12,6 @@
 typedef unsigned int uint;
 typedef unsigned char byte;
 
-uint8_t N98Init = 0;
-uint KeyS[132];
-char SBoxInverse[] =
-{
-	13, 3, 11, 0, 10, 6, 5, 12, 1, 14, 4, 7, 15, 9, 8, 2,
-	5, 8, 2, 14, 15, 6, 12, 3, 11, 4, 7, 9, 1, 13, 10, 0,
-	12, 9, 15, 4, 11, 14, 1, 2, 0, 3, 6, 13, 5, 8, 10, 7,
-	0, 9, 10, 7, 11, 14, 6, 13, 3, 5, 12, 2, 4, 8, 15, 1,
-	5, 0, 8, 3, 10, 9, 7, 14, 2, 12, 11, 6, 4, 15, 13, 1,
-	8, 15, 2, 9, 4, 1, 13, 14, 11, 6, 5, 3, 7, 12, 10, 0,
-	15, 10, 1, 13, 5, 3, 6, 0, 4, 9, 14, 7, 2, 12, 8, 11,
-	3, 0, 6, 13, 9, 14, 15, 8, 5, 12, 11, 7, 10, 1, 4, 2
-};
-
-uint getBit(uint number, int bt)
-{
-	return (number >> bt ) & 1;
-}
-
-void SBitslice(uint* Iarray, int offsetin, uint* Oarray, int offsetout, int row, char* box)
-{
-	int bi, input, l, output;
-	uint calcArray[4]  = {0, 0, 0, 0};
-
-	for (bi = 0; bi < 32; bi++)
-	{
-		input = 0;
-
-		for (l = 0; l < 4; l++)
-		{
-			input += getBit(Iarray[l + offsetin], bi) << l;
-		}
-
-		output = box[input + 16 * row];
-
-		for (l = 0; l < 4; l++)
-		{
-			calcArray[l] += getBit(output, l) << bi;
-		}
-	}
-
-	for (l = 0; l < 4; l++)
-	{
-		Oarray[l + offsetout] = calcArray[l];
-	}
-}
-
-void xorBlock(uint* data, int offset)
-{
-	int i;
-	for (i = 0; i < 4; i++)
-	{
-		data[i] ^= KeyS[i + 4*offset];
-	}
-}
-
-uint rotr(uint val, int nbits)
-{
-	return ((val >> nbits) + (val << (32 - nbits)));
-}
-
-void LTBitsliceInverse(uint* data)
-{
-	uint C0 = data[0];
-	uint C1 = data[1];
-	uint C2 = data[2];
-	uint C3 = data[3];
-	C2  = rotr(C2, 22);
-	C0  = rotr(C0, 5);
-	C2 ^= C3 ^ (C1 << 7);
-	C0 ^= C1 ^ C3;
-	C3  = rotr(C3, 7);
-	C3 ^= C2 ^ (C0 << 3);
-	C1  = rotr(C1, 1);
-	C1 ^= C0 ^ C2;
-	C2  = rotr(C2, 3);
-	C0  = rotr(C0, 13);
-	data[0] = C0;
-	data[1] = C1;
-	data[2] = C2;
-	data[3] = C3;
-}
-
-void N98_decrypt(byte* data)
-{
-	int r; // round
-	int i, j;
-	uint N98[4]; // make 32 bits words
-
-	for(i = 0; i < 4; i++)
-	{
-		N98[i] = data[4 * i] + (data[4 * i + 1] << 8) + (data[4 * i + 2] << 16) + (data[4 * i + 3] << 24);
-	}
-
-	for(r = 31; r >= 0; r--) // decrypt, inverse order
-	{
-		if (r == 31)
-		{
-			xorBlock(N98, 32);
-		}
-		else
-		{
-			LTBitsliceInverse(N98); // inverse Linear Transform
-		}
-		SBitslice(N98, 0, N98, 0, (r & 7), SBoxInverse); // SBox inverse, bitslice mode
-		xorBlock(N98, r);
-	}
-
-	for(i = 0; i < 4; i++) // set bytes to caller's array
-	{
-		for(j = 0; j < 4; j++)
-		{
-			data[4 * i + j] = (N98[i] >> 8 * j) & 0xFF;
-		}
-	}
-}
-
-void MakeSubKeys(uint* KeySch, char key98Idx)
-{
-	int i, k;
-	char j;
-	uint w[140] = {0};
-	char Sbox[128];
-	// uint KeyS[132];
-
-	// calc SBox , inverse of SBoxInverse
-	for(i = 0; i < 8; i++) //row
-	{
-		for(j = 0; j < 16; j++) // search for column
-		{
-			k = 0;
-			while (SBoxInverse[k+16*i] != j)
-			{
-				k = k +1;
-			}
-			Sbox[j + 16 * i] = k;
-		}
-	}
-
-	switch (key98Idx)
-	{
-		case 0x21:
-		{
-			w[0] = 0x6341F22E;
-			w[1] = 0x002E2D10;
-			w[2] = 0x181D7704;
-			w[3] = 0x1D93A0F3;
-			w[4] = 1;
-			w[5] = 0;
-			w[6] = 0;
-			w[7] = 0;
-			break;
-		}
-	}
-
-	for(i = 0; i < 132; i++)
-	{
-		w[i + 8] = rotr((w[i + 0] ^ w[i + 3] ^ w[i + 5] ^ w[i + 7] ^ 0x9E3779B9 ^ i), 21);
-	}
-	for(i = 0; i < 33; i++)
-	{
-		SBitslice(w, (4 * i + 8), KeySch, (4 * i), ((35 - i) & 7), Sbox); // SBox , bitslice mode
-	}
-}
-
 struct geo_cache
 {
 	uint32_t provid;
@@ -199,6 +34,20 @@ struct via_date
 	uint16_t day_e   : 5;
 	uint16_t month_e : 4;
 	uint16_t year_e  : 7;
+};
+
+uint8_t N98Init = 0;
+uint KeyS[132];
+char SBoxInverse[] =
+{
+	13, 3, 11, 0, 10, 6, 5, 12, 1, 14, 4, 7, 15, 9, 8, 2,
+	5, 8, 2, 14, 15, 6, 12, 3, 11, 4, 7, 9, 1, 13, 10, 0,
+	12, 9, 15, 4, 11, 14, 1, 2, 0, 3, 6, 13, 5, 8, 10, 7,
+	0, 9, 10, 7, 11, 14, 6, 13, 3, 5, 12, 2, 4, 8, 15, 1,
+	5, 0, 8, 3, 10, 9, 7, 14, 2, 12, 11, 6, 4, 15, 13, 1,
+	8, 15, 2, 9, 4, 1, 13, 14, 11, 6, 5, 3, 7, 12, 10, 0,
+	15, 10, 1, 13, 5, 3, 6, 0, 4, 9, 14, 7, 2, 12, 8, 11,
+	3, 0, 6, 13, 9, 14, 15, 8, 5, 12, 11, 7, 10, 1, 4, 2
 };
 
 static void parse_via_date(const uint8_t *buf, struct via_date *vd, int32_t fend)
@@ -1066,6 +915,157 @@ void hdSurEncPhase2_D2_13_15(uint8_t *cws)
 	ExchangeCWs((uint8_t *) &cws[8], (uint8_t *) &cws[0]);
 }
 
+uint getBit(uint number, int bt)
+{
+	return (number >> bt ) & 1;
+}
+
+void SBitslice(uint* Iarray, int offsetin, uint* Oarray, int offsetout, int row, char* box)
+{
+	int bi, input, l, output;
+	uint calcArray[4]  = {0, 0, 0, 0};
+
+	for (bi = 0; bi < 32; bi++)
+	{
+		input = 0;
+
+		for (l = 0; l < 4; l++)
+		{
+			input += getBit(Iarray[l + offsetin], bi) << l;
+		}
+
+		output = box[input + 16 * row];
+
+		for (l = 0; l < 4; l++)
+		{
+			calcArray[l] += getBit(output, l) << bi;
+		}
+	}
+
+	for (l = 0; l < 4; l++)
+	{
+		Oarray[l + offsetout] = calcArray[l];
+	}
+}
+
+void xorBlock(uint* data, int offset)
+{
+	int i;
+	for (i = 0; i < 4; i++)
+	{
+		data[i] ^= KeyS[i + 4*offset];
+	}
+}
+
+uint rotr(uint val, int nbits)
+{
+	return ((val >> nbits) + (val << (32 - nbits)));
+}
+
+void LTBitsliceInverse(uint* data)
+{
+	uint C0 = data[0];
+	uint C1 = data[1];
+	uint C2 = data[2];
+	uint C3 = data[3];
+	C2  = rotr(C2, 22);
+	C0  = rotr(C0, 5);
+	C2 ^= C3 ^ (C1 << 7);
+	C0 ^= C1 ^ C3;
+	C3  = rotr(C3, 7);
+	C3 ^= C2 ^ (C0 << 3);
+	C1  = rotr(C1, 1);
+	C1 ^= C0 ^ C2;
+	C2  = rotr(C2, 3);
+	C0  = rotr(C0, 13);
+	data[0] = C0;
+	data[1] = C1;
+	data[2] = C2;
+	data[3] = C3;
+}
+
+void N98_decrypt(byte* data)
+{
+	int r; // round
+	int i, j;
+	uint N98[4]; // make 32 bits words
+
+	for(i = 0; i < 4; i++)
+	{
+		N98[i] = data[4 * i] + (data[4 * i + 1] << 8) + (data[4 * i + 2] << 16) + (data[4 * i + 3] << 24);
+	}
+
+	for(r = 31; r >= 0; r--) // decrypt, inverse order
+	{
+		if (r == 31)
+		{
+			xorBlock(N98, 32);
+		}
+		else
+		{
+			LTBitsliceInverse(N98); // inverse Linear Transform
+		}
+		SBitslice(N98, 0, N98, 0, (r & 7), SBoxInverse); // SBox inverse, bitslice mode
+		xorBlock(N98, r);
+	}
+
+	for(i = 0; i < 4; i++) // set bytes to caller's array
+	{
+		for(j = 0; j < 4; j++)
+		{
+			data[4 * i + j] = (N98[i] >> 8 * j) & 0xFF;
+		}
+	}
+}
+
+void MakeSubKeys(uint* KeySch, char key98Idx)
+{
+	int i, k;
+	char j;
+	uint w[140] = {0};
+	char Sbox[128];
+	// uint KeyS[132];
+
+	// calc SBox , inverse of SBoxInverse
+	for(i = 0; i < 8; i++) //row
+	{
+		for(j = 0; j < 16; j++) // search for column
+		{
+			k = 0;
+			while (SBoxInverse[k+16*i] != j)
+			{
+				k = k +1;
+			}
+			Sbox[j + 16 * i] = k;
+		}
+	}
+
+	switch (key98Idx)
+	{
+		case 0x21:
+		{
+			w[0] = 0x6341F22E;
+			w[1] = 0x002E2D10;
+			w[2] = 0x181D7704;
+			w[3] = 0x1D93A0F3;
+			w[4] = 1;
+			w[5] = 0;
+			w[6] = 0;
+			w[7] = 0;
+			break;
+		}
+	}
+
+	for(i = 0; i < 132; i++)
+	{
+		w[i + 8] = rotr((w[i + 0] ^ w[i + 3] ^ w[i + 5] ^ w[i + 7] ^ 0x9E3779B9 ^ i), 21);
+	}
+	for(i = 0; i < 33; i++)
+	{
+		SBitslice(w, (4 * i + 8), KeySch, (4 * i), ((35 - i) & 7), Sbox); // SBox , bitslice mode
+	}
+}
+
 static int32_t viaccess_card_init(struct s_reader *reader, ATR *newatr)
 {
 	get_atr;
@@ -1206,17 +1206,20 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 	uint8_t ecmData[ecm88Len];
 	memset(ecmData, 0, ecm88Len);
 	memcpy(ecmData, er->ecm + 4, ecm88Len);
-
 	uint8_t *ecm88Data = &ecmData[0];
 	uint32_t provid = 0;
 	int32_t rc = 0;
 	int32_t hasD2 = 0;
 	uint8_t hasE0 = 0;
 	int32_t has98 = 0;
+	int32_t has9635 = 0;
+	int32_t has9632 = 0;
 	int32_t curEcm88len = 0;
 	int32_t nanoLen = 0;
 	uint8_t *nextEcm;
 	uint8_t DE04[MAX_ECM_SIZE];
+	uint8_t nano9635ecm88Data[MAX_ECM_SIZE];
+	uint8_t nano9632ecm88Data[MAX_ECM_SIZE];
 	int32_t D2KeyID = 0;
 	int32_t curnumber_ecm = 0;
 	uint8_t SubECM = 0;
@@ -1379,14 +1382,23 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 			ecm88Len -= nanoLen;
 			curEcm88len -= nanoLen;
 
-			if(ecm88Data[0] == 0x9F && ecm88Data[1] == 0x04)
+			if(ecm88Data[0] == 0x96 && ecm88Data[1] == 0x35)
 			{
-				rdr_log_dbg(reader, D_READER, "[viaccess-reader] nano 9F/04 ECM detected!");
-				ecm88Data += 6;
+				rdr_log_dbg(reader, D_READER, "[viaccess-reader] nano 96/35 ECM detected!");
+				ecm88Data += 55;
+				has9635 = 1;
+			}
+
+			if(ecm88Data[0] == 0x96 && ecm88Data[1] == 0x32)
+			{
+				rdr_log_dbg(reader, D_READER, "[viaccess-reader] nano 96/32 ECM detected!");
+				ecm88Data += 52;
+				has9632 = 1;
 			}
 
 			if(ecm88Data[0] == 0xDE && ecm88Data[1] == 0x04)
 			{
+				rdr_log_dbg(reader, D_READER, "[viaccess-reader] nano DE/04 ECM detected!");
 				memcpy(DE04, &ecm88Data[0], 6);
 				ecm88Data += 6;
 			}
@@ -1538,6 +1550,18 @@ static int32_t viaccess_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, s
 
 				memcpy(DE04 + 6, (uint8_t *)ecm88Data, l);
 				write_cmd(ins88, DE04); // request dcw
+			}
+			else if(has9635)
+			{
+				ins88[4] -= 0x37;
+				memcpy(nano9635ecm88Data, (uint8_t *)ecm88Data, ins88[4]);
+				write_cmd(ins88, nano9635ecm88Data);
+			}
+			else if(has9632)
+			{
+				ins88[4] -= 0x34;
+				memcpy(nano9632ecm88Data, (uint8_t *)ecm88Data, ins88[4]);
+				write_cmd(ins88, nano9632ecm88Data);
 			}
 			else
 			{
