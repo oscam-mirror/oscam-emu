@@ -349,7 +349,14 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				uint32_t expire_date;
 
 				start_date = 1;
-				expire_date = b2i(0x04, cta_res + 22);
+				if(reader->caid == 0x186D)
+				{
+					expire_date = b2i(0x04, timestamp186D);
+				}
+				else
+				{
+					expire_date = b2i(0x04, cta_res + 22);
+				}
 				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
@@ -411,6 +418,11 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 							if ((reader->cak7_emm_caid == 0x186A) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x00))
 							{
 								(cta_res + p + 5)[2] = 0xAC;
+							}
+							if ((reader->cak7_emm_caid == 0x1861) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x01) && (!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x35\x30\x20\x52\x65\x76\x57\x36\x30", 15)))
+							{
+								(cta_res + p + 5)[1] = 0x00;
+								(cta_res + p + 5)[2] = 0x32;
 							}
 							addSA(reader, cta_res + p + 5);
 							addemmfilter(reader, cta_res + p + 5);
@@ -519,12 +531,35 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 					case 0x1830: // Max TV
 					case 0x1843: // HD02
 					case 0x1860: // HD03
-					case 0x1861: // Polsat, Vodafone D08
 						start_date = b2i(0x04, cta_res + 42);
 						expire_date1 = b2i(0x04, cta_res + 28);
-						expire_date2 = (reader->caid != 0x1861) ? b2i(0x04, cta_res + 46) : expire_date1;
+						expire_date2 = b2i(0x04, cta_res + 46);
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
+
+					case 0x1861: // Polsat, Vodafone D08
+					{
+						if(!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x35\x30\x20\x52\x65\x76\x57\x36\x30", 15))
+						{
+							start_date = b2i(0x04, cta_res + 53);
+							expire_date1 = b2i(0x04, cta_res + 39);
+							expire_date2 = b2i(0x04, cta_res + 57);
+							expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
+						}
+						else if(!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x31\x30\x20\x52\x65\x76\x51\x32\x31", 15))
+						{
+							start_date = b2i(0x04, cta_res + 42);
+							expire_date = b2i(0x04, cta_res + 28);
+						}
+						else
+						{
+							start_date = b2i(0x04, cta_res + 42);
+							expire_date1 = b2i(0x04, cta_res + 28);
+							expire_date2 = b2i(0x04, cta_res + 46);
+							expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
+						}
+						break;
+					}
 
 					case 0x186A: // HD04, HD05
 						start_date = b2i(0x04, cta_res + 53);
@@ -544,6 +579,11 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						}
 						break;
 					}
+
+					case 0x1824:
+						start_date = 1;
+						expire_date = b2i(0x04, cta_res + 28);
+						break;
 
 					default: // unknown card
 						start_date = 1;
