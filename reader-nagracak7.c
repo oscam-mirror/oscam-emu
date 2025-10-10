@@ -419,11 +419,6 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 							{
 								(cta_res + p + 5)[2] = 0xAC;
 							}
-							if ((reader->cak7_emm_caid == 0x1861) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x01) && (!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x35\x30\x20\x52\x65\x76\x57\x36\x30", 15)))
-							{
-								(cta_res + p + 5)[1] = 0x00;
-								(cta_res + p + 5)[2] = 0x32;
-							}
 							addSA(reader, cta_res + p + 5);
 							addemmfilter(reader, cta_res + p + 5);
 						}
@@ -1771,6 +1766,14 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		}
 		else
 		{
+			if((reader->caid == 0x1861) && (!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x35\x30\x20\x52\x65\x76\x57\x36\x30", 15)) && (ep->emm[0] == 0x84) && (ep->emm[3] == 0x00))
+			{
+				return ERROR;
+			}
+			if((reader->caid == 0x1861) && (!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x31\x30\x20\x52\x65\x76\x51\x32\x31", 15)) && (ep->emm[0] == 0x84) && (ep->emm[3] == 0x01))
+			{
+				return ERROR;
+			}
 			emmreq[8] = ep->emm[9] + 6;
 			memcpy(&emmreq[14], ep->emm + 9, ep->emm[9] + 1);
 		}

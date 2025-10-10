@@ -186,7 +186,7 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 				memset(ep->hexserial, 0x00, 0x08);
 				memcpy(ep->hexserial, ep->emm + 5, 3);
 				i = get_prov_idx(rdr, ep->emm + 3);
-				if((ep->emm[3] == 0x00) && (ep->emm[5] == 0x00) && (ep->emm[6] == 0x00) && (ep->emm[7] == 0x00) && (ep->emm[8] == 0x04) && (ep->emm[9] == 0x84))
+				if((ep->emm[3] == 0x00 || ep->emm[3] == 0x01) && (ep->emm[5] == 0x00) && (ep->emm[6] == 0x00) && (ep->emm[7] == 0x00) && (ep->emm[8] == 0x04) && (ep->emm[9] == 0x84))
 				{
 					ep->type = GLOBAL;
 					return 1;
@@ -407,7 +407,7 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 	{
 		if(*emm_filters == NULL)
 		{
-			const unsigned int max_filter_count = 5 + (3 * rdr->nprov);
+			const unsigned int max_filter_count = 6 + (3 * rdr->nprov);
 			if(!cs_malloc(emm_filters, max_filter_count * sizeof(struct s_csystem_emm_filter)))
 			{
 				return ERROR;
@@ -451,6 +451,15 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 
 			filters[idx].type = EMM_GLOBAL;
 			filters[idx].enabled = 1;
+			filters[idx].filter[0] = 0x83;
+			filters[idx].mask[0] = 0xFF;
+			filters[idx].filter[1] = 0x00;
+			filters[idx].filter[2] = 0x00;
+			memset(&filters[idx].mask[1], 0xFF, 2);
+			idx++;
+
+			filters[idx].type = EMM_GLOBAL;
+			filters[idx].enabled = 1;
 			filters[idx].filter[0] = 0x84;
 			filters[idx].mask[0] = 0xFF;
 			filters[idx].filter[1] = 0x00;
@@ -463,11 +472,14 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 
 			filters[idx].type = EMM_GLOBAL;
 			filters[idx].enabled = 1;
-			filters[idx].filter[0] = 0x83;
+			filters[idx].filter[0] = 0x84;
 			filters[idx].mask[0] = 0xFF;
-			filters[idx].filter[1] = 0x00;
-			filters[idx].filter[2] = 0x00;
-			memset(&filters[idx].mask[1], 0xFF, 2);
+			filters[idx].filter[1] = 0x01;
+			filters[idx].mask[1] = 0xFF;
+			filters[idx].filter[3] = 0x00;
+			filters[idx].filter[4] = 0x00;
+			filters[idx].filter[5] = 0x00;
+			memset(&filters[idx].mask[3], 0xFF, 3);
 			idx++;
 
 			int32_t prov;
