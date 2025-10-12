@@ -333,11 +333,11 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			if(cta_res[21] == 0x9C)
 			{
 				uint32_t timestamp = b2i(0x04, cta_res + 22);
-				uint8_t timestamp186D[4] = {0xA6, 0x9E, 0xFB, 0x7F};
-				uint32_t timestamp186Db2i = b2i(0x04, timestamp186D);
-				if(reader->caid == 0x186D)
+				uint8_t timestamp2038[4] = {0xAD, 0x0E, 0x26, 0x01};
+				uint32_t timestamp2038b2i = b2i(0x04, timestamp2038);
+				if((reader->caid == 0x186D) || (reader->caid == 0x187D))
 				{
-					reader->card_valid_to = tier_date(timestamp186Db2i, de, 11);
+					reader->card_valid_to = tier_date(timestamp2038b2i, de, 11);
 				}
 				else
 				{
@@ -349,9 +349,9 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				uint32_t expire_date;
 
 				start_date = 1;
-				if(reader->caid == 0x186D)
+				if((reader->caid == 0x186D) || (reader->caid == 0x187D))
 				{
-					expire_date = b2i(0x04, timestamp186D);
+					expire_date = b2i(0x04, timestamp2038);
 				}
 				else
 				{
@@ -362,7 +362,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				addProvider(reader, cta_res + 19);
 			}
 
-			if((reader->caid == 0x1856) && (cta_res[21] == 0x01))
+			if(((reader->caid == 0x1856) || (reader->caid == 0x187D)) && (cta_res[21] == 0x01) && (cta_res[8] != 0x18))
 			{
 				uint16_t chid = 0;
 				uint32_t id = b2i(0x02, cta_res + 19);
@@ -400,6 +400,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				addProvider(reader, cta_res + 19);
 				uint8_t check[] = {0x00, 0x01};
 				uint8_t checkecmcaid[] = {0xFF, 0x07};
+				uint8_t emm84g_provid[2];
 				check[0] = reader->cak7_emm_caid & 0xFF;
 
 				int p;
@@ -418,6 +419,12 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 							if ((reader->cak7_emm_caid == 0x186A) && ((cta_res + p + 5)[0] == 0x84) && ((cta_res + p + 5)[1] == 0x00))
 							{
 								(cta_res + p + 5)[2] = 0xAC;
+							}
+							if ((cta_res + p + 5)[0] == 0x84)
+							{
+								emm84g_provid[0] = (cta_res + p + 5)[1] & (cta_res + p + 5)[4];
+								emm84g_provid[1] = (cta_res + p + 5)[2] & (cta_res + p + 5)[5];
+								addProvider(reader, emm84g_provid);
 							}
 							addSA(reader, cta_res + p + 5);
 							addemmfilter(reader, cta_res + p + 5);
@@ -532,7 +539,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
 						break;
 
-					case 0x1861: // Polsat, Vodafone D08
+					case 0x1861: // Polsat, Vodafone D08, Movistar Latin America
 					{
 						if(!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x35\x30\x20\x52\x65\x76\x57\x36\x30", 15))
 						{
@@ -544,6 +551,11 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						else if(!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x31\x30\x20\x52\x65\x76\x51\x32\x31", 15))
 						{
 							start_date = b2i(0x04, cta_res + 42);
+							expire_date = b2i(0x04, cta_res + 28);
+						}
+						else if(!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x31\x30\x20\x52\x65\x76\x51\x32\x53", 15))
+						{
+							start_date = 1;
 							expire_date = b2i(0x04, cta_res + 28);
 						}
 						else
@@ -564,13 +576,34 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 						break;
 
 					case 0x186D: // HD04H
+					case 0x187D: // Canal+ reunion
+					case 0x1884: // nc+
 					{
-						if((b2i(0x04, cta_res + 49) != 0x00000001) && (b2i(0x04, cta_res + 39) != 0xFFFFFFFF) && (b2i(0x04, cta_res + 53) != 0xFFFFFFFF))
+						if(cta_res[8] == 0x45)
 						{
 							start_date = b2i(0x04, cta_res + 47);
 							expire_date1 = b2i(0x04, cta_res + 39);
 							expire_date2 = b2i(0x04, cta_res + 51);
 							expire_date = expire_date1 <= expire_date2 ? expire_date1 : expire_date2;
+						}
+						break;
+					}
+
+					case 0x1812:
+					case 0x1814: // MEO
+					case 0x1817: // Canal Digitaal
+					case 0x1818: // TV Vlaanderen
+					case 0x1819: // Telesat
+					{
+						if(cta_res[8] > 0x28)
+						{
+							start_date = b2i(0x04, cta_res + 32);
+							expire_date = b2i(0x04, cta_res + 36);
+						}
+						if(cta_res[8] == 0x20)
+						{
+							start_date = b2i(0x04, cta_res + 28);
+							expire_date = b2i(0x04, cta_res + 32);
 						}
 						break;
 					}
@@ -582,7 +615,7 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 
 					default: // unknown card
 						start_date = 1;
-						expire_date = 0xA69EFB7F;
+						expire_date = 0xAD0E2601;
 				}
 
 				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
@@ -1766,14 +1799,6 @@ static int32_t nagra3_do_emm(struct s_reader *reader, EMM_PACKET *ep)
 		}
 		else
 		{
-			if((reader->caid == 0x1861) && (!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x35\x30\x20\x52\x65\x76\x57\x36\x30", 15)) && (ep->emm[0] == 0x84) && (ep->emm[3] == 0x00))
-			{
-				return ERROR;
-			}
-			if((reader->caid == 0x1861) && (!memcmp(reader->rom, "\x44\x4E\x41\x53\x50\x34\x31\x30\x20\x52\x65\x76\x51\x32\x31", 15)) && (ep->emm[0] == 0x84) && (ep->emm[3] == 0x01))
-			{
-				return ERROR;
-			}
 			emmreq[8] = ep->emm[9] + 6;
 			memcpy(&emmreq[14], ep->emm + 9, ep->emm[9] + 1);
 		}
