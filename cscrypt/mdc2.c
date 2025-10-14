@@ -14,6 +14,7 @@
 						*((c)++)=(unsigned char)(((l)>>16L)&0xff), \
 						*((c)++)=(unsigned char)(((l)>>24L)&0xff))
 
+#if !defined(WITH_LIBCRYPTO)
 # define FP(l,r) \
 		{ \
 		register DES_LONG tt; \
@@ -24,7 +25,6 @@
 		PERM_OP(l,r,tt, 4,0x0f0f0f0fL); \
 		}
 
-#if !defined(WITH_LIBCRYPTO)
 const DES_LONG DES_SPtrans[8][64] =
 {
 	{
@@ -180,8 +180,6 @@ const DES_LONG DES_SPtrans[8][64] =
 		0x20000000L, 0x20800080L, 0x00020000L, 0x00820080L,
 	}
 };
-#endif
-
 
 #define LOAD_DATA_tmp(a,b,c,d,e,f) LOAD_DATA(a,b,c,d,e,f,g)
 #define LOAD_DATA(R,S,u,t,E0,E1,tmp) \
@@ -216,8 +214,6 @@ const DES_LONG DES_SPtrans[8][64] =
 		(a)^=((t)<<(n)))
 
 #define ROTATE(a,n)     (((a)>>(n))+((a)<<(32-(n))))
-
-
 
 static const unsigned char odd_parity[256] =
 {
@@ -489,8 +485,6 @@ void DES_set_odd_parity(DES_cblock *key)
 		(*key)[i] = odd_parity[(*key)[i]];
 }
 
-
-#if !defined(WITH_LIBCRYPTO)
 void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 {
 	register DES_LONG l=0, r=0, t=0, u=0;
@@ -567,7 +561,6 @@ void DES_encrypt1(DES_LONG *data, DES_key_schedule *ks, int enc)
 	data[1] = r;
 }
 #endif
-
 
 static void mdc2_body(MDC2_CTX *c, const unsigned char *in, size_t len);
 int MDC2_Init(MDC2_CTX *c)
