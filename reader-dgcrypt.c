@@ -17,6 +17,7 @@ static const uint8_t cmd_EMM[3]     = { 0x80, 0xEB, 0x80 };
 struct dgcrypt_data
 {
 	uint8_t session_key[16];
+	uint8_t cardid[5];
 };
 
 static int32_t dgcrypt_cmd(struct s_reader *rdr, const uint8_t *buf, const int32_t buflen, uint8_t *response, uint16_t *response_length, uint16_t min_response_len)
@@ -82,7 +83,6 @@ static int32_t dgcrypt_card_init(struct s_reader *rdr, ATR *newatr)
 	memset(rdr->sa, 0, sizeof(rdr->sa));
 	memset(rdr->prid, 0, sizeof(rdr->prid));
 	memset(rdr->hexserial, 0, sizeof(rdr->hexserial));
-	memset(rdr->cardid, 0, sizeof(rdr->cardid));
 
 	rdr->nprov = 1;
 	// rdr->caid = 0x4ABF;
@@ -114,7 +114,7 @@ static int32_t dgcrypt_card_init(struct s_reader *rdr, ATR *newatr)
 	// Recv: 00 00 00 76 AC 90 00
 	if(!dgcrypt_cmd(rdr, cmd_CARD_ID, sizeof(cmd_CARD_ID), cta_res, &cta_lr, 5))
 		{ return ERROR; }
-	memcpy(rdr->cardid, cta_res, 5);
+	memcpy(csystem_data->cardid, cta_res, 5);
 
 	// Get LABEL
 	// Send: 81 D2 00 01 10
@@ -137,7 +137,7 @@ static int32_t dgcrypt_card_init(struct s_reader *rdr, ATR *newatr)
 					b2ll(7, rdr->hexserial),
 					rdr->hexserial[0], rdr->hexserial[1], rdr->hexserial[2],
 					rdr->hexserial[3], rdr->hexserial[4], rdr->hexserial[5], rdr->hexserial[6],
-					rdr->cardid[0], rdr->cardid[1], rdr->cardid[2], rdr->cardid[3], rdr->cardid[4],
+					csystem_data->cardid[0], csystem_data->cardid[1], csystem_data->cardid[2], csystem_data->cardid[3], csystem_data->cardid[4],
 					label);
 
 	return OK;
@@ -194,6 +194,7 @@ static int32_t dgcrypt_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 {
 	rdr_log_dbg(rdr, D_EMM, "Entered dgcrypt_get_emm_type ep->emm[0]=%x", ep->emm[0]);
 	char tmp_dbg[10];
+	struct dgcrypt_data *csystem_data = rdr->csystem_data;
 
 	switch(ep->emm[0])
 	{
@@ -205,10 +206,10 @@ static int32_t dgcrypt_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 			rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE, ep->hexserial = {%s}",
 								cs_hexdump(1, ep->hexserial, 5, tmp_dbg, sizeof(tmp_dbg)));
 
-			rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE, rdr->cardid = {%s}",
-								cs_hexdump(1, rdr->cardid, 5, tmp_dbg, sizeof(tmp_dbg)));
+			rdr_log_dbg_sensitive(rdr, D_EMM, "UNIQUE, csystem_data->cardid = {%s}",
+								cs_hexdump(1, csystem_data->cardid, 5, tmp_dbg, sizeof(tmp_dbg)));
 
-			return (!memcmp(rdr->cardid, ep->hexserial, 5));
+			return (!memcmp(csystem_data->cardid, ep->hexserial, 5));
 			break;
 			// Unknown EMM types, but allready subbmited to dev's
 			// FIXME: Drop EMM's until there are implemented
@@ -220,6 +221,7 @@ static int32_t dgcrypt_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 
 static int32_t dgcrypt_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count)
 {
+	struct dgcrypt_data *csystem_data = rdr->csystem_data;
 	if(*emm_filters == NULL)
 	{
 		// need more info
@@ -243,7 +245,7 @@ static int32_t dgcrypt_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm
 		filters[idx].enabled = 1;
 		filters[idx].filter[0] = 0x82;
 		filters[idx].mask[0] = 0xFF;
-		memcpy(&filters[idx].filter[2], rdr->cardid, 5);
+		memcpy(&filters[idx].filter[2], csystem_data->cardid, 5);
 		memset(&filters[idx].mask[2], 0xFF, 5);
 		idx++;
 /*

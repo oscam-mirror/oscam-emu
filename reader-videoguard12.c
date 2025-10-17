@@ -109,10 +109,8 @@ static int32_t videoguard12_card_init(struct s_reader *reader, ATR *newatr)
 
 	if((hist_size < 7) || (hist[1] != 0xB0) || (hist[4] != 0xFF) || (hist[5] != 0x4A) || (hist[6] != 0x50))
 	{
-		rdr_log_dbg(reader, D_READER, "failed history check");
 		return ERROR;
 	}
-	rdr_log_dbg(reader, D_READER, "passed history check");
 
 	get_atr;
 	def_resp;
@@ -151,121 +149,10 @@ static int32_t videoguard12_card_init(struct s_reader *reader, ATR *newatr)
 	if(!write_cmd_vg(ins4852, NULL) || !status_ok(cta_res + cta_lr - 2))
 	{
 		rdr_log(reader, "class48 ins52: failed");
-		//return ERROR;
-	}
-
-	if(!write_cmd_vg(ins4852, NULL) || !status_ok(cta_res + cta_lr - 2))
-	{
-		rdr_log(reader, "class48 ins52: failed");
-		//return ERROR;
+		return ERROR;
 	}
 
 	uint8_t boxID[4];
-	int32_t boxidOK = 0;
-
-	/*
-		// Try to get the boxid from the card, even if BoxID specified in the config file
-		uint8_t ins36[5] = { 0x48, 0x36, 0x00, 0x00, 0x53 };
-
-		// get the length of ins36
-		static const uint8_t ins38[5] = { 0x48, 0x38, 0x80, 0x00, 0x02 };
-		if (!write_cmd_vg(ins38,NULL) || !status_ok(cta_res+cta_lr-2)) {
-			rdr_log(reader, "class48 ins38: failed");
-			//return ERROR;
-		} else {
-			ins36[3] = cta_res[0];
-			ins36[4] = cta_res[1];
-		}
-
-
-		if (!write_cmd_vg(ins36,NULL) || !status_ok(cta_res+cta_lr-2)) {
-			rdr_log(reader, "class48 ins36: failed");
-			//return ERROR;
-		}
-
-		if (cta_res[2] > 0x0F) {
-			rdr_log(reader, "class48 ins36: encrypted - therefore not an NDS12 card");
-			// return ERROR;
-		} else {
-			// skipping the initial fixed fields: encr/rev++ (4)
-			int32_t i = 4;
-			int32_t gotUA = 0;
-			while (i < (cta_lr-2)) {
-				if (!gotUA && cta_res[i] < 0xF0) {    // then we guess that the next 4 bytes is the UA
-					gotUA = 1;
-					i += 4;
-				} else {
-					switch (cta_res[i]) {   // object length vary depending on type
-						case 0x00:        // padding
-							{
-								i += 1;
-								break;
-							}
-						case 0xEF:        // card status
-							{
-								i += 3;
-								break;
-							}
-						case 0xD1:
-							{
-								i += 4;
-								break;
-							}
-						case 0xDF:        // next server contact
-							{
-								i += 5;
-								break;
-							}
-						case 0xF3:        // boxID
-							{
-								memcpy(&boxID, &cta_res[i + 1], sizeof(boxID));
-								boxidOK = 1;
-								i += 5;
-								break;
-							}
-						case 0xF6:
-							{
-								i += 6;
-								break;
-							}
-						case 0xFC:        // No idea NDS1/NDS12
-							{
-								i += 14;
-								break;
-							}
-						case 0x01:        // date & time
-							{
-								i += 7;
-								break;
-							}
-						case 0xFA:
-							{
-								i += 9;
-								break;
-							}
-						case 0x5E:
-						case 0x67:        // signature
-						case 0xDE:
-						case 0xE2:
-						case 0xE9:        // tier dates
-						case 0xF8:        // Old PPV Event Record
-						case 0xFD:
-							{
-								i += cta_res[i + 1] + 2;  // skip length + 2 bytes (type and length)
-								break;
-							}
-						default:      // default to assume a length byte
-							{
-								rdr_log(reader, "class48 ins36: returned unknown type=0x%02X - parsing may fail", cta_res[i]);
-								i += cta_res[i + 1] + 2;
-							}
-						} //switch
-					}//else
-				}//while
-			}//ele
-
-		rdr_log_dbg(reader, D_READER, "calculated BoxID: %02X%02X%02X%02X", boxID[0], boxID[1], boxID[2], boxID[3]);
-	*/
 
 	/* the boxid is specified in the config */
 	if(reader->boxid > 0)
@@ -275,13 +162,127 @@ static int32_t videoguard12_card_init(struct s_reader *reader, ATR *newatr)
 		{
 			boxID[i] = (reader->boxid >> (8 * (3 - i))) % 0x100;
 		}
-		rdr_log_dbg(reader, D_READER, "oscam.server BoxID: %02X%02X%02X%02X", boxID[0], boxID[1], boxID[2], boxID[3]);
 	}
-
-	if(!boxidOK)
+	else
 	{
-		rdr_log(reader, "no boxID available");
-		return ERROR;
+		int32_t boxidOK = 0;
+
+		// Try to get the boxid from the card, even if BoxID specified in the config file
+		uint8_t ins36[5] = { 0x48, 0x36, 0x00, 0x00, 0x53 };
+
+		// get the length of ins36
+		static const uint8_t ins38[5] = { 0x48, 0x38, 0x80, 0x00, 0x02 };
+		if(!write_cmd_vg(ins38,NULL) || !status_ok(cta_res + cta_lr - 2))
+		{
+			rdr_log(reader, "class48 ins38: failed");
+			return ERROR;
+		}
+		else
+		{
+			ins36[3] = cta_res[0];
+			ins36[4] = cta_res[1];
+		}
+
+
+		if(!write_cmd_vg(ins36, NULL) || !status_ok(cta_res + cta_lr - 2))
+		{
+			rdr_log(reader, "class48 ins36: failed");
+			return ERROR;
+		}
+
+		if(cta_res[2] > 0x0F)
+		{
+			rdr_log(reader, "class48 ins36: encrypted - therefore not an NDS12 card");
+		}
+		else
+		{
+			// skipping the initial fixed fields: encr/rev++ (4)
+			int32_t i = 4;
+			int32_t gotUA = 0;
+			while(i < (cta_lr - 2))
+			{
+				if (!gotUA && cta_res[i] < 0xF0)
+				{    // then we guess that the next 4 bytes is the UA
+					gotUA = 1;
+					i += 4;
+				}
+				else
+				{
+					switch (cta_res[i])
+					{   // object length vary depending on type
+						case 0x00:        // padding
+						{
+							i += 1;
+							break;
+						}
+						case 0xEF:        // card status
+						{
+							i += 3;
+							break;
+						}
+						case 0xD1:
+						{
+							i += 4;
+							break;
+						}
+						case 0xDF:        // next server contact
+						{
+							i += 5;
+							break;
+						}
+						case 0xF3:        // boxID
+						{
+							memcpy(&boxID, &cta_res[i + 1], sizeof(boxID));
+							boxidOK = 1;
+							i += 5;
+							break;
+						}
+						case 0xF6:
+						{
+							i += 6;
+							break;
+						}
+						case 0xFC:        // No idea NDS1/NDS12
+						{
+							i += 14;
+							break;
+						}
+						case 0x01:        // date & time
+						{
+							i += 7;
+							break;
+						}
+						case 0xFA:
+						{
+							i += 9;
+							break;
+						}
+						case 0x5E:
+						case 0x67:        // signature
+						case 0xDE:
+						case 0xE2:
+						case 0xE9:        // tier dates
+						case 0xF8:        // Old PPV Event Record
+						case 0xFD:
+						{
+							i += cta_res[i + 1] + 2;  // skip length + 2 bytes (type and length)
+							break;
+						}
+						default:      // default to assume a length byte
+						{
+							rdr_log(reader, "class48 ins36: returned unknown type=0x%02X - parsing may fail", cta_res[i]);
+							i += cta_res[i + 1] + 2;
+						}
+					} //switch
+				}//else
+			}//while
+		}//else
+
+		if(!boxidOK)
+		{
+			rdr_log(reader, "no boxID available");
+			return ERROR;
+		}
 	}
 
 	// Send BoxID
@@ -291,7 +292,7 @@ static int32_t videoguard12_card_init(struct s_reader *reader, ATR *newatr)
 	if(!write_cmd_vg(ins484C, payload4C) || !status_ok(cta_res + cta_lr - 2))
 	{
 		rdr_log(reader, "class48 ins4C: sending boxid failed");
-		//return ERROR;
+		return ERROR;
 	}
 
 	static const uint8_t ins4858[5] = { 0x48, 0x58, 0x00, 0x00, 0x35 };
@@ -313,22 +314,22 @@ static int32_t videoguard12_card_init(struct s_reader *reader, ATR *newatr)
 	static const uint8_t insBE[5] = { 0x4B, 0xBE, 0x00, 0x00, 0x12 };
 	if(!write_cmd_vg(insBE, NULL) || !status_ok(cta_res + cta_lr - 2))
 	{
-		rdr_log(reader, "class4B ins52: failed");
-		//return ERROR;
+		rdr_log(reader, "class4B insBE: failed");
+		return ERROR;
 	}
 
 	static const uint8_t ins4952[5] = { 0x49, 0x52, 0x00, 0x00, 0x14 };
 	if(!write_cmd_vg(ins4952, NULL) || !status_ok(cta_res + cta_lr - 2))
 	{
 		rdr_log(reader, "class49 ins52: failed");
-		//return ERROR;
+		return ERROR;
 	}
 
 	static const uint8_t ins4958[5] = { 0x49, 0x58, 0x00, 0x00, 0x35 };
 	if(!write_cmd_vg(ins4958, NULL) || !status_ok(cta_res + cta_lr - 2))
 	{
 		rdr_log(reader, "class49 ins58: failed");
-		//return ERROR;
+		return ERROR;
 	}
 
 	// Send BoxID class 49
@@ -336,20 +337,20 @@ static int32_t videoguard12_card_init(struct s_reader *reader, ATR *newatr)
 	if(!write_cmd_vg(ins494C, payload4C) || !status_ok(cta_res + cta_lr - 2))
 	{
 		rdr_log(reader, "class49 ins4C: sending boxid failed");
-		//return ERROR;
+		return ERROR;
 	}
 
 	static const uint8_t ins0C[5] = { 0x49, 0x0C, 0x00, 0x00, 0x0A };
 	if(!write_cmd_vg(ins0C, NULL) || !status_ok(cta_res + cta_lr - 2))
 	{
 		rdr_log(reader, "class49 ins0C: failed");
-		//return ERROR;
+		return ERROR;
 	}
 
 	rdr_log_sensitive(reader, "type: VideoGuard, caid: %04X, serial: {%02X%02X%02X%02X}, BoxID: {%02X%02X%02X%02X}",
 					reader->caid, reader->hexserial[2], reader->hexserial[3], reader->hexserial[4],
 					reader->hexserial[5], boxID[0], boxID[1], boxID[2], boxID[3]);
-	rdr_log(reader, "ready for requests - this is in testing please send -d 255 logs to rebdog");
+	rdr_log(reader, "ready for requests");
 
 	return OK;
 }

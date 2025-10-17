@@ -632,10 +632,8 @@ static int32_t videoguard2_card_init(struct s_reader *reader, ATR *newatr)
 	get_hist;
 	if((hist_size < 7) || (hist[1] != 0xB0) || (hist[4] != 0xFF) || (hist[5] != 0x4A) || (hist[6] != 0x50))
 	{
-		rdr_log_dbg(reader, D_READER, "failed history check");
 		return ERROR;
 	}
-	rdr_log_dbg(reader, D_READER, "passed history check");
 
 	get_atr;
 	def_resp;
