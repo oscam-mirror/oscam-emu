@@ -1,3 +1,20 @@
+			<script>
+				function showCAK7CWPK(row_id,show_button,hide_button)
+				{
+					if (document.getElementById(row_id).style.display == "none")
+					{
+						document.getElementById(row_id).style.display = "table-row";
+						document.getElementById(show_button).style.display = "none";
+						document.getElementById(hide_button).style.display = "block";
+					}
+					else
+					{
+						document.getElementById(row_id).style.display = "none";
+						document.getElementById(show_button).style.display = "block";
+						document.getElementById(hide_button).style.display = "none";
+					}
+				}
+			</script>
 			<TR><TH COLSPAN="2">Reader specific settings for Nagra Merlin</TH></TR>
 				<TR><TD><A>Init card in CAK7 mode:</A></TD><TD><input name="cak7_mode" type="hidden" value="0"><input name="cak7_mode" type="checkbox" value="1" ##NAGRACAK7MODECHECKED##><label></label></TD></TR>
 				<TR><TD><A>Force CW swap:</A></TD><TD><input name="forcecwswap" type="hidden" value="0"><input name="forcecwswap" type="checkbox" value="1" ##FORCECWSWAPCHECKED##><label></label></TD></TR>
@@ -34,13 +51,13 @@
 				<TR><TD><A>CWPK5:</A></TD><TD><input name="cwekey5" class="longer" type="text" maxlength="32" value="##CWEKEY5##"></TD></TR>
 				<TR><TD><A>CWPK6:</A></TD><TD><input name="cwekey6" class="longer" type="text" maxlength="32" value="##CWEKEY6##"></TD></TR>
 				<TR><TD><A>CWPK7:</A></TD><TD><input name="cwekey7" class="longer" type="text" maxlength="32" value="##CWEKEY7##"></TD></TR>
-				<TR><TD><A>CWPK8:</A></TD><TD><input name="cwekey8" class="longer" type="text" maxlength="32" value="##CWEKEY8##"></TD></TR>
-				<TR><TD><A>CWPK9:</A></TD><TD><input name="cwekey9" class="longer" type="text" maxlength="32" value="##CWEKEY9##"></TD></TR>
-				<TR><TD><A>CWPK10:</A></TD><TD><input name="cwekey10" class="longer" type="text" maxlength="32" value="##CWEKEY10##"></TD></TR>
-				<TR><TD><A>CWPK11:</A></TD><TD><input name="cwekey11" class="longer" type="text" maxlength="32" value="##CWEKEY11##"></TD></TR>
-				<TR><TD><A>CWPK12:</A></TD><TD><input name="cwekey12" class="longer" type="text" maxlength="32" value="##CWEKEY12##"></TD></TR>
-				<TR><TD><A>CWPK13:</A></TD><TD><input name="cwekey13" class="longer" type="text" maxlength="32" value="##CWEKEY13##"></TD></TR>
-				<TR><TD><A>CWPK14:</A></TD><TD><input name="cwekey14" class="longer" type="text" maxlength="32" value="##CWEKEY14##"></TD></TR>
-				<TR><TD><A>CWPK15:</A></TD><TD><input name="cwekey15" class="longer" type="text" maxlength="32" value="##CWEKEY15##"></TD></TR>
-				<TR><TD><A>CWPK16:</A></TD><TD><input name="cwekey16" class="longer" type="text" maxlength="32" value="##CWEKEY16##"></TD></TR>
-
+				<TR><TD><A>Show/Hide CWPK8 - CWPK16:</A></TD><TD><input type="button" name="cak7cwpkshow" id="cak7cwpkShowButton" value="Show" onclick="showCAK7CWPK('cak7cwpk8','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk9','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk10','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk11','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk12','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk13','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk14','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk15','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk16','cak7cwpkShowButton','cak7cwpkHideButton')" /><input type="button" name="cak7cwpkhide" id="cak7cwpkHideButton" value="Hide" onclick="showCAK7CWPK('cak7cwpk8','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk9','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk10','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk11','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk12','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk13','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk14','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk15','cak7cwpkShowButton','cak7cwpkHideButton'); showCAK7CWPK('cak7cwpk16','cak7cwpkShowButton','cak7cwpkHideButton')" style="display:none;" /></TD></TR>
+				<TR id="cak7cwpk8" style="display:none;"><TD><A>CWPK8:</A></TD><TD><input name="cwekey8" class="longer" type="text" maxlength="32" value="##CWEKEY8##"></TD></TR>
+				<TR id="cak7cwpk9" style="display:none;"><TD><A>CWPK9:</A></TD><TD><input name="cwekey9" class="longer" type="text" maxlength="32" value="##CWEKEY9##"></TD></TR>
+				<TR id="cak7cwpk10" style="display:none;"><TD><A>CWPK10:</A></TD><TD><input name="cwekey10" class="longer" type="text" maxlength="32" value="##CWEKEY10##"></TD></TR>
+				<TR id="cak7cwpk11" style="display:none;"><TD><A>CWPK11:</A></TD><TD><input name="cwekey11" class="longer" type="text" maxlength="32" value="##CWEKEY11##"></TD></TR>
+				<TR id="cak7cwpk12" style="display:none;"><TD><A>CWPK12:</A></TD><TD><input name="cwekey12" class="longer" type="text" maxlength="32" value="##CWEKEY12##"></TD></TR>
+				<TR id="cak7cwpk13" style="display:none;"><TD><A>CWPK13:</A></TD><TD><input name="cwekey13" class="longer" type="text" maxlength="32" value="##CWEKEY13##"></TD></TR>
+				<TR id="cak7cwpk14" style="display:none;"><TD><A>CWPK14:</A></TD><TD><input name="cwekey14" class="longer" type="text" maxlength="32" value="##CWEKEY14##"></TD></TR>
+				<TR id="cak7cwpk15" style="display:none;"><TD><A>CWPK15:</A></TD><TD><input name="cwekey15" class="longer" type="text" maxlength="32" value="##CWEKEY15##"></TD></TR>
+				<TR id="cak7cwpk16" style="display:none;"><TD><A>CWPK16:</A></TD><TD><input name="cwekey16" class="longer" type="text" maxlength="32" value="##CWEKEY16##"></TD></TR>

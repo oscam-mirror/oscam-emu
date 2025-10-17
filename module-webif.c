@@ -1889,7 +1889,10 @@ static char *send_oscam_reader(struct templatevars *vars, struct uriparams *para
 	if(strcmp(getParam(params, "action"), "reloadreaders") == 0)
 	{
 		if(!cfg.http_readonly)
-			{ refresh_oscam(REFR_READERS); }
+		{
+			refresh_oscam(REFR_READERS);
+			refresh_oscam(REFR_ACCOUNTS);
+		}
 	}
 	if((strcmp(getParam(params, "action"), "disable") == 0) || (strcmp(getParam(params, "action"), "enable") == 0))
 	{
