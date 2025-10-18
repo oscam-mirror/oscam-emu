@@ -1176,6 +1176,10 @@ static const struct config_list reader_opts[] =
 #endif
 
 	DEF_OPT_INT8("cak7_mode"                      , OFS(cak7_mode),                       0),
+	DEF_OPT_INT32("card_startdate_basemonth"      , OFS(card_startdate_basemonth),        1),
+	DEF_OPT_INT32("card_startdate_baseyear"       , OFS(card_startdate_baseyear),         1997),
+	DEF_OPT_INT32("card_expiredate_basemonth"     , OFS(card_expiredate_basemonth),       1),
+	DEF_OPT_INT32("card_expiredate_baseyear"      , OFS(card_expiredate_baseyear),        1997),
 	DEF_OPT_FUNC_X("ins7e"                        , OFS(ins7E),                           ins7E_fn, SIZEOF(ins7E)),
 	DEF_OPT_FUNC_X("ins42"                        , OFS(ins42),                           ins42_fn, SIZEOF(ins42)),
 	DEF_OPT_FUNC_X("ins7e11"                      , OFS(ins7E11),                         ins7E_fn, SIZEOF(ins7E11)),
@@ -1286,7 +1290,7 @@ static bool reader_check_setting(const struct config_list *UNUSED(clist), void *
 	static const char *hw_only_settings[] =
 	{
 		"readnano", "resetcycle", "smargopatch", "autospeed", "sc8in1_dtrrts_patch", "boxid","fix07",
-		"fix9993", "rsakey", "deskey", "ins7e", "ins42", "ins7e11", "ins2e06", "k1_generic", "k1_unique", "force_irdeto", "needsemmfirst", "boxkey",
+		"fix9993", "rsakey", "deskey", "card_startdate_basemonth", "card_startdate_baseyear", "card_expiredate_basemonth", "card_expiredate_baseyear", "ins7e", "ins42", "ins7e11", "ins2e06", "k1_generic", "k1_unique", "force_irdeto", "needsemmfirst", "boxkey",
 		"atr", "detect", "nagra_read", "mhz", "cardmhz", "readtiers", "read_old_classes", "use_gpio", "needsglobalfirst",
 #ifdef READER_NAGRA_MERLIN
 		"mod1", "idird", "cmd0eprov", "mod2", "key3588", "key3460", "key3310", "data50", "mod50", "nuid", "forcepair", "otpcsc", "otacsc", "cwpkcaid", "headermode", "cwekey0", "cwekey1", "cwekey2", "cwekey3", "cwekey4", "cwekey5", "cwekey6", "cwekey7", "cwekey8", "cwekey9", "cwekey10", "cwekey11", "cwekey12", "cwekey13", "cwekey14", "cwekey15", "cwekey16",

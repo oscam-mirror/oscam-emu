@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://wiki.streamboard.tv/wiki"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.25.10-11898"
+#define CS_VERSION				"2.25.10-11899"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1851,6 +1851,10 @@ struct s_reader										// contains device info, reader info and card info
 	uint8_t			VgCountryC[3];
 	uint8_t			VgRegionC[8];
 	uint8_t			VgLastPayload[6];
+	int32_t			card_startdate_basemonth;
+	int32_t			card_startdate_baseyear;
+	int32_t			card_expiredate_basemonth;
+	int32_t			card_expiredate_baseyear;
 #ifdef WITH_LB
 	int32_t			lb_weight;						// loadbalance weight factor, if unset, weight=100. The higher the value, the higher the usage-possibility
 	int8_t			lb_force_fallback;				// force this reader as fallback if fallback or fallback_percaid paramters set
