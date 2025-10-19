@@ -2864,11 +2864,13 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	if(rdr->cak7_mode)
 		{ tpl_addVar(vars, TPLADD, "NAGRACAK7MODECHECKED", "checked"); }
 
-	tpl_printf(vars, TPLADD, "CARDSTARTDATEBASEMONTH", "%d", rdr->card_startdate_basemonth);
+	tpl_printf(vars, TPLADD, "TMP", "CARDSTARTDATEBASEMONTH%d", rdr->card_startdate_basemonth);
+	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
 
 	tpl_printf(vars, TPLADD, "CARDSTARTDATEBASEYEAR", "%d", rdr->card_startdate_baseyear);
 
-	tpl_printf(vars, TPLADD, "CARDEXPIREDATEBASEMONTH", "%d", rdr->card_expiredate_basemonth);
+	tpl_printf(vars, TPLADD, "TMP", "CARDEXPIREDATEBASEMONTH%d", rdr->card_expiredate_basemonth);
+	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
 
 	tpl_printf(vars, TPLADD, "CARDEXPIREDATEBASEYEAR", "%d", rdr->card_expiredate_baseyear);
 
