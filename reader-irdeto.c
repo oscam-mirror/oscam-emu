@@ -603,7 +603,7 @@ int32_t irdeto_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_e
 
 					case 0x27: // valid for V6 and V7 cards Time sync EMMs
 					{
-						snprintf(ea->msglog, MSGLOGSIZE, "%.23s need global EMMs first", reader->label);
+						snprintf(ea->msglog, MSGLOGSIZE, "%.23s Time Sync Global EMM needed", reader->label);
 						return ERROR;
 					}
 
@@ -615,7 +615,7 @@ int32_t irdeto_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_e
 
 					case 0x35: // valid for V6 and V7 cards Time sync EMMs
 					{
-						snprintf(ea->msglog, MSGLOGSIZE, "%.23s need global EMMs first", reader->label);
+						snprintf(ea->msglog, MSGLOGSIZE, "%.23s Time Sync Global EMM needed", reader->label);
 						return ERROR;
 					}
 
@@ -696,7 +696,7 @@ int32_t irdeto_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_e
 
 					case 0x27: // valid for V6 and V7 cards Time sync EMMs
 					{
-						snprintf(ea->msglog, MSGLOGSIZE, "%.23s need global EMMs first", reader->label);
+						snprintf(ea->msglog, MSGLOGSIZE, "%.23s Time Sync Global EMM needed", reader->label);
 						return ERROR;
 					}
 
@@ -708,7 +708,7 @@ int32_t irdeto_do_ecm(struct s_reader *reader, const ECM_REQUEST *er, struct s_e
 
 					case 0x35: // valid for V6 and V7 cards Time sync EMMs
 					{
-						snprintf(ea->msglog, MSGLOGSIZE, "%.23s need global EMMs first", reader->label);
+						snprintf(ea->msglog, MSGLOGSIZE, "%.23s Time Sync Global EMM needed", reader->label);
 						return ERROR;
 					}
 
