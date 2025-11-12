@@ -369,10 +369,10 @@
  *			constants
  * =========================== */
 #define SCM_URL					"https://github.com/oscam-mirror/oscam-emu"
-#define WIKI_URL				"https://wiki.streamboard.tv/wiki"
+#define WIKI_URL				"https://git.streamboard.tv/common/oscam/-/wikis"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.25.10-11903"
+#define CS_VERSION				"2.25.11-11904"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
