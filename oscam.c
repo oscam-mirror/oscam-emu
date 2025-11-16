@@ -140,11 +140,11 @@ static int32_t oscam_stacksize = 0;
 static void show_usage(void)
 {
 	printf("%s",
-		   "  ___  ____   ___\n"
-		   " / _ \\/ ___| / __|__ _ _ __ ___\n"
-		   "| | | \\___ \\| |  / _` | '_ ` _ \\\n"
-		   "| |_| |___) | |_| (_| | | | | | |\n"
-		   " \\___/|____/ \\___\\__,_|_| |_| |_|\n\n");
+			"  ___  ____   ___\n"
+			" / _ \\/ ___| / __|__ _ _ __ ___\n"
+			"| | | \\___ \\| |  / _` | '_ ` _ \\\n"
+			"| |_| |___) | |_| (_| | | | | | |\n"
+			" \\___/|____/ \\___\\__,_|_| |_| |_|\n\n");
 	printf("OSCam Cardserver v%s@%s (%s)\n", CS_VERSION, CS_GIT_COMMIT, CS_TARGET);
 	printf("Copyright (C) 2009-2025 OSCam developers.\n");
 	printf("This program is distributed under GPLv3.\n");
@@ -367,7 +367,7 @@ static void write_versionfile(bool use_stdout)
 		struct tm st;
 		time_t walltime = cs_time();
 		localtime_r(&walltime, &st);
-		fprintf(fp, "Unix Starttime: %lld\n", (long long)walltime);
+		fprintf(fp, "Unix Starttime: %" PRId64 "\n", (int64_t)walltime);
 		fprintf(fp, "Starttime:      %02d.%02d.%04d %02d:%02d:%02d\n",
 				st.tm_mday, st.tm_mon + 1, st.tm_year + 1900,
 				st.tm_hour, st.tm_min, st.tm_sec);
@@ -1104,7 +1104,7 @@ int32_t start_thread_nolog(char *nameroutine, void *startroutine, void *arg, pth
 	SAFE_ATTR_INIT(&attr);
 
 	if(modify_stacksize)
- 		{ SAFE_ATTR_SETSTACKSIZE(&attr, oscam_stacksize); }
+		{ SAFE_ATTR_SETSTACKSIZE(&attr, oscam_stacksize); }
 
 	int32_t ret = pthread_create(pthread == NULL ? &temp : pthread, &attr, startroutine, arg);
 	if(ret)
@@ -1315,7 +1315,7 @@ static void process_clients(void)
 			if(pfd[i].revents == 0) { continue; }  // skip sockets with no changes
 			rc--; //event handled!
 			cs_log_dbg(D_TRACE, "[OSCAM] new event %d occurred on fd %d after %"PRId64" ms inactivity", pfd[i].revents,
-						  pfd[i].fd, comp_timeb(&end, &start));
+						pfd[i].fd, comp_timeb(&end, &start));
 			//clients
 			cl = cl_list[i];
 			if(cl && !is_valid_client(cl))

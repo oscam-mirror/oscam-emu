@@ -699,26 +699,26 @@ void cs_statistics(struct s_client *client)
 		/* statistics entry start with 's' to filter it out on other end of pipe
 		 * so we can use the same Pipe as Log
 		 */
-		snprintf(buf, sizeof(buf), "s%02d.%02d.%02d %02d:%02d:%02d %3.1f %s %s %d %d %d %d %d %d %d %lld %lld %02d:%02d:%02d %s %04X@%06X:%04X %s\n",
-				 lt.tm_mday, lt.tm_mon + 1, lt.tm_year % 100,
-				 lt.tm_hour, lt.tm_min, lt.tm_sec, cwps,
-				 client->account->usr,
-				 cs_inet_ntoa(client->ip),
-				 client->port,
-				 client->cwfound,
-				 client->cwcache,
-				 client->cwnot,
-				 client->cwignored,
-				 client->cwtout,
-				 client->cwtun,
-				 (long long)client->login,
-				 (long long)client->last,
-				 fullhours, mins, secs,
-				 get_module(client)->desc,
-				 client->last_caid,
-				 client->last_provid,
-				 client->last_srvid,
-				 channame);
+		snprintf(buf, sizeof(buf), "s%02d.%02d.%02d %02d:%02d:%02d %3.1f %s %s %d %d %d %d %d %d %d %" PRId64 " %" PRId64 " %02d:%02d:%02d %s %04X@%06X:%04X %s\n",
+				lt.tm_mday, lt.tm_mon + 1, lt.tm_year % 100,
+				lt.tm_hour, lt.tm_min, lt.tm_sec, cwps,
+				client->account->usr,
+				cs_inet_ntoa(client->ip),
+				client->port,
+				client->cwfound,
+				client->cwcache,
+				client->cwnot,
+				client->cwignored,
+				client->cwtout,
+				client->cwtun,
+				(int64_t)client->login,
+				(int64_t)client->last,
+				fullhours, mins, secs,
+				get_module(client)->desc,
+				client->last_caid,
+				client->last_provid,
+				client->last_srvid,
+				channame);
 
 		cs_write_log_int(buf);
 	}

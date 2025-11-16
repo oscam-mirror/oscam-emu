@@ -1165,7 +1165,7 @@ int32_t send_dcw(struct s_client *client, ECM_REQUEST *er)
 			if(client->account->acosc_penalty_active > 0)
 			{
 				if(client->account->acosc_penalty_active == 4)
-					{ cs_log_dbg(D_TRACE, "[zaplist] ACoSC for Client: %s  penalty_duration: %lld seconds left(%s)", username(client), (long long)client->account->acosc_penalty_until - zaptime, info3); }
+					{ cs_log_dbg(D_TRACE, "[zaplist] ACoSC for Client: %s  penalty_duration: %" PRId64 " seconds left(%s)", username(client), (int64_t)(client->account->acosc_penalty_until - zaptime), info3); }
 
 				int16_t lt = get_module(client)->listenertype;
 				switch(penalty)
@@ -1913,7 +1913,7 @@ int32_t write_ecm_answer(struct s_reader *reader, ECM_REQUEST *er, int8_t rc, ui
 
 		if(chk_if_ignore_checksum(er, &reader->disablecrccws_only_for) && caid_is_videoguard(er->caid)
 #ifdef CS_CACHEEX_AIO
-		 && !chk_srvid_disablecrccws_only_for_exception(er)
+		&& !chk_srvid_disablecrccws_only_for_exception(er)
 #endif
 		)
 		{
@@ -2302,9 +2302,9 @@ void write_ecm_answer_fromcache(struct s_write_from_cache *wfc)
 		{
 			cs_log_dbg(D_LB,"{client %s, caid %04X, prid %06X, srvid %04X} [write_ecm_answer_fromcache] found cw in CACHE (count %d)!", (check_client(er->client)?er->client->account->usr:"-"),er->caid, er->prid, er->srvid,
 #ifdef CS_CACHEEX_AIO
-					 (er->cw_count > 0x0F000000) ? er->cw_count ^= 0x0F000000 : er->cw_count);
+					(er->cw_count > 0x0F000000) ? er->cw_count ^= 0x0F000000 : er->cw_count);
 #else
-					 er->cw_count);
+					er->cw_count);
 #endif
 			send_dcw(er->client, er);
 		}
@@ -2852,9 +2852,9 @@ OUT:
 
 	if(client->account && !client->account->no_wait_time
 #ifdef CS_CACHEEX_AIO
-			 && !chk_srvid_no_wait_time(er)
+			&& !chk_srvid_no_wait_time(er)
 #endif
-			 && er->preferlocalcards<2)
+			&& er->preferlocalcards<2)
 	{
 		wait_time_no_hitcache = get_cacheex_wait_time(er,NULL); // NO check hitcache. Wait_time is dwtime, or, if 0, awtime.
 		wait_time_hitcache = get_cacheex_wait_time(er,client); // check hitcache for calculating wait_time! If hitcache wait_time is biggest value between dwtime and awtime, else it's awtime.

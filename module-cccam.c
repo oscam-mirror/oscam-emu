@@ -3971,7 +3971,7 @@ int32_t cc_recv_chk(struct s_client *cl, uint8_t *dcw, int32_t *rc, uint8_t *buf
 
 	if(buf[1] == MSG_CW_ECM
 #ifdef CS_CACHEEX_AIO
-		 || buf[1] == MSG_CW_ECM_LGF
+		|| buf[1] == MSG_CW_ECM_LGF
 #endif
 	)
 	{
@@ -4167,7 +4167,7 @@ int32_t cc_recv(struct s_client *cl, uint8_t *buf, int32_t l)
 		n = cc_parse_msg(cl, buf, n);
 		if(n == MSG_CW_ECM || n == MSG_EMM_ACK
 #ifdef CS_CACHEEX_AIO
-			 || n == MSG_CW_ECM_LGF
+			|| n == MSG_CW_ECM_LGF
 #endif
 		)
 		{
@@ -4793,7 +4793,7 @@ int32_t cc_cli_connect(struct s_client *cl)
 		cs_log_dbg(D_READER, "%s login succeeded", getprefix());
 	}
 
-	cs_log_dbg(D_READER, "cccam: last_s=%lld, last_g=%lld", (long long)rdr->last_s, (long long)rdr->last_g);
+	cs_log_dbg(D_READER, "cccam: last_s=%" PRId64 ", last_g=%" PRId64, (int64_t)rdr->last_s, (int64_t)rdr->last_g);
 
 	cl->pfd = cl->udp_fd;
 	cs_log_dbg(D_READER, "cccam: pfd=%d", cl->pfd);
