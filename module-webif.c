@@ -1712,6 +1712,9 @@ static char *send_oscam_config_dvbapi(struct templatevars *vars, struct uriparam
 	if(cfg.dvbapi_listenport > 0)
 		{ tpl_printf(vars, TPLADD, "LISTENPORT", "%d", cfg.dvbapi_listenport); }
 
+	if(IP_ISSET(cfg.dvbapi_srvip))
+		{ tpl_addVar(vars, TPLADD, "SERVERIP", cs_inet_ntoa(cfg.dvbapi_srvip)); }
+
 	return tpl_getTpl(vars, "CONFIGDVBAPI");
 }
 #endif

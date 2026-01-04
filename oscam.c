@@ -146,7 +146,7 @@ static void show_usage(void)
 			"| |_| |___) | |_| (_| | | | | | |\n"
 			" \\___/|____/ \\___\\__,_|_| |_| |_|\n\n");
 	printf("OSCam Cardserver v%s@%s (%s)\n", CS_VERSION, CS_GIT_COMMIT, CS_TARGET);
-	printf("Copyright (C) 2009-2025 OSCam developers.\n");
+	printf("Copyright (C) 2009-2026 OSCam developers.\n");
 	printf("This program is distributed under GPLv3.\n");
 	printf("OSCam is based on Streamboard mp-cardserver v0.9d written by dukat\n");
 	printf("Visit %s for more details.\n\n", BOARD_URL);
@@ -428,10 +428,7 @@ static void write_versionfile(bool use_stdout)
 	if(config_enabled(HAVE_DVBAPI))
 	{
 		write_conf(WITH_EXTENDED_CW, "DVB API with extended CW API support");
-		if(config_enabled(MODULE_STREAMRELAY))
-		{
-			write_conf(true, "DVB API with Stream Relay support");
-		}
+		write_conf(MODULE_STREAMRELAY, "DVB API with Stream Relay support");
 		write_conf(WITH_AZBOX, "DVB API with AZBOX support");
 		write_conf(WITH_MCA, "DVB API with MCA support");
 		write_conf(WITH_COOLAPI, "DVB API with COOLAPI support");

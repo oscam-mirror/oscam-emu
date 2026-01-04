@@ -10,7 +10,7 @@ License
 =======
 
 OSCam-Emu: Open Source CAM with Emulator
-Copyright (C) 2009-2025 OSCam-Emu developers
+Copyright (C) 2009-2026 OSCam-Emu developers
 
 OSCam-Emu is based on the Streamboard mp-cardserver 0.9d by dukat and
 has been extended and worked on by many more since then.

@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://git.streamboard.tv/common/oscam/-/wikis"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.25.12-11907"
+#define CS_VERSION				"2.26.01-11910"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -2406,6 +2406,7 @@ struct s_config
 	int8_t			dvbapi_pmtmode;
 	int8_t			dvbapi_requestmode;
 	int32_t			dvbapi_listenport;				// TCP port to listen instead of camd.socket (network mode, default=0 -> disabled)
+	IN_ADDR_T		dvbapi_srvip;
 	SIDTABS			dvbapi_sidtabs;
 	int32_t			dvbapi_delayer;					// delayer ms, minimum time to write cw
 	int8_t			dvbapi_ecminfo_file;			// Enable or disable ecm.info file creation
@@ -2692,6 +2693,16 @@ static inline bool caid_is_nagra(uint16_t caid) { return caid >> 8 == 0x18; }
 static inline bool caid_is_bulcrypt(uint16_t caid) { return caid == 0x5581 || caid == 0x4AEE; }
 static inline bool caid_is_dre(uint16_t caid) { return caid == 0x4AE0 || caid == 0x4AE1 || caid == 0x2710;}
 static inline bool caid_is_tongfang(uint16_t caid) { return caid == 0x4A02; }
+#if defined(WITH_EXTENDED_CW) || defined(MODULE_STREAMRELAY)
+static inline bool select_csa_alt(const ECM_REQUEST *er) {
+	return (caid_is_videoguard(er->caid) && er->ecm[4] != 0 && (er->ecm[2] - er->ecm[4]) == 4);
+}
+#endif
+#ifdef MODULE_STREAMRELAY
+static inline uint8_t get_ecm_mode(const ECM_REQUEST *er) {
+	return (caid_is_videoguard(er->caid) && er->ecmlen >= 4) ? (er->ecm[er->ecmlen - 1] & 0x0F) : 0;
+}
+#endif
 const char *get_cardsystem_desc_by_caid(uint16_t caid);
 
 #ifdef WITH_EMU
