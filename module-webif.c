@@ -4827,7 +4827,12 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 			}
 
 			lastresponsetm = latestclient->cwlastresptime;
-			tpl_addVar(vars, TPLADD, "CLIENTIP", cs_inet_ntoa(latestclient->ip));
+			if(IP_ISSET(latestclient->ip))
+				{ tpl_addVar(vars, TPLADD, "CLIENTIP", cs_inet_ntoa(latestclient->ip)); }
+			else if(latestclient->login > latestclient->logout)
+				{ tpl_addVar(vars, TPLADD, "CLIENTIP", "camd.socket"); }
+			else
+				{ tpl_addVar(vars, TPLADD, "CLIENTIP", ""); }
 			connected_users++;
 			casc_users = ll_count(latestclient->cascadeusers);
 			LL_ITER it = ll_iter_create(latestclient->cascadeusers);
@@ -6058,7 +6063,18 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 						else { tpl_addVar(vars, TPLADD, "CLIENTCRYPTED", ""); }
 					}
 					else { tpl_printf(vars, TPLADD, "CLIENTCRYPTED", "%d", cl->crypted); }
-					tpl_addVar(vars, TPLADD, "CLIENTIP", cs_inet_ntoa(cl->ip));
+
+					if(cl->typ == 'r' && cl->reader && !is_network_reader(cl->reader))
+						{ tpl_addVar(vars, TPLADD, "CLIENTIP", "local"); }
+					else if(IP_ISSET(cl->ip))
+						{ tpl_addVar(vars, TPLADD, "CLIENTIP", cs_inet_ntoa(cl->ip)); }
+					else if((cl->typ == 'p' || cl->typ == 'r') && cl->reader && cl->reader->tcp_connected)
+						{ tpl_addVar(vars, TPLADD, "CLIENTIP", "camd.socket"); }
+					else if(cl->typ == 'c' && cl->login > cl->logout)
+						{ tpl_addVar(vars, TPLADD, "CLIENTIP", "camd.socket"); }
+					else
+						{ tpl_addVar(vars, TPLADD, "CLIENTIP", ""); }
+
 					tpl_printf(vars, TPLADD, "CLIENTPORT", "%d", cl->port);
 					const char *proto = client_get_proto(cl);
 #ifdef CS_CACHEEX_AIO
@@ -8186,7 +8202,12 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 				}
 			}
 
-			tpl_addVar(vars, TPLADD, "IP", cs_inet_ntoa(cl->ip));
+			if(IP_ISSET(cl->ip))
+				{ tpl_addVar(vars, TPLADD, "IP", cs_inet_ntoa(cl->ip)); }
+			else if(cl->login > cl->logout)
+				{ tpl_addVar(vars, TPLADD, "IP", "camd.socket"); }
+			else
+				{ tpl_addVar(vars, TPLADD, "IP", ""); }
 			tpl_printf(vars, TPLADD, "NODE", "%" PRIu64 "X", get_cacheex_node(cl));
 			tpl_addVar(vars, TPLADD, "LEVEL", level[cl->account->cacheex.mode]);
 			tpl_printf(vars, TPLADD, "PUSH", "%d", cl->account->cwcacheexpush);
@@ -8237,7 +8258,12 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 				}
 			}
 
-			tpl_addVar(vars, TPLADD, "IP", cs_inet_ntoa(cl->ip));
+			if(IP_ISSET(cl->ip))
+				{ tpl_addVar(vars, TPLADD, "IP", cs_inet_ntoa(cl->ip)); }
+			else if(cl->reader && cl->reader->tcp_connected)
+				{ tpl_addVar(vars, TPLADD, "IP", "camd.socket"); }
+			else
+				{ tpl_addVar(vars, TPLADD, "IP", ""); }
 			tpl_printf(vars, TPLADD, "NODE", "%" PRIu64 "X", get_cacheex_node(cl));
 			tpl_addVar(vars, TPLADD, "LEVEL", level[cl->reader->cacheex.mode]);
 			tpl_printf(vars, TPLADD, "PUSH", "%d", cl->cwcacheexpush);
@@ -8272,7 +8298,12 @@ static char *send_oscam_cacheex(struct templatevars * vars, struct uriparams * p
 				tpl_addVar(vars, TPLADD, "NAME", "csp");
 			}
 
-			tpl_addVar(vars, TPLADD, "IP", cs_inet_ntoa(cl->ip));
+			if(IP_ISSET(cl->ip))
+				{ tpl_addVar(vars, TPLADD, "IP", cs_inet_ntoa(cl->ip)); }
+			else if(cl->login > cl->logout)
+				{ tpl_addVar(vars, TPLADD, "IP", "camd.socket"); }
+			else
+				{ tpl_addVar(vars, TPLADD, "IP", ""); }
 			tpl_addVar(vars, TPLADD, "NODE", "csp");
 
 			if(cl->cwcacheexping)
