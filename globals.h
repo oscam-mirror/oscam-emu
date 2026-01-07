@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://git.streamboard.tv/common/oscam/-/wikis"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.26.01-11914"
+#define CS_VERSION				"2.26.01-11918"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -380,6 +380,7 @@
 #ifdef CS_CACHEEX
 #ifdef CS_CACHEEX_AIO
 #define CS_AIO_VERSION			CS_VERSION
+#define CS_AIO_VERSION_LEN		(sizeof(CS_AIO_VERSION))
 #endif
 #endif
 #ifndef CS_TARGET
@@ -1520,7 +1521,7 @@ typedef struct ce_csp_t
 	uint8_t			lg_only_remote_settings;
 	int32_t			feature_bitfield;
 	CAIDVALUETAB	cacheex_nopushafter_tab;
-	char			aio_version[12];
+	char			aio_version[CS_AIO_VERSION_LEN];
 #endif
 } CECSP;
 

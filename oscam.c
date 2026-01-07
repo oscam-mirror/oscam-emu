@@ -505,6 +505,7 @@ static void write_versionfile(bool use_stdout)
 		write_cardreaderconf(CARDREADER_INTERNAL_AZBOX, "internal_azbox");
 		write_cardreaderconf(CARDREADER_INTERNAL_COOLAPI, "internal_coolapi");
 		write_cardreaderconf(CARDREADER_INTERNAL_COOLAPI2, "internal_coolapi2");
+		write_cardreaderconf(CARDREADER_INTERNAL_AMSMC, "internal_amsmc");
 		write_cardreaderconf(CARDREADER_INTERNAL_SCI, "internal_sci");
 		write_cardreaderconf(CARDREADER_SC8IN1, "sc8in1");
 		write_cardreaderconf(CARDREADER_MP35, "mp35");
@@ -1650,6 +1651,8 @@ const struct s_cardreader *cardreaders[] =
 	&cardreader_internal_cool,
 #elif defined(CARDREADER_INTERNAL_COOLAPI2)
 	&cardreader_internal_cool,
+#elif defined(CARDREADER_INTERNAL_AMSMC)
+	&cardreader_internal_amsmc,
 #elif defined(CARDREADER_INTERNAL_SCI)
 	&cardreader_internal_sci,
 #endif

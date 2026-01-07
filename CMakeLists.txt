@@ -53,6 +53,8 @@ if (CMAKE_CROSSCOMPILING)
 		set (OSCamOperatingSystem "Padre")
 	elseif (OSCAM_SYSTEM_NAME MATCHES "FriendlyARM")
 		set (OSCamOperatingSystem "FriendlyARM")
+	elseif (OSCAM_SYSTEM_NAME MATCHES "Amsmc")
+		set (OSCamOperatingSystem "Amsmc")
 	else (OSCAM_SYSTEM_NAME MATCHES "Tuxbox")
 		message (STATUS "Unknown cross system name: <${CMAKE_SYSTEM_NAME}>")
 		set (OSCamOperatingSystem "Unknown")
@@ -193,6 +195,9 @@ elseif (OSCamOperatingSystem MATCHES "OpenBSD")
 	set (DEFAULT_CS_CONFDIR "/etc/oscam")
 elseif (OSCamOperatingSystem MATCHES "FriendlyARM")
 	set (DEFAULT_CS_CONFDIR ".")
+elseif (OSCamOperatingSystem MATCHES "Amsmc")
+	set (USE_AMSMC "USE_AMSMC")
+	add_definitions ("-DWITH_AMSMC=1")
 endif (OSCamOperatingSystem MATCHES "Linux")
 
 set (CS_CONFDIR ${DEFAULT_CS_CONFDIR} CACHE STRING "Default path for the config files")
@@ -570,7 +575,7 @@ GENERATE_OSCAM_CONFIG("${CMAKE_CURRENT_SOURCE_DIR}/config.h")
 # Build config.mak and related files
 # FIXME: Create USE_FLAGS and pass them to config.sh using --use-flags
 execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --objdir ${CMAKE_CURRENT_BINARY_DIR} --use-flags  "${USE_STAPI} ${USE_STAPI5} /
-${USE_COOLAPI} ${USE_SU980} ${USE_AZBOX} ${USE_MCA} ${USE_SSL} ${USE_LIBCRYPTO} ${USE_LIBUSB} ${USE_PCSC} ${USE_COMPRESS_FLAG}" --make-config.mak)
+${USE_COOLAPI} ${USE_SU980} ${USE_AZBOX} ${USE_AMSMC} ${USE_MCA} ${USE_SSL} ${USE_LIBCRYPTO} ${USE_LIBUSB} ${USE_PCSC} ${USE_COMPRESS_FLAG}" --make-config.mak)
 # Generate webif/pages.c
 execute_process (COMMAND make --no-print-directory --quiet -C ${CMAKE_CURRENT_SOURCE_DIR}/webif clean)
 execute_process (COMMAND make --no-print-directory --quiet -C ${CMAKE_CURRENT_SOURCE_DIR}/webif)
