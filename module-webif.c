@@ -7051,6 +7051,7 @@ static char *send_oscam_services(struct templatevars * vars, struct uriparams * 
 	while(sidtab != NULL)
 	{
 		tpl_addVar(vars, TPLADD, "SID", "");
+		tpl_printf(vars, TPLADD, "SERVICENUM", "%d", counter + 1);
 		if((strcmp(getParam(params, "service"), sidtab->label) == 0) && (strcmp(getParam(params, "action"), "list") == 0))
 		{
 			tpl_addVar(vars, TPLADD, "SIDCLASS", "sidlist");
