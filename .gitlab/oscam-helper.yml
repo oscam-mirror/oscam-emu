@@ -115,9 +115,14 @@
   #installs download-secure-files for pipeline user
   download-secure-files-installer:
     - |
-      echo "Installing gitlab download-secure-files binary...";
       CI_API_V4_URL="${API_PROTOCOL}:${CI_API_V4_URL#*:}"
-      curl --silent -L "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash;
+      if [ ! -x $HOME/bin/download-secure-files ]; then
+        echo "Installing gitlab download-secure-files binary...";
+        curl --silent -L "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash;
+      else
+        echo "download-secure-files already installed, skipping...";
+        download-secure-files;
+      fi;
 
   #checkout git repository parts (needs variables GIT_STRATEGY: none and e.g. GIT SPARSE_FILTER: .gitlab to be set in the calling job)
   sparse-checkout:
