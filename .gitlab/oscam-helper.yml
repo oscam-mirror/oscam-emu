@@ -121,7 +121,7 @@
         curl --silent -L "https://gitlab.com/gitlab-org/incubation-engineering/mobile-devops/download-secure-files/-/raw/main/installer" | bash;
       else
         echo "download-secure-files already installed, skipping...";
-        download-secure-files;
+        $HOME/bin/download-secure-files;
       fi;
 
   #checkout git repository parts (needs variables GIT_STRATEGY: none and e.g. GIT SPARSE_FILTER: .gitlab to be set in the calling job)

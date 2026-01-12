@@ -2,15 +2,8 @@
 #include "module-newcamd-des.h"
 #include "oscam-string.h"
 
-#define DES_ECS2_DECRYPT (DES_IP | DES_IP_1 | DES_RIGHT)
-#define DES_ECS2_CRYPT   (DES_IP | DES_IP_1)
-
 #define CRYPT        0
 #define HASH         1
-#define F_EURO_S2    0
-#define F_TRIPLE_DES 1
-
-#define TestBit(addr, bit) ((addr) & (1 << bit))
 
 extern const int32_t CWS_NETMSGSIZE;
 
@@ -427,80 +420,17 @@ static void des_random_get(uint8_t *buffer, uint8_t len)
 	}
 }
 
-static uint8_t getmask(uint8_t *OutData, uint8_t *Mask, uint8_t I, uint8_t J)
+static void EuroDes(uint8_t key[], uint8_t operatingMode, uint8_t data[])
 {
-	uint8_t K, B, M, M1 , D, DI, MI;
+	/* Eurocrypt 3-DES */
+	uint8_t mode = (operatingMode == HASH) ? 0 : DES_RIGHT;
+	nc_des(key, (uint8_t)(DES_IP | mode), data);
 
-	K = I ^ J;
-	DI = 7;
-	if((K & 4) == 4)
-	{
-		K ^= 7;
-		DI ^= 7;
-	}
-	MI = 3;
-	MI &= J;
-	K ^= MI;
-	K += MI;
-	if((K & 4) == 4)
-	{
-		return 0;
-	}
-	DI ^= J;
-	D = OutData[DI];
-	MI = 0;
-	MI += J;
-	M1 = Mask[MI];
-	MI ^= 4;
-	M = Mask[MI];
-	B = 0;
-	for(K = 0; K <= 7; K++)
-	{
-		if((D & 1) == 1) { B += M; }
-		D = (D >> 1) + ((B & 1) << 7);
-		B = B >> 1;
-	}
-	return D ^ M1;
-}
+	mode ^= DES_RIGHT;
+	nc_des(key + 8, mode, data);
 
-static void v2mask(uint8_t *cw, uint8_t *mask)
-{
-	int i, j;
-
-	for(i = 7; i >= 0; i--)
-		for(j = 7; j >= 4; j--)
-			{ cw[i] ^= getmask(cw, mask, i, j); }
-	for(i = 0; i <= 7; i++)
-		for(j = 0; j <= 3; j++)
-			{ cw[i] ^= getmask(cw, mask, i, j); }
-}
-
-static void EuroDes(uint8_t key1[], uint8_t key2[], uint8_t operatingMode, uint8_t data[])
-{
-	uint8_t mode;
-
-	if(key1[7]) /* Viaccess */
-	{
-		mode = (operatingMode == HASH) ? DES_ECM_HASH : DES_ECM_CRYPT;
-
-		if(key2 != NULL)
-			{ v2mask(data, key2); }
-		nc_des(key1, mode, data);
-		if(key2 != NULL)
-			{ v2mask(data, key2); }
-	}
-	else
-	{
-		/* Eurocrypt 3-DES */
-		mode = (operatingMode == HASH) ? 0 : DES_RIGHT;
-		nc_des(key1, (uint8_t)(DES_IP | mode), data);
-
-		mode ^= DES_RIGHT;
-		nc_des(key2, mode, data);
-
-		mode ^= DES_RIGHT;
-		nc_des(key1, (uint8_t)(mode | DES_IP_1), data);
-	}
+	mode ^= DES_RIGHT;
+	nc_des(key, (uint8_t)(mode | DES_IP_1), data);
 }
 
 int nc_des_encrypt(uint8_t *buffer, int len, uint8_t *deskey)
@@ -524,7 +454,7 @@ int nc_des_encrypt(uint8_t *buffer, int len, uint8_t *deskey)
 	{
 		uint8_t j;
 		for(j = 0; j < 8; j++) { buffer[i + j] ^= ivec[j]; }
-		EuroDes(deskey, deskey + 8, HASH, buffer + i);
+		EuroDes(deskey, HASH, buffer + i);
 		memcpy(ivec, buffer + i, 8);
 	}
 	len += 8;
@@ -548,7 +478,7 @@ int nc_des_decrypt(uint8_t *buffer, int len, uint8_t *deskey)
 
 		memcpy(ivec, nextIvec, 8);
 		memcpy(nextIvec, buffer + i, 8);
-		EuroDes(deskey, deskey + 8, CRYPT, buffer + i);
+		EuroDes(deskey, CRYPT, buffer + i);
 		for(j = 0; j < 8; j++)
 			{ buffer[i + j] ^= ivec[j]; }
 	}
@@ -557,7 +487,7 @@ int nc_des_decrypt(uint8_t *buffer, int len, uint8_t *deskey)
 	return len;
 }
 
-uint8_t *nc_des_login_key_get(uint8_t *key1, uint8_t *key2, int len, uint8_t *des16)
+void nc_des_login_key_get(uint8_t *key1, uint8_t *key2, int len, uint8_t *des16)
 {
 	uint8_t des14[14];
 	int i;
@@ -567,5 +497,4 @@ uint8_t *nc_des_login_key_get(uint8_t *key1, uint8_t *key2, int len, uint8_t *de
 	des16 = des_key_spread(des14, des16);
 	doPC1(des16);
 	doPC1(des16 + 8);
-	return des16;
 }
