@@ -707,8 +707,6 @@ if (HAVE_LIBCRYPTO)
 	target_link_libraries (${exe_name} "${OPENSSL_CRYPTO_LIBRARIES}")
 endif (HAVE_LIBCRYPTO)
 
-# libm no longer needed - fmod replaced with pure C implementation in reader-nagracak7.c
-
 if (HAVE_PCSC)
 if (NOT OSCamOperatingSystem MATCHES "Mac OS X")
 if (NOT OSCamOperatingSystem MATCHES "Windows/Cygwin")
@@ -728,14 +726,6 @@ endif (HAVE_LIBSTAPI5)
 add_dependencies (${exe_name} ${csoscam} ${csreaders} ${csmodules})
 
 #----------------------- specific options ------------------------------
-
-# librt only needed for CLOCKFIX on Linux
-execute_process (COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --enabled CLOCKFIX OUTPUT_VARIABLE CONFIG_CLOCKFIX OUTPUT_STRIP_TRAILING_WHITESPACE)
-if (NOT OSCamOperatingSystem MATCHES "(Mac OS X|Windows/Cygwin|FreeBSD|OpenBSD)")
-	if (CONFIG_CLOCKFIX MATCHES "Y")
-		target_link_libraries (${exe_name} rt)
-	endif (CONFIG_CLOCKFIX MATCHES "Y")
-endif (NOT OSCamOperatingSystem MATCHES "(Mac OS X|Windows/Cygwin|FreeBSD|OpenBSD)")
 
 if (OSCamOperatingSystem MATCHES "Linux")
 	set (dl_link "dl")

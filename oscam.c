@@ -449,12 +449,7 @@ static void write_versionfile(bool use_stdout)
 	write_conf(CW_CYCLE_CHECK, "CW Cycle Check support");
 	write_conf(LCDSUPPORT, "LCD support");
 	write_conf(LEDSUPPORT, "LED support");
-	switch (cs_getclocktype())
-	{
-		case CLOCK_TYPE_UNKNOWN  : write_conf(CLOCKFIX, "Clockfix with UNKNOWN clock"); break;
-		case CLOCK_TYPE_REALTIME : write_conf(CLOCKFIX, "Clockfix with realtime clock"); break;
-		case CLOCK_TYPE_MONOTONIC: write_conf(CLOCKFIX, "Clockfix with monotonic clock"); break;
-	}
+	write_conf(CLOCKFIX, "Clockfix with realtime clock");
 	write_conf(IPV6SUPPORT, "IPv6 support");
 #if defined(__arm__) || defined(__aarch64__)
 	write_conf(WITH_ARM_NEON, "ARM NEON (SIMD/MPE) support");
@@ -675,14 +670,20 @@ static void cs_dumpstack(int32_t sig)
 
 	fprintf(stderr, "crashed with signal %d on %swriting oscam.crash\n", sig, buf);
 
-	fprintf(fp, "%sOSCam cardserver v%s@%s (%s)\n", buf, CS_VERSION, CS_GIT_COMMIT, CS_TARGET);
-	fprintf(fp, "FATAL: Signal %d: %s Fault. Logged StackTrace:\n\n", sig, (sig == SIGSEGV) ? "Segmentation" : ((sig == SIGBUS) ? "Bus" : "Unknown"));
-	fclose(fp);
+	if (fp)
+	{
+		fprintf(fp, "%sOSCam cardserver v%s@%s (%s)\n", buf, CS_VERSION, CS_GIT_COMMIT, CS_TARGET);
+		fprintf(fp, "FATAL: Signal %d: %s Fault. Logged StackTrace:\n\n", sig, (sig == SIGSEGV) ? "Segmentation" : ((sig == SIGBUS) ? "Bus" : "Unknown"));
+		fclose(fp);
+	}
 
 	FILE *cmd = fopen("/tmp/gdbcmd", "w");
-	fputs("bt\n", cmd);
-	fputs("thread apply all bt\n", cmd);
-	fclose(cmd);
+	if (cmd)
+	{
+		fputs("bt\n", cmd);
+		fputs("thread apply all bt\n", cmd);
+		fclose(cmd);
+	}
 
 	snprintf(buf, sizeof(buf) - 1, "gdb %s %d -batch -x /tmp/gdbcmd >> oscam.crash", prog_name, getpid());
 	if(system(buf) == -1)
@@ -1575,8 +1576,8 @@ static void detect_valgrind(void)
 				break;
 			}
 		}
+		fclose(f);
 	}
-	fclose(f);
 #endif
 }
 
@@ -1738,8 +1739,6 @@ int32_t main(int32_t argc, char *argv[])
 	run_tests();
 	int32_t i, j;
 	prog_name = argv[0];
-	struct timespec start_ts;
-	cs_gettime(&start_ts); // Initialize clock_type
 
 	if(pthread_key_create(&getclient, NULL))
 	{

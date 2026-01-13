@@ -329,61 +329,33 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 
 		case IRDINFO: // case 0x03
 		{
+			uint16_t chid = 0;
+			uint32_t id = b2i(0x02, cta_res + 19);
+			uint32_t start_date = 1;
+			uint32_t expire_date = 0;
+
 			if(cta_res[21] == 0x9C)
 			{
-				uint32_t timestamp = b2i(0x04, cta_res + 22);
-				uint8_t timestamp2038[4] = {0xAD, 0x0E, 0x26, 0x01};
-				uint32_t timestamp2038b2i = b2i(0x04, timestamp2038);
 				if((reader->caid == 0x186D) || (reader->caid == 0x187D))
 				{
-					reader->card_valid_to = tier_date(timestamp2038b2i, de, 11);
-				}
-				else
-				{
-					reader->card_valid_to = tier_date(timestamp, de, 11);
-				}
-				uint16_t chid = 0;
-				uint32_t id = b2i(0x02, cta_res + 19);
-				uint32_t start_date;
-				uint32_t expire_date;
-
-				start_date = 1;
-				if((reader->caid == 0x186D) || (reader->caid == 0x187D))
-				{
+					const uint8_t timestamp2038[4] = {0xAD, 0x0E, 0x26, 0x01};
 					expire_date = b2i(0x04, timestamp2038);
 				}
 				else
 				{
 					expire_date = b2i(0x04, cta_res + 22);
 				}
-				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
-				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
-				addProvider(reader, cta_res + 19);
 			}
 
-			if(((reader->caid == 0x1856) || (reader->caid == 0x187D)) && (cta_res[21] == 0x01) && (cta_res[8] != 0x18))
+			if((cta_res[21] == 0x01) && (reader->protocol_type == ATR_PROTOCOL_TYPE_T0 ||
+			   ((reader->caid == 0x1856 || reader->caid == 0x187D) && cta_res[8] != 0x18)))
 			{
-				uint16_t chid = 0;
-				uint32_t id = b2i(0x02, cta_res + 19);
-				uint32_t start_date;
-				uint32_t expire_date;
-
-				start_date = 1;
 				expire_date = b2i(0x04, cta_res + 22);
-				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
-				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
-				addProvider(reader, cta_res + 19);
 			}
 
-			if((reader->protocol_type == ATR_PROTOCOL_TYPE_T0) && (cta_res[21] == 0x01))
+			if (expire_date)
 			{
-				uint16_t chid = 0;
-				uint32_t id = b2i(0x02, cta_res + 19);
-				uint32_t start_date;
-				uint32_t expire_date;
-
-				start_date = 1;
-				expire_date = b2i(0x04, cta_res + 22);
+				reader->card_valid_to = tier_date(expire_date, de, 11);
 				cs_add_entitlement(reader, reader->caid, id, chid, 0, tier_date(start_date, ds, 11), tier_date(expire_date, de, 11), 4, 1);
 				rdr_log(reader, "|%04X|%04X    |%s  |%s  |", id, chid, ds, de);
 				addProvider(reader, cta_res + 19);
@@ -454,10 +426,9 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 			reader->dt5num = cta_res[20];
 			char tmp[8];
 			rdr_log(reader, "Card has DT05_%s", cs_hexdump(1, &reader->dt5num, 1, tmp, sizeof(tmp)));
-
+			IDEA_KEY_SCHEDULE ks;
 			if(reader->dt5num == 0x00)
 			{
-				IDEA_KEY_SCHEDULE ks;
 				rsa_decrypt(reader->edata, 0x70, reader->out, reader->mod1, reader->mod1_length, public_exponent, 3);
 				memcpy(reader->kdt05_00, &reader->out[18], 0x5C + 2);
 				memcpy(&reader->kdt05_00[0x5C + 2], cta_res + 26 + 0x70, 6);
@@ -470,7 +441,6 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 				memcpy(&reader->kdt05_00[0x5C + 2 + 6], reader->iout, 8);
 
 				uint8_t mdc_hash1[MDC2_DIGEST_LENGTH];
-				memset(mdc_hash1, 0x00, MDC2_DIGEST_LENGTH);
 				uint8_t check1[0x7E];
 				memset(check1, 0x00, 0x7E);
 				memcpy(check1 + 18, reader->kdt05_00, 0x6C);
@@ -494,7 +464,6 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 
 			if(reader->dt5num == 0x10)
 			{
-				IDEA_KEY_SCHEDULE ks;
 				rsa_decrypt(reader->edata, 0x70, reader->out, reader->mod1, reader->mod1_length, public_exponent, 3);
 				memcpy(reader->kdt05_10, &reader->out[16], 6 * 16);
 				memcpy(reader->ideakey1, reader->out, 16);
@@ -763,26 +732,12 @@ static void IdeaDecrypt(unsigned char *data, int len, const unsigned char *key, 
 	idea_cbc_encrypt(data, data, len&~7, &ks, iv, IDEA_DECRYPT);
 }
 
-static inline void xxxor(uint8_t *data, int32_t len, const uint8_t *v1, const uint8_t *v2)
+static inline void xor8(uint8_t *data, const uint8_t *v1, const uint8_t *v2)
 {
 	int i;
-	switch(len)
+	for(i = 0; i < 8; ++i)
 	{
-		case 16:
-		case 8:
-		case 4:
-			for(i = 0; i < len; ++i)
-			{
-				data[i] = v1[i] ^ v2[i];
-			}
-			break;
-
-		default:
-			while(len--)
-			{
-				*data++ = *v1++ ^ *v2++;
-			}
-			break;
+		data[i] = v1[i] ^ v2[i];
 	}
 }
 
@@ -797,7 +752,7 @@ static void CreateRSAPair60(struct s_reader *reader, const unsigned char *key)
 		memcpy(d, &key[13], 8);
 		*d ^= i;
 		IdeaDecrypt(d, 8, key, 0);
-		xxxor(d, 8, d, &key[13]);
+		xor8(d, d, &key[13]);
 		*d ^= i;
 	}
 
@@ -854,7 +809,7 @@ static void CreateRSAPair68(struct s_reader *reader, const unsigned char *key)
 		memcpy(d, &key[13], 8);
 		*d ^= i;
 		IdeaDecrypt(d, 8, key, 0);
-		xxxor(d, 8, d, &key[13]);
+		xor8(d, d, &key[13]);
 		*d ^= i;
 	}
 
@@ -940,7 +895,6 @@ static void dt05_20(struct s_reader *reader)
 	memcpy(data_20_fin + 8, data_20_x, 64);
 	rdr_log_dump_dbg(reader, D_READER, data_20_fin, sizeof(data_20_fin), "data_20_fin: ");
 	uint8_t mdc_hash4[MDC2_DIGEST_LENGTH];
-	memset(mdc_hash4, 0x00, MDC2_DIGEST_LENGTH);
 	uint8_t check4[112];
 	memset(check4, 0x00, 112);
 	memcpy(check4, reader->cardid, 4);
@@ -1012,7 +966,6 @@ static int32_t CAK7_cmd03_global(struct s_reader *reader)
 	rsa_decrypt(reader->stillencrypted, 0x50, reader->resultrsa, reader->mod50, reader->mod50_length, reader->cak7expo, 0x11);
 
 	uint8_t mdc_hash3[MDC2_DIGEST_LENGTH];
-	memset(mdc_hash3, 0x00, MDC2_DIGEST_LENGTH);
 	MDC2_CTX c3;
 	MDC2_Init(&c3);
 	MDC2_Update(&c3, reader->resultrsa, sizeof(reader->resultrsa));
@@ -1068,7 +1021,6 @@ static int32_t CAK7_cmd03_unique(struct s_reader *reader)
 	rsa_decrypt(reader->stillencrypted, 0x50, reader->resultrsa, reader->mod50, reader->mod50_length, reader->cak7expo, 0x11);
 
 	uint8_t mdc_hash5[MDC2_DIGEST_LENGTH];
-	memset(mdc_hash5, 0x00, MDC2_DIGEST_LENGTH);
 	MDC2_CTX c5;
 	MDC2_Init(&c5);
 	MDC2_Update(&c5, reader->resultrsa, sizeof(reader->resultrsa));
@@ -1241,7 +1193,6 @@ static int32_t CAK7_GetCamKey(struct s_reader *reader)
 	if(reader->cak7_seq <= 15)
 	{
 		uint8_t mdc_hash2[MDC2_DIGEST_LENGTH];
-		memset(mdc_hash2, 0x00, MDC2_DIGEST_LENGTH);
 		uint8_t check2[0x78];
 		memset(check2, 0x00, 0x78);
 		memcpy(check2, reader->cardid, 4);

@@ -304,6 +304,8 @@ void *work_thread(void *ptr)
 
 				case ACTION_READER_SENDCMD:
 #ifdef WITH_CARDREADER
+					if (!reader)
+						{ break; }
 					dblvl = cs_dblevel;
 					cs_dblevel = dblvl | D_READER;
 					rc = cardreader_do_rawcmd(reader, data->ptr);
