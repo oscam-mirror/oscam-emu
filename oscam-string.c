@@ -45,21 +45,7 @@ bool cs_realloc(void *result, size_t size)
  */
 size_t cs_strlen(const char *c)
 {
-	if (c == NULL)
-	{
-		return 0;
-	}
-	else
-	{
-		if (c[0] == '\0')
-		{
-			return 0;
-		}
-		else
-		{
-			return strlen(c);
-		}
-	}
+	return c ? strlen(c) : 0;
 }
 
 /* Allocates a new empty string and copies str into it. You need to free() the result. */
@@ -164,8 +150,7 @@ char *strtolower(char *txt)
 	char *p;
 	for(p = txt; *p; p++)
 	{
-		if(isupper((uint8_t)*p))
-			{ *p = tolower((uint8_t) * p); }
+		*p = tolower((uint8_t) *p);
 	}
 	return txt;
 }
@@ -176,8 +161,7 @@ char *strtoupper(char *txt)
 	char *p;
 	for(p = txt; *p; p++)
 	{
-		if(islower((uint8_t)*p))
-			{ *p = toupper((uint8_t)*p); }
+		*p = toupper((uint8_t) *p);
 	}
 	return txt;
 }

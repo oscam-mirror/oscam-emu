@@ -63,7 +63,7 @@ ifeq "$(shell ./config.sh --enabled MODULE_STREAMRELAY)" "Y"
 	endif
 endif
 
-override STD_LIBS := -lm $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
+override STD_LIBS := $(LIB_PTHREAD) $(LIB_DL) $(LIB_RT)
 override STD_DEFS := -D'CS_VERSION="$(VER)"'
 override STD_DEFS += -D'CS_GIT_COMMIT="$(GIT_SHA)"'
 override STD_DEFS += -D'CS_BUILD_DATE="$(BUILD_DATE)"'
@@ -195,11 +195,8 @@ DEFAULT_AZBOX_LIB = -Lextapi/openxcas -lOpenXCASAPI
 DEFAULT_LIBCRYPTO_LIB = -lcrypto
 DEFAULT_SSL_LIB = -lssl
 DEFAULT_LIBDVBCSA_LIB = -ldvbcsa
-ifeq ($(uname_S),Linux)
-	DEFAULT_LIBUSB_LIB = -lusb-1.0 -lrt
-else
-	DEFAULT_LIBUSB_LIB = -lusb-1.0
-endif
+DEFAULT_LIBUSB_LIB = -lusb-1.0
+
 # Since FreeBSD 8 (released in 2010) they are using their own
 # libusb that is API compatible to libusb but with different soname
 ifeq ($(uname_S),FreeBSD)

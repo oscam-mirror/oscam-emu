@@ -1,6 +1,5 @@
 #include "globals.h"
 #ifdef READER_NAGRA_MERLIN
-#include "math.h"
 #include "cscrypt/bn.h"
 #include "cscrypt/idea.h"
 #include "csctapi/icc_async.h"
@@ -632,10 +631,10 @@ static int32_t ParseDataType(struct s_reader *reader, uint8_t dt, uint8_t *cta_r
 	return ERROR;
 }
 
-static int32_t CAK7do_cmd(struct s_reader *reader, uint8_t dt, uint8_t len, uint8_t *res, uint16_t *rlen, int32_t sub, uint8_t retlen)
+static int32_t CAK7do_cmd(struct s_reader *reader, uint8_t dt, uint8_t *res, uint16_t *rlen, int32_t sub, uint8_t retlen)
 {
 	uint8_t dtdata[0x10];
-	memset(dtdata, 0xCC, len);
+	memset(dtdata, 0xCC, 0x10);
 	dtdata[ 7] = 0x04;
 	dtdata[ 8] = 0x04;
 	dtdata[ 9] = (sub >> 16) & 0xFF;
@@ -656,7 +655,7 @@ static int32_t CAK7GetDataType(struct s_reader *reader, uint8_t dt)
 
 	while(1)
 	{
-		CAK7do_cmd(reader, dt, 0x10, cta_res, &cta_lr, sub, retlen);
+		CAK7do_cmd(reader, dt, cta_res, &cta_lr, sub, retlen);
 		rdr_log_dump_dbg(reader, D_READER, cta_res, cta_lr, "Decrypted Answer:");
 
 		// hier eigentlich check auf 90 am ende usw... obs halt klarging ...
@@ -706,15 +705,8 @@ static int32_t CAK7GetDataType(struct s_reader *reader, uint8_t dt)
 
 static void sub_6AD78(uint32_t *dinit) // gbox function
 {
-	uint32_t v0 = (uint32_t) * dinit;
-	double f0;
-	f0 = v0;
-	double f12 = 16807;
-	double f15 = 2147483647;
-	f12 = f0 * f12;
-	double v12;
-	v12 = fmod(f12, f15);
-	*dinit = v12;
+	double res = *dinit * 16807.0;
+	*dinit = (uint32_t)(res - (uint32_t)(res / 2147483647.0) * 2147483647.0);
 }
 
 static void calc_cak7_exponent(uint32_t *dinit, uint8_t *out, uint8_t len)

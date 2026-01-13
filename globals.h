@@ -234,7 +234,7 @@
 #endif
 
 // checking if (X) free(X) unneccessary since freeing a null pointer doesnt do anything
-#define NULLFREE(X) {if (X) {void *tmpX=X; X=NULL; free(tmpX); }}
+#define NULLFREE(X) {void *tmpX=X; X=NULL; free(tmpX); }
 
 #ifdef __CYGWIN__
 #define cs_recv(a,b,c,d) cygwin_recv(a,b,c,d)
@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://git.streamboard.tv/common/oscam/-/wikis"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.26.01-11923"
+#define CS_VERSION				"2.26.01-11924"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1762,7 +1762,6 @@ struct s_reader										// contains device info, reader info and card info
 	int8_t			ncd_disable_server_filt;
 	int8_t			ncd_proto;
 	int8_t			currenthops;					// number of hops (cccam & gbox)
-	int8_t			sh4_stb;						// to set sh4 type box used to identify sci type.
 #ifdef MODULE_CCCAM
 	char			cc_version[7];					// cccam version
 	char			cc_build[7];					// cccam build number

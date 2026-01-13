@@ -6,86 +6,47 @@
 
 static int32_t CWPK_CNX(struct s_reader *reader,uint8_t *msg)
 {
-int32_t ret = 0;
+	uint8_t CWp[16], CWs[16];
 
-uint8_t CWp1[8];
-uint8_t CWp2[8];
-uint8_t CWs1[8];
-uint8_t CWs2[8];
+	memcpy(CWp, msg + 7, 8);
+	memcpy(CWp + 8, msg + 22, 8);
 
-CWp1[0] = msg[7];
-CWp1[1] = msg[8];
-CWp1[2] = msg[9];
-CWp1[3] = msg[10];
-CWp1[4] = msg[11];
-CWp1[5] = msg[12];
-CWp1[6] = msg[13];
-CWp1[7] = msg[14];
+	des_ecb3_decrypt(CWp, reader->cwpk_mod);
+	des_ecb3_decrypt(CWp + 8, reader->cwpk_mod);
 
-CWp2[0] = msg[22];
-CWp2[1] = msg[23];
-CWp2[2] = msg[24];
-CWp2[3] = msg[25];
-CWp2[4] = msg[26];
-CWp2[5] = msg[27];
-CWp2[6] = msg[28];
-CWp2[7] = msg[29];
+	memcpy(CWs, CWp + 4, 4);
+	memcpy(CWs + 4, CWp, 4);
+	memcpy(CWs + 8, CWp + 12, 4);
+	memcpy(CWs + 12, CWp + 8, 4);
 
-des_ecb3_decrypt(CWp1,reader->cwpk_mod);
-des_ecb3_decrypt(CWp2,reader->cwpk_mod);
-CWs1[0] = CWp1[4];
-CWs1[1] = CWp1[5];
-CWs1[2] = CWp1[6];
-CWs1[3] = CWp1[7];
-CWs1[4] = CWp1[0];
-CWs1[5] = CWp1[1];
-CWs1[6] = CWp1[2];
-CWs1[7] = CWp1[3];
+	int chkok = 1;
+	if(((CWs[0] + CWs[1] + CWs[2]) & 0xFF) != CWs[3])
+	{
+		chkok = 0;
+		rdr_log(reader, "CW0 checksum error [0]");
+	}
+	if(((CWs[4] + CWs[5] + CWs[6]) & 0xFF) != CWs[7])
+	{
+		chkok = 0;
+		rdr_log(reader, "CW0 checksum error [1]");
+	}
+	if(((CWs[8] + CWs[9] + CWs[10]) & 0xFF) != CWs[11])
+	{
+		chkok = 0;
+		rdr_log(reader, "CW1 checksum error [0]");
+	}
+	if(((CWs[12] + CWs[13] + CWs[14]) & 0xFF) != CWs[15])
+	{
+		chkok = 0;
+		rdr_log(reader, "CW1 checksum error [1]");
+	}
 
-CWs2[0] = CWp2[4];
-CWs2[1] = CWp2[5];
-CWs2[2] = CWp2[6];
-CWs2[3] = CWp2[7];
-CWs2[4] = CWp2[0];
-CWs2[5] = CWp2[1];
-CWs2[6] = CWp2[2];
-CWs2[7] = CWp2[3];
+	if(!chkok)
+		return -8;
 
-int chkok = 1;
-if(((CWs1[0] + CWs1[1] + CWs1[2]) & 0xFF) != CWs1[3])
-{
-	chkok = 0;
-	rdr_log(reader, "CW0 checksum error [0]");
-}
-if(((CWs1[4] + CWs1[5] + CWs1[6]) & 0xFF) != CWs1[7])
-{
-	chkok = 0;
-	rdr_log(reader, "CW0 checksum error [1]");
-}
-if(((CWs2[0] + CWs2[1] + CWs2[2]) & 0xFF) != CWs2[3])
-{
-	chkok = 0;
-	rdr_log(reader, "CW1 checksum error [0]");
-}
-if(((CWs2[4] + CWs2[5] + CWs2[6]) & 0xFF) != CWs2[7])
-{
-	chkok = 0;
-	rdr_log(reader, "CW1 checksum error [1]");
-}
-
-if(chkok == 1)
-{
-	memcpy(&msg[7],CWs1,0x08);
-	memcpy(&msg[22],CWs2,0x08);
-
-	ret = 0;
-}
-if(chkok != 1)
-{
-	ret = -8;
-}
-
-return ret;
+	memcpy(msg + 7, CWs, 8);
+	memcpy(msg + 22, CWs + 8, 8);
+	return 0;
 }
 
 static int32_t RSA_CNX(struct s_reader *reader, uint8_t *msg, uint8_t *mod, uint8_t *exp, uint32_t cta_lr, uint32_t modbytes, uint32_t expbytes)
