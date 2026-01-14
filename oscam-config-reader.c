@@ -1207,7 +1207,7 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_INT8("fix9993"                        , OFS(fix_9993),                        0),
 	DEF_OPT_INT8("readtiers"                      , OFS(readtiers),                       1),
 #endif
-#if defined(READER_NAGRA) || defined(READER_IRDETO)
+#ifdef READER_IRDETO
 	DEF_OPT_INT8("force_irdeto"                   , OFS(force_irdeto),                    0),
 #endif
 #ifdef READER_CRYPTOWORKS

@@ -2711,7 +2711,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	if(rdr->ecmnotfoundlimit)
 		{ tpl_printf(vars, TPLADD, "ECMNOTFOUNDLIMIT", "%u", rdr->ecmnotfoundlimit); }
 
-#if defined(READER_NAGRA) || defined(READER_IRDETO)
+#ifdef READER_IRDETO
 	// Force Irdeto
 	if(!apicall)
 	{

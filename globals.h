@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://git.streamboard.tv/common/oscam/-/wikis"
 #define BOARD_URL				"https://github.com/oscam-mirror/oscam-emu/discussions"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.26.01-11930"
+#define CS_VERSION				"2.26.01-11931"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -1700,7 +1700,7 @@ struct s_reader										// contains device info, reader info and card info
 	int8_t			nagra_read;						// read nagra ncmed records: 0 Disabled (default), 1 read all records, 2 read valid records only
 	int8_t			detect_seca_nagra_tunneled_card;
 #endif
-#if defined(READER_NAGRA) || defined(READER_IRDETO)
+#ifdef READER_IRDETO
 	int8_t			force_irdeto;
 #endif
 #ifdef WITH_CARDREADER
