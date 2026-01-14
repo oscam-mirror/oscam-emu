@@ -1185,13 +1185,11 @@ static const struct config_list reader_opts[] =
 	DEF_OPT_INT8("forceemmg"                      , OFS(forceemmg),                       0),
 	DEF_OPT_INT8("cwpkota"                        , OFS(cwpkota),                         0),
 	DEF_OPT_INT8("headermode"                     , OFS(headermode),                      1),
+	DEF_OPT_INT8("cak7_mode"                      , OFS(cak7_mode),                       0),
 #endif
 #if defined(READER_NAGRA)
 	DEF_OPT_FUNC_X("cak63nuid"                    , OFS(cak63nuid),                       param_fn, SIZEOF(cak63nuid) ^ (OFS(cak63nuid_length) - OFS(cak63nuid)) << 8),
 	DEF_OPT_FUNC_X("cak63cwekey"                  , OFS(cak63cwekey),                     param_fn, SIZEOF(cak63cwekey) ^ (OFS(cak63cwekey_length) - OFS(cak63cwekey)) << 8),
-#endif
-#if defined(READER_NAGRA) || defined(READER_NAGRA_MERLIN)
-	DEF_OPT_INT8("cak7_mode"                      , OFS(cak7_mode),                       0),
 #endif
 #if defined(READER_VIDEOGUARD)
 	DEF_OPT_INT8("ndsversion"                     , OFS(ndsversion),                      0),
