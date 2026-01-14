@@ -334,8 +334,8 @@ int32_t ICC_Async_Activate(struct s_reader *reader, ATR *atr, uint16_t deprecate
 		return ERROR;
 	}
 
-	reader->cak7type = 0;
 #ifdef READER_NAGRA_MERLIN
+	reader->cak7type = 0;
 
 	ATR_GetRaw(atr, atrarr, &atr_size);
 
@@ -519,7 +519,11 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 		case ATR_PROTOCOL_TYPE_T1:
 			ret = Protocol_T1_Command(reader, command, command_len, rsp, lr);
 			type = 1;
-			if(ret != OK && !crdr_ops->skip_t1_command_retries && reader->cak7type == 0)
+			if(ret != OK && !crdr_ops->skip_t1_command_retries
+#ifdef READER_NAGRA_MERLIN
+				&& reader->cak7type == 0
+#endif
+			)
 			{
 				//try to resync
 				rdr_log(reader, "Resync error: readtimeouts %d/%d (max/min) us, writetimeouts %d/%d (max/min) us", reader->maxreadtimeout, reader->minreadtimeout, reader->maxwritetimeout, reader->minwritetimeout);
@@ -555,7 +559,11 @@ int32_t ICC_Async_CardWrite(struct s_reader *reader, unsigned char *command, uin
 		}
 		try++;
 	}
-	while((try < 3) && (ret != OK) && (((type == 0 || type == 1) && reader->cak7type == 0) || type == 14)); // always do one retry when failing
+	while((try < 3) && (ret != OK) && (((type == 0 || type == 1)
+#ifdef READER_NAGRA_MERLIN
+		&& reader->cak7type == 0
+#endif
+	) || type == 14)); // always do one retry when failing
 	if(crdr_ops->unlock)
 	{
 		crdr_ops->unlock(reader);

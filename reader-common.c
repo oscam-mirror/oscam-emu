@@ -38,12 +38,14 @@ static void reader_nullcard(struct s_reader *reader)
 	memset(reader->hexserial, 0, sizeof(reader->hexserial));
 	memset(reader->prid, 0xFF, sizeof(reader->prid));
 	memset(reader->sa, 0, sizeof(reader->sa));
+#if defined(READER_NAGRA) || defined(READER_NAGRA_MERLIN)
 	memset(reader->emm82u, 0, sizeof(reader->emm82u));
 	memset(reader->emm84, 0, sizeof(reader->emm84));
 	memset(reader->emm84s, 0, sizeof(reader->emm84s));
 	memset(reader->emm83s, 0, sizeof(reader->emm83s));
 	memset(reader->emm83u, 0, sizeof(reader->emm83u));
 	memset(reader->emm87, 0, sizeof(reader->emm87));
+#endif
 	reader->caid = 0;
 	reader->nprov = 0;
 	cs_clear_entitlement(reader);

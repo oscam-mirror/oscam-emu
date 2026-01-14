@@ -2639,6 +2639,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	if(rdr->boxid)
 		{ tpl_printf(vars, TPLADD, "BOXID", "%08X", rdr->boxid); }
 
+#ifdef READER_VIDEOGUARD
 	// Filt 07
 	if(!apicall)
 	{
@@ -2659,6 +2660,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	{
 		tpl_addVar(vars, TPLADD, "FIX9993VALUE", (rdr->fix_9993 == 1) ? "1" : "0");
 	}
+#endif
 
 	// Drop CWs with wrong checksum:
 	if(!apicall)
@@ -2680,6 +2682,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		tpl_addVar(vars, TPLADD, "DISABLECRCCWSVALUE", (rdr->disablecrccws == 1) ? "1" : "0");
 	}
 
+#ifdef WITH_CARDREADER
 	// Set reader to use GPIO
 	if(!apicall)
 	{
@@ -2689,6 +2692,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	{
 		tpl_addVar(vars, TPLADD, "USE_GPIOVALUE", rdr->use_gpio ? "1" : "0");
 	}
+#endif
 
 	// AUdisabled
 	if(!apicall)
@@ -2707,6 +2711,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	if(rdr->ecmnotfoundlimit)
 		{ tpl_printf(vars, TPLADD, "ECMNOTFOUNDLIMIT", "%u", rdr->ecmnotfoundlimit); }
 
+#if defined(READER_NAGRA) || defined(READER_IRDETO)
 	// Force Irdeto
 	if(!apicall)
 	{
@@ -2716,6 +2721,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	{
 		tpl_addVar(vars, TPLADD, "FORCEIRDETOVALUE", (rdr->force_irdeto == 1) ? "1" : "0");
 	}
+#endif
 
 #ifdef READER_CRYPTOWORKS
 	// needsglobalfirst
@@ -2728,7 +2734,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		tpl_addVar(vars, TPLADD, "NEEDSGLOBALFIRST", (rdr->needsglobalfirst == 1) ? "1" : "0");
 	}
 #endif
-
+#ifdef WITH_CARDREADER
 	// RSA Key
 	for(i = 0; i < rdr->rsa_mod_length; i++)
 		{ tpl_printf(vars, TPLAPPEND, "RSAKEY", "%02X", rdr->rsa_mod[i]); }
@@ -2740,12 +2746,11 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	// BoxKey
 	for(i = 0; i < rdr->boxkey_length ; i++)
 		{ tpl_printf(vars, TPLAPPEND, "BOXKEY", "%02X", rdr->boxkey[i]); }
-
+#endif
 #ifdef READER_CONAX
 	for(i = 0; i < rdr->cwpk_mod_length; i++)
 		{ tpl_printf(vars, TPLAPPEND, "CWPKKEY", "%02X", rdr->cwpk_mod[i]); }
 #endif
-
 #ifdef READER_NAGRA
 	// nuid (CAK6.3)
 	for(i = 0; i < rdr->cak63nuid_length; i++)
@@ -2846,7 +2851,6 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 
 	tpl_printf(vars, TPLADD, "TMP", "NAGRACAK7HEADERMODE%d", rdr->headermode);
 	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
-#endif
 
 	// CWPK CaID (CAK7)
 	for(i = 0; i < rdr->cwpkcaid_length ; i++)
@@ -2855,7 +2859,9 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	// cak7_mode
 	if(rdr->cak7_mode)
 		{ tpl_addVar(vars, TPLADD, "NAGRACAK7MODECHECKED", "checked"); }
+#endif
 
+#ifdef READER_VIDEOGUARD
 	tpl_printf(vars, TPLADD, "TMP", "CARDSTARTDATEBASEMONTH%d", rdr->card_startdate_basemonth);
 	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
 
@@ -2900,11 +2906,14 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	{
 		for(i = 0; i < rdr->k1_unique[0x10] ; i++) { tpl_printf(vars, TPLAPPEND, "K1_UNIQUE", "%02X", rdr->k1_unique[i]); }
 	}
+#endif
 
+#ifdef WITH_CARDREADER
 	// ATR
 	if(rdr->atr[0])
 		for(i = 0; i < rdr->atrlen / 2; i++)
 			{ tpl_printf(vars, TPLAPPEND, "ATR", "%02X", rdr->atr[i]); }
+#endif
 
 	// ECM Whitelist
 	value = mk_t_ecm_whitelist(&rdr->ecm_whitelist);
@@ -2916,6 +2925,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_addVar(vars, TPLADD, "ECMHEADERWHITELIST", value);
 	free_mk_t(value);
 
+#ifdef WITH_CARDREADER
 	// Deprecated
 	if(!apicall)
 	{
@@ -2955,6 +2965,7 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		tpl_addVar(vars, TPLADD, "SC8IN1DTRRTSPATCHVALUE", (rdr->sc8in1_dtrrts_patch == 1) ? "1" : "0");
 	}
 
+#ifdef READER_VIACCESS
 	if(!apicall)
 	{
 		tpl_addVar(vars, TPLADD, "READOLDCLASSES", (rdr->read_old_classes == 1) ? "checked" : "");
@@ -2963,12 +2974,14 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	{
 		tpl_addVar(vars, TPLADD, "READOLDCLASSES", (rdr->read_old_classes == 1) ? "1" : "0");
 	}
+#endif
 
 	// Detect
 	if(rdr->detect & 0x80)
 		{ tpl_printf(vars, TPLADD, "DETECT", "!%s", RDR_CD_TXT[rdr->detect & 0x7f]); }
 	else
 		{ tpl_addVar(vars, TPLADD, "DETECT", RDR_CD_TXT[rdr->detect & 0x7f]); }
+#endif
 
 	// Ratelimit
 	if(rdr->ratelimitecm)
@@ -2992,9 +3005,11 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 		tpl_printf(vars, TPLADD, "COOLDOWNDELAY", "%d", rdr->cooldown[0]);
 		tpl_printf(vars, TPLADD, "COOLDOWNTIME", "%d", rdr->cooldown[1]);
 	}
+#ifdef WITH_CARDREADER
 	// Frequencies
 	tpl_printf(vars, TPLADD, "MHZ", "%d", rdr->mhz);
 	tpl_printf(vars, TPLADD, "CARDMHZ", "%d", rdr->cardmhz);
+#endif
 
 	// Device
 	if(!apicall)
@@ -3064,10 +3079,12 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	tpl_addVar(vars, TPLADD, "CAIDS", value);
 	free_mk_t(value);
 
+#ifdef READER_VIACCESS
 	// AESkeys
 	value = mk_t_aeskeys(rdr);
 	tpl_addVar(vars, TPLADD, "AESKEYS", value);
 	free_mk_t(value);
+#endif
 
 	//ident
 	value = mk_t_ftab(&rdr->ftab);
@@ -3182,18 +3199,20 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	}
 #endif
 
+#ifdef READER_VIDEOGUARD
 	tpl_printf(vars, TPLADD, "TMP", "NDSVERSION%d", rdr->ndsversion);
 	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
 
 	tpl_printf(vars, TPLADD, "TMP", "NDSREADTIERS%d", rdr->readtiers);
 	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
-
+#endif
+#ifdef READER_NAGRA
 	tpl_printf(vars, TPLADD, "TMP", "NAGRAREAD%d", rdr->nagra_read);
 	tpl_addVar(vars, TPLADD, tpl_getVar(vars, "TMP"), "selected");
 
 	if(rdr->detect_seca_nagra_tunneled_card)
 		{ tpl_addVar(vars, TPLADD, "NAGRADETECTSECACARDCHECKED", "checked"); }
-
+#endif
 #ifdef READER_TONGFANG
 	if(rdr->tongfang3_calibsn)
 		{ tpl_printf(vars, TPLADD, "TONGFANGCALIBSN", "%08X", rdr->tongfang3_calibsn); }
@@ -5425,6 +5444,7 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 					tpl_addVar(vars, TPLAPPEND, "READERPROVIDS", i == 0 ? "(sysid)<BR>\n" : "&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<BR>\n");
 				}
 
+#ifdef READER_VIDEOGUARD
 				//CountryCode Vg card
 				char add_nds_line = 0;
 				if(rdr->VgCountryC[0])
@@ -5483,6 +5503,7 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 				{
 					tpl_addVar(vars, TPLADD, "READERCREDIT", "n/a");
 				}
+#endif
 
 				if(rdr->card_valid_to)
 				{
@@ -5528,10 +5549,12 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 				if (rdr->csystem)
 					tpl_addVar(vars, TPLADD, "READERCSYSTEM", rdr->csystem->desc);
 
+#ifdef READER_VIDEOGUARD
 				if(add_nds_line)
 				{
 					tpl_addVar(vars, TPLADD, "ENTITLEMENTCONTENTNDS", tpl_getTpl(vars, "ENTITLEMENTBITNDS"));
 				}
+#endif
 				tpl_addVar(vars, TPLADD, "ENTITLEMENTCONTENT", tpl_getTpl(vars, "ENTITLEMENTBIT"));
 			}
 			else
@@ -8621,6 +8644,7 @@ static char *send_oscam_api(struct templatevars * vars, FILE * f, struct uripara
 			return tpl_getTpl(vars, "APIERROR");
 		}
 	}
+#ifdef READER_VIDEOGUARD
 	else if(strcmp(getParam(params, "part"), "sendcmd") == 0)
 	{
 		if(strcmp(getParam(params, "label"), ""))
@@ -8692,6 +8716,7 @@ static char *send_oscam_api(struct templatevars * vars, FILE * f, struct uripara
 			return tpl_getTpl(vars, "APIERROR");
 		}
 	}
+#endif
 	else if(strcmp(getParam(params, "part"), "shutdown") == 0)
 	{
 		if((strcmp(strtolower(getParam(params, "action")), "restart") == 0) ||

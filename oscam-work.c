@@ -303,7 +303,7 @@ void *work_thread(void *ptr)
 					break;
 
 				case ACTION_READER_SENDCMD:
-#ifdef WITH_CARDREADER
+#ifdef READER_VIDEOGUARD
 					if (!reader)
 						{ break; }
 					dblvl = cs_dblevel;

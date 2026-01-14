@@ -17,6 +17,7 @@ int32_t get_prov_idx(struct s_reader *rdr, const uint8_t *provid)
 
 int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 {
+#ifdef READER_NAGRA_MERLIN
 	if(rdr->cak7type == 3)
 	{
 		int i;
@@ -160,6 +161,7 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 		}
 	}
 	else
+#endif
 	{
 		int i;
 		switch(ep->emm[0])
@@ -266,6 +268,7 @@ int32_t nagra_get_emm_type(EMM_PACKET *ep, struct s_reader *rdr)
 
 int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter **emm_filters, unsigned int *filter_count)
 {
+#ifdef READER_NAGRA_MERLIN
 	if(rdr->cak7type == 3)
 	{
 		if(*emm_filters == NULL)
@@ -407,6 +410,7 @@ int32_t nagra_get_emm_filter(struct s_reader *rdr, struct s_csystem_emm_filter *
 		return OK;
 	}
 	else
+#endif
 	{
 		if(*emm_filters == NULL)
 		{
