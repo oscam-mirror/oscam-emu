@@ -2527,3 +2527,505 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 
 // Create Base64 Object
 var Base64={_keyStr:"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=",encode:function(e){var t="";var n,r,i,s,o,u,a;var f=0;e=Base64._utf8_encode(e);while(f<e.length){n=e.charCodeAt(f++);r=e.charCodeAt(f++);i=e.charCodeAt(f++);s=n>>2;o=(n&3)<<4|r>>4;u=(r&15)<<2|i>>6;a=i&63;if(isNaN(r)){u=a=64}else if(isNaN(i)){a=64}t=t+this._keyStr.charAt(s)+this._keyStr.charAt(o)+this._keyStr.charAt(u)+this._keyStr.charAt(a)}return t},decode:function(e){var t="";var n,r,i;var s,o,u,a;var f=0;e=e.replace(/[^A-Za-z0-9\+\/\=]/g,"");while(f<e.length){s=this._keyStr.indexOf(e.charAt(f++));o=this._keyStr.indexOf(e.charAt(f++));u=this._keyStr.indexOf(e.charAt(f++));a=this._keyStr.indexOf(e.charAt(f++));n=s<<2|o>>4;r=(o&15)<<4|u>>2;i=(u&3)<<6|a;t=t+String.fromCharCode(n);if(u!=64){t=t+String.fromCharCode(r)}if(a!=64){t=t+String.fromCharCode(i)}}t=Base64._utf8_decode(t);return t},_utf8_encode:function(e){e=e.replace(/\r\n/g,"\n");var t="";for(var n=0;n<e.length;n++){var r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r)}else if(r>127&&r<2048){t+=String.fromCharCode(r>>6|192);t+=String.fromCharCode(r&63|128)}else{t+=String.fromCharCode(r>>12|224);t+=String.fromCharCode(r>>6&63|128);t+=String.fromCharCode(r&63|128)}}return t},_utf8_decode:function(e){var t="";var n=0;var r=c1=c2=0;while(n<e.length){r=e.charCodeAt(n);if(r<128){t+=String.fromCharCode(r);n++}else if(r>191&&r<224){c2=e.charCodeAt(n+1);t+=String.fromCharCode((r&31)<<6|c2&63);n+=2}else{c2=e.charCodeAt(n+1);c3=e.charCodeAt(n+2);t+=String.fromCharCode((r&15)<<12|(c2&63)<<6|c3&63);n+=3}}return t}}
+
+/*
+ * OSCam WebIf Wiki Help System
+ * If wikiInternal is true (set by server when WEBIF_WIKI is compiled in),
+ * show local wiki popup. Otherwise, open external wiki directly (old behavior).
+ */
+var wikiPopupHtml = '<div id="wikiPopup" class="wiki-popup">' +
+	'<div class="wiki-popup-header">' +
+		'<a class="wiki-popup-title" href="#" target="_blank"></a>' +
+		'<span class="wiki-popup-reset" title="Reset position and size">&#8634;</span>' +
+		'<span class="wiki-popup-close" title="Close">&times;</span>' +
+	'</div>' +
+	'<div class="wiki-popup-content"></div>' +
+	'</div>';
+
+var wikiDragState = { isDragging: false, startX: 0, startY: 0, startLeft: 0, startTop: 0 };
+var wikiSavedLeft = localStorage.getItem('wikiPopupLeft');
+var wikiSavedWidth = localStorage.getItem('wikiPopupWidth');
+var wikiSavedHeight = localStorage.getItem('wikiPopupHeight');
+var wikiDefaultWidth = 400;
+var wikiLastLinkOffset = 0;
+var wikiUserResized = !!(wikiSavedWidth || wikiSavedHeight);
+var wikiCurrentLink = null;
+var wikiConnectorLine = null;
+
+/* Draw connector line between link and popup */
+function updateWikiConnector() {
+	if (!wikiCurrentLink || !$('#wikiPopup').is(':visible')) {
+		if (wikiConnectorLine) {
+			wikiConnectorLine.remove();
+			wikiConnectorLine = null;
+		}
+		return;
+	}
+
+	var $link = wikiCurrentLink;
+	var $popup = $('#wikiPopup');
+
+	/* Calculate positions */
+	var linkOffset = $link.offset();
+	var linkRight = linkOffset.left + $link.outerWidth();
+	var linkCenterY = linkOffset.top + $link.outerHeight() / 2;
+
+	var popupOffset = $popup.offset();
+	var popupLeft = popupOffset.left;
+	var popupCenterY = popupOffset.top + 20; /* Connect to header area */
+
+	/* Create or update SVG line */
+	if (!wikiConnectorLine) {
+		wikiConnectorLine = $('<svg class="wiki-connector"><line/></svg>');
+		$('body').append(wikiConnectorLine);
+	}
+
+	/* Position SVG to cover the area between link and popup */
+	var minX = Math.min(linkRight, popupLeft) - 5;
+	var maxX = Math.max(linkRight, popupLeft) + 5;
+	var minY = Math.min(linkCenterY, popupCenterY) - 5;
+	var maxY = Math.max(linkCenterY, popupCenterY) + 5;
+
+	wikiConnectorLine.css({
+		position: 'absolute',
+		left: minX,
+		top: minY,
+		width: maxX - minX,
+		height: maxY - minY,
+		pointerEvents: 'none',
+		zIndex: 1
+	});
+
+	wikiConnectorLine.find('line').attr({
+		x1: linkRight - minX,
+		y1: linkCenterY - minY,
+		x2: popupLeft - minX,
+		y2: popupCenterY - minY,
+		stroke: '#ffcc00',
+		'stroke-width': 2
+	});
+}
+
+function removeWikiConnector() {
+	if (wikiConnectorLine) {
+		wikiConnectorLine.remove();
+		wikiConnectorLine = null;
+	}
+}
+
+$(function() {
+	if (typeof oscamconf === 'undefined') return;
+
+	/* Check if internal wiki is enabled (WEBIF_WIKI compiled in) */
+	if (typeof wikiInternal === 'undefined' || wikiInternal !== true) {
+		/* No internal wiki - external wiki links are handled in document.ready above */
+		return;
+	}
+
+	/* Internal wiki enabled - setup popup and override click handler */
+	$('body').append(wikiPopupHtml);
+
+	$('.wiki-popup-close').click(function() {
+		$('#wikiPopup').fadeOut(200);
+		removeWikiConnector();
+		if (wikiCurrentLink) {
+			wikiCurrentLink.removeClass('wiki-active');
+			wikiCurrentLink = null;
+		}
+	});
+
+	$('.wiki-popup-reset').click(function() {
+		localStorage.removeItem('wikiPopupLeft');
+		localStorage.removeItem('wikiPopupWidth');
+		localStorage.removeItem('wikiPopupHeight');
+		wikiSavedLeft = null;
+		wikiSavedWidth = null;
+		wikiSavedHeight = null;
+		wikiUserResized = false;
+		var $popup = $('#wikiPopup');
+		/* Recalculate position based on current link */
+		if (wikiCurrentLink) {
+			var offset = wikiCurrentLink.offset();
+			wikiLastLinkOffset = offset.left + wikiCurrentLink.outerWidth();
+			var defaultLeft = wikiLastLinkOffset + 10;
+			if (defaultLeft + 420 > $(window).width()) {
+				defaultLeft = $(window).width() - 420;
+			}
+			$popup.css({ width: wikiDefaultWidth, height: 'auto', left: defaultLeft, top: offset.top - 10 });
+		} else {
+			var defaultLeft = wikiLastLinkOffset + 10;
+			if (defaultLeft + 420 > $(window).width()) {
+				defaultLeft = $(window).width() - 420;
+			}
+			$popup.css({ width: wikiDefaultWidth, height: 'auto', left: defaultLeft });
+		}
+		setTimeout(updateWikiConnector, 50);
+	});
+
+	$(document).click(function(e) {
+		if (!$(e.target).closest('#wikiPopup').length &&
+		    !$(e.target).closest('form table a').length) {
+			$('#wikiPopup').fadeOut(200);
+			removeWikiConnector();
+			if (wikiCurrentLink) {
+				wikiCurrentLink.removeClass('wiki-active');
+				wikiCurrentLink = null;
+			}
+		}
+	});
+
+	$(document).keydown(function(e) {
+		if (e.keyCode === 27) {
+			$('#wikiPopup').fadeOut(200);
+			removeWikiConnector();
+			if (wikiCurrentLink) {
+				wikiCurrentLink.removeClass('wiki-active');
+				wikiCurrentLink = null;
+			}
+		}
+		/* Arrow keys to navigate between parameters when popup is open */
+		if ((e.keyCode === 38 || e.keyCode === 40) && $('#wikiPopup').is(':visible') && wikiCurrentLink) {
+			var $allLinks = $('form table a').filter(function() {
+				return !$(this).attr('href') && $(this).text().trim();
+			});
+			var currentIndex = $allLinks.index(wikiCurrentLink);
+			var newIndex;
+			if (e.keyCode === 38) {
+				/* Arrow up - previous parameter */
+				if (currentIndex > 0) {
+					e.preventDefault();
+					newIndex = currentIndex - 1;
+					var $newLink = $allLinks.eq(newIndex);
+					$newLink.click();
+					/* Scroll into view if needed */
+					var linkTop = $newLink.offset().top;
+					var scrollTop = $(window).scrollTop();
+					if (linkTop < scrollTop + 50) {
+						$('html, body').animate({ scrollTop: linkTop - 100 }, 150);
+					}
+				}
+			} else {
+				/* Arrow down - next parameter */
+				if (currentIndex < $allLinks.length - 1) {
+					e.preventDefault();
+					newIndex = currentIndex + 1;
+					var $newLink = $allLinks.eq(newIndex);
+					$newLink.click();
+					/* Scroll into view if needed */
+					var linkBottom = $newLink.offset().top + $newLink.outerHeight();
+					var windowBottom = $(window).scrollTop() + $(window).height();
+					if (linkBottom > windowBottom - 50) {
+						$('html, body').animate({ scrollTop: $newLink.offset().top - $(window).height() + 150 }, 150);
+					}
+				}
+			}
+		}
+	});
+
+	/* Drag functionality for popup */
+	$('.wiki-popup-header').css('cursor', 'move').on('mousedown', function(e) {
+		if ($(e.target).hasClass('wiki-popup-close') || $(e.target).hasClass('wiki-popup-reset') || $(e.target).hasClass('wiki-popup-title')) return;
+		wikiDragState.isDragging = true;
+		wikiDragState.startX = e.pageX;
+		wikiDragState.startY = e.pageY;
+		wikiDragState.startLeft = parseInt($('#wikiPopup').css('left')) || 0;
+		wikiDragState.startTop = parseInt($('#wikiPopup').css('top')) || 0;
+		e.preventDefault();
+	});
+
+	/* Touch support for drag */
+	$('.wiki-popup-header').on('touchstart', function(e) {
+		if ($(e.target).hasClass('wiki-popup-close') || $(e.target).hasClass('wiki-popup-reset') || $(e.target).hasClass('wiki-popup-title')) return;
+		var touch = e.originalEvent.touches[0];
+		wikiDragState.isDragging = true;
+		wikiDragState.startX = touch.pageX;
+		wikiDragState.startY = touch.pageY;
+		wikiDragState.startLeft = parseInt($('#wikiPopup').css('left')) || 0;
+		wikiDragState.startTop = parseInt($('#wikiPopup').css('top')) || 0;
+	});
+
+	$(document).on('touchmove', function(e) {
+		if (!wikiDragState.isDragging) return;
+		var touch = e.originalEvent.touches[0];
+		var newLeft = wikiDragState.startLeft + (touch.pageX - wikiDragState.startX);
+		var newTop = wikiDragState.startTop + (touch.pageY - wikiDragState.startY);
+		newLeft = Math.max(0, Math.min(newLeft, $(window).width() - 420));
+		newTop = Math.max(0, newTop);
+		$('#wikiPopup').css({ left: newLeft, top: newTop });
+		updateWikiConnector();
+		e.preventDefault();
+	});
+
+	$(document).on('touchend', function() {
+		if (wikiDragState.isDragging) {
+			wikiDragState.isDragging = false;
+			wikiSavedLeft = $('#wikiPopup').css('left');
+			localStorage.setItem('wikiPopupLeft', wikiSavedLeft);
+		}
+	});
+
+	$(document).on('mousemove', function(e) {
+		if (!wikiDragState.isDragging) return;
+		var newLeft = wikiDragState.startLeft + (e.pageX - wikiDragState.startX);
+		var newTop = wikiDragState.startTop + (e.pageY - wikiDragState.startY);
+		newLeft = Math.max(0, Math.min(newLeft, $(window).width() - 420));
+		newTop = Math.max(0, newTop);
+		$('#wikiPopup').css({ left: newLeft, top: newTop });
+		updateWikiConnector();
+	});
+
+	$(document).on('mouseup', function() {
+		if (wikiDragState.isDragging) {
+			wikiDragState.isDragging = false;
+			wikiSavedLeft = $('#wikiPopup').css('left');
+			localStorage.setItem('wikiPopupLeft', wikiSavedLeft);
+		}
+	});
+
+	/* Save size after user resize */
+	var wikiLastWidth = 0;
+	var wikiLastHeight = 0;
+	$('#wikiPopup').on('mouseup', function() {
+		var w = $(this).width();
+		var h = $(this).height();
+		if (wikiLastWidth && wikiLastHeight && (w !== wikiLastWidth || h !== wikiLastHeight)) {
+			wikiUserResized = true;
+			wikiSavedWidth = w;
+			wikiSavedHeight = h;
+			localStorage.setItem('wikiPopupWidth', wikiSavedWidth);
+			localStorage.setItem('wikiPopupHeight', wikiSavedHeight);
+		}
+		wikiLastWidth = w;
+		wikiLastHeight = h;
+	});
+
+	$('form table a').off('click').click(function(e) {
+		e.preventDefault();
+		e.stopPropagation();
+
+		/* Remove highlight from previous link */
+		if (wikiCurrentLink) {
+			wikiCurrentLink.removeClass('wiki-active');
+		}
+
+		/* Store current link for keyboard navigation and highlight it */
+		wikiCurrentLink = $(this);
+		wikiCurrentLink.addClass('wiki-active');
+
+		/* Get real input name for internal wiki lookup */
+		var $cell = $(this).parent();
+		var inputName = null;
+
+		/* Try 1: Input in next cell (standard layout) */
+		var $input = $cell.next().find('input,select,textarea').first();
+
+		/* Try 2: Input in same cell */
+		if (!$input.length) {
+			$input = $cell.find('input,select,textarea').first();
+		}
+
+		/* Try 3: For TH headers (like services), look in same column of next row */
+		if (!$input.length && $cell.is('th')) {
+			var cellIndex = $cell.index();
+			var $nextRow = $cell.closest('tr').next('tr');
+			if ($nextRow.length) {
+				var $correspondingCell = $nextRow.find('td, th').eq(cellIndex);
+				$input = $correspondingCell.find('input,select,textarea').first();
+			}
+		}
+
+		if ($input.length) {
+			inputName = $input.attr('name');
+		}
+
+		/* Get param for external wiki link (use data-p override if present) */
+		var externalParam = $(this).data('p') || inputName;
+
+		if (!inputName) return;
+
+		/* Extract section from form's hidden part input */
+		var section = $('input[name="part"]').val() || '';
+
+		var $link = $(this);
+		var $popup = $('#wikiPopup');
+
+		$('.wiki-popup-title').text(inputName).attr('href',
+			'https://git.streamboard.tv/common/oscam/-/wikis/pages/configuration/oscam.' + oscamconf + '#' + externalParam);
+		$('.wiki-popup-content').html('<div class="wiki-loading">Loading...</div>');
+
+		var offset = $link.offset();
+		wikiLastLinkOffset = offset.left + $link.outerWidth();
+		var leftPos;
+		if (wikiSavedLeft) {
+			leftPos = parseInt(wikiSavedLeft);
+		} else {
+			leftPos = offset.left + $link.outerWidth() + 10;
+			if (leftPos + 420 > $(window).width()) {
+				leftPos = $(window).width() - 420;
+			}
+		}
+		$popup.css({
+			top: offset.top - 10,
+			left: leftPos,
+			width: wikiUserResized && wikiSavedWidth ? parseInt(wikiSavedWidth) : wikiDefaultWidth,
+			height: wikiUserResized && wikiSavedHeight ? parseInt(wikiSavedHeight) : 'auto',
+			'max-width': $(window).width() - 20,
+			'max-height': $(window).height() - 20
+		}).fadeIn(200);
+
+		/* Draw connector line */
+		setTimeout(updateWikiConnector, 50);
+
+		/* Update last size for resize detection */
+		setTimeout(function() {
+			wikiLastWidth = $popup.width();
+			wikiLastHeight = $popup.height();
+		}, 250);
+
+		$.ajax({
+			url: 'wiki.json',
+			type: 'GET',
+			data: { config: oscamconf, section: section, param: inputName },
+			dataType: 'json',
+			success: function(data) {
+				if (data && data.text) {
+					var html = formatWikiText(data.text);
+					$('.wiki-popup-content').html(html);
+				} else {
+					$('.wiki-popup-content').html(
+						'<div class="wiki-nohelp">No help available for this parameter.<br><br>' +
+						'<a href="https://git.streamboard.tv/common/oscam/-/wikis/pages/configuration/oscam.' +
+						oscamconf + '#' + externalParam + '" target="_blank">View Wiki &rarr;</a></div>'
+					);
+				}
+			},
+			error: function() {
+				$('.wiki-popup-content').html(
+					'<div class="wiki-error">Failed to load help.<br><br>' +
+					'<a href="https://git.streamboard.tv/common/oscam/-/wikis/pages/configuration/oscam.' +
+					oscamconf + '#' + externalParam + '" target="_blank">View Wiki &rarr;</a></div>'
+				);
+			}
+		});
+	});
+});
+
+function formatWikiText(text) {
+	if (!text) return '';
+
+	/* Convert escaped newlines to real newlines first */
+	text = text.replace(/\\n/g, '\n');
+
+	text = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+	text = text.replace(/```(\w*)\n([\s\S]*?)```/g, '<pre class="wiki-code">$2</pre>');
+	text = text.replace(/```([\s\S]*?)```/g, '<pre class="wiki-code">$1</pre>');
+	text = text.replace(/`([^`]+)`/g, '<code>$1</code>');
+	text = text.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+	text = text.replace(/^### (.+)$/gm, '<h4>$1</h4>');
+	text = text.replace(/^## (.+)$/gm, '<h3>$1</h3>');
+	text = text.replace(/\n/g, '<br>');
+	text = text.replace(/<\/pre><br>/g, '</pre>');
+
+	return '<div class="wiki-text">' + text + '</div>';
+}
+
+/* Wiki documentation status toggle - shows icons for missing/review/ok documentation */
+$(document).ready(function() {
+	if (typeof oscamconf === 'undefined' || typeof wikiInternal === 'undefined' || wikiInternal !== true) {
+		return;
+	}
+
+	var wikiStatusLoaded = false;
+	var wikiStatusVisible = false;
+
+	/* Support different table classes: config, configreader, configuser, configservices, writeemm */
+	var $allTables = $('table.config, table.configreader, table.configuser, table.configservices, table.writeemm');
+	if (!$allTables.length) return;
+
+	/* Only make the FIRST table header clickable */
+	var $firstHeader = $allTables.find('th[colspan]').first();
+	if (!$firstHeader.length) return;
+
+	$firstHeader.css('cursor', 'pointer').attr('title', 'Click to toggle documentation status icons');
+
+	$firstHeader.click(function() {
+		if (!wikiStatusLoaded) {
+			/* Load status for all parameters */
+			$.ajax({
+				url: 'wiki_status.json',
+				type: 'GET',
+				data: { config: oscamconf },
+				dataType: 'json',
+				success: function(data) {
+					if (data) {
+						/* Method 1: Find all <A> tags that are parameter labels */
+						$allTables.find('a').each(function() {
+							var $a = $(this);
+
+							/* Skip if already has icon */
+							if ($a.find('.wiki-status-icon').length) return;
+
+							/* Skip links with href (real links, not labels) */
+							if ($a.attr('href')) return;
+
+							/* Skip if no text */
+							var labelText = $a.text().trim();
+							if (!labelText) return;
+
+							/* Find associated input name */
+							var paramName = null;
+							var $cell = $a.closest('td, th');
+
+							/* Try 1: Input in same cell */
+							var $input = $cell.find('input,select,textarea').first();
+
+							/* Try 2: Input in next cell */
+							if (!$input.length) {
+								$input = $cell.next('td, th').find('input,select,textarea').first();
+							}
+
+							/* Try 3: For TH headers, look in same column of next row */
+							if (!$input.length && $cell.is('th')) {
+								var cellIndex = $cell.index();
+								var $nextRow = $cell.closest('tr').next('tr');
+								if ($nextRow.length) {
+									var $correspondingCell = $nextRow.find('td, th').eq(cellIndex);
+									$input = $correspondingCell.find('input,select,textarea').first();
+								}
+							}
+
+							if ($input.length) {
+								paramName = $input.attr('name');
+							}
+
+							if (!paramName) return;
+
+							var status = data[paramName];
+							var icon = '';
+							var tooltip = '';
+							if (status === 'missing') { icon = '❗ '; tooltip = 'Documentation missing'; }
+							else if (status === 'review') { icon = '⚠️ '; tooltip = 'Documentation needs review'; }
+							else if (status === 'ok') { icon = '✅ '; tooltip = 'Documentation complete'; }
+
+							if (icon) {
+								$a.prepend('<span class="wiki-status-icon" title="' + tooltip + '">' + icon + '</span>');
+							}
+						});
+
+						wikiStatusLoaded = true;
+						wikiStatusVisible = true;
+						$('.wiki-status-icon').addClass('visible');
+					}
+				}
+			});
+		} else {
+			/* Toggle visibility for ALL icons */
+			wikiStatusVisible = !wikiStatusVisible;
+			if (wikiStatusVisible) {
+				$('.wiki-status-icon').addClass('visible');
+			} else {
+				$('.wiki-status-icon').removeClass('visible');
+			}
+		}
+	});
+});

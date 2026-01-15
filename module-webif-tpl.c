@@ -808,6 +808,59 @@ char *xml_encode(struct templatevars *vars, const char *chartoencode)
 	return tpl_addTmp(vars, encoded);
 }
 
+char *json_encode(struct templatevars *vars, const char *chartoencode)
+{
+	if(!chartoencode) { return ""; }
+	int32_t i, pos = 0, len = cs_strlen(chartoencode);
+	char *encoded;
+	char buffer[7];
+	/* In worst case, every character could get converted to 6 chars (\uXXXX) */
+	if(!cs_malloc(&encoded, len * 6 + 1)) { return ""; }
+	for(i = 0; i < len; ++i)
+	{
+		uint8_t tmp = chartoencode[i];
+		switch(tmp)
+		{
+		case '"' :
+			memcpy(encoded + pos, "\\\"", 2);
+			pos += 2;
+			break;
+		case '\\':
+			memcpy(encoded + pos, "\\\\", 2);
+			pos += 2;
+			break;
+		case '\n':
+			memcpy(encoded + pos, "\\n", 2);
+			pos += 2;
+			break;
+		case '\r':
+			memcpy(encoded + pos, "\\r", 2);
+			pos += 2;
+			break;
+		case '\t':
+			memcpy(encoded + pos, "\\t", 2);
+			pos += 2;
+			break;
+		default:
+			if(tmp < 32)
+			{
+				snprintf(buffer, 7, "\\u%04x", tmp);
+				memcpy(encoded + pos, buffer, 6);
+				pos += 6;
+			}
+			else
+			{
+				encoded[pos] = tmp;
+				++pos;
+			}
+		}
+	}
+	/* Reduce to the really needed memory size and store it in the templatevars */
+	if(!cs_realloc(&encoded, pos + 1)) { return ""; }
+	encoded[pos] = '\0';
+	return tpl_addTmp(vars, encoded);
+}
+
 /* Format a seconds integer to hh:mm:ss or dd hh:mm:ss depending hrs >24 */
 char *sec2timeformat(struct templatevars *vars, int32_t seconds)
 {

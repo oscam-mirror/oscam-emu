@@ -1,0 +1,5 @@
+[submodule "wiki"]
+	path = wiki
+	url = https://git.streamboard.tv/common/oscam.wiki.git
+	branch = main
+	shallow = true

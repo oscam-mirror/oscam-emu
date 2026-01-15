@@ -1,6 +1,7 @@
 ##TPLHEADERSHORT##
 	<script type="text/javascript">
 		var oscamconf = 'server';
+##WIKIINTERNALVAR##
 	</script>
 ##TPLBODY##
 ##TPLMENU##
@@ -55,25 +56,25 @@
 			<TR><TD><A>Skip CWs checksum test:</A></TD><TD><input name="disablecrccws" type="hidden" value="0"><input name="disablecrccws" type="checkbox" value="1" ##DISABLECRCCWSCHECKED##></TD></TR>
 			<TR><TD><A>Skip CWs checksum test only for:</A></TD><TD><textarea name="disablecrccws_only_for" rows="3" class="bt">##IGN_CHKSUM_ONLYFOR##</textarea></TD></TR>
 			<TR><TD><A>Emmcache:</A></TD><TD><input name="emmcache" class="medium" type="text" maxlength="10" value="##EMMCACHE##"></TD></TR>
-			<TR><TD><A data-p="saveemm-u">Saveemm:</A></TD>
+			<TR><TD>Saveemm:</TD>
 				<TD CLASS="invisible">
 					<TABLE>
 						<TR>
-							<TD><input name="saveemm-unknown" type="hidden" value="0"><input name="saveemm-unknown" type="checkbox" value="1" ##SAVEEMMUNKNOWNCHK##><label>unknown</label></TD>
-							<TD><input name="saveemm-u" type="hidden" value="0"><input name="saveemm-u" type="checkbox" value="1" ##SAVEEMMUNIQCHK##><label>unique</label></TD>
-							<TD><input name="saveemm-s" type="hidden" value="0"><input name="saveemm-s" type="checkbox" value="1" ##SAVEEMMSHAREDCHK##><label>shared</label></TD>
-							<TD><input name="saveemm-g" type="hidden" value="0"><input name="saveemm-g" type="checkbox" value="1" ##SAVEEMMGLOBALCHK##><label>global</label></TD>
+							<TD><A>unknown:</A></TD><TD><input name="saveemm-unknown" type="hidden" value="0"><input name="saveemm-unknown" type="checkbox" value="1" ##SAVEEMMUNKNOWNCHK##></TD>
+							<TD><A>unique:</A></TD><TD><input name="saveemm-u" type="hidden" value="0"><input name="saveemm-u" type="checkbox" value="1" ##SAVEEMMUNIQCHK##></TD>
+							<TD><A>shared:</A></TD><TD><input name="saveemm-s" type="hidden" value="0"><input name="saveemm-s" type="checkbox" value="1" ##SAVEEMMSHAREDCHK##></TD>
+							<TD><A>global:</A></TD><TD><input name="saveemm-g" type="hidden" value="0"><input name="saveemm-g" type="checkbox" value="1" ##SAVEEMMGLOBALCHK##></TD>
 						</TR>
 					</TABLE>
 				</TD>
-			<TR><TD><A data-p="blockemm-u">Blockemm:</A></TD>
+			<TR><TD>Blockemm:</TD>
 				<TD CLASS="invisible">
 					<TABLE>
 						<TR>
-							<TD><input name="blockemm-unknown" type="hidden" value="0"><input name="blockemm-unknown" type="checkbox" value="1" ##BLOCKEMMUNKNOWNCHK##><label>unknown</label></TD>
-							<TD><input name="blockemm-u" type="hidden" value="0"><input name="blockemm-u" type="checkbox" value="1" ##BLOCKEMMUNIQCHK##><label>unique</label></TD>
-							<TD><input name="blockemm-s" type="hidden" value="0"><input name="blockemm-s" type="checkbox" value="1" ##BLOCKEMMSHAREDCHK##><label>shared</label></TD>
-							<TD><input name="blockemm-g" type="hidden" value="0"><input name="blockemm-g" type="checkbox" value="1" ##BLOCKEMMGLOBALCHK##><label>global</label></TD>
+							<TD><A>unknown:</A></TD><TD><input name="blockemm-unknown" type="hidden" value="0"><input name="blockemm-unknown" type="checkbox" value="1" ##BLOCKEMMUNKNOWNCHK##></TD>
+							<TD><A>unique:</A></TD><TD><input name="blockemm-u" type="hidden" value="0"><input name="blockemm-u" type="checkbox" value="1" ##BLOCKEMMUNIQCHK##></TD>
+							<TD><A>shared:</A></TD><TD><input name="blockemm-s" type="hidden" value="0"><input name="blockemm-s" type="checkbox" value="1" ##BLOCKEMMSHAREDCHK##></TD>
+							<TD><A>global:</A></TD><TD><input name="blockemm-g" type="hidden" value="0"><input name="blockemm-g" type="checkbox" value="1" ##BLOCKEMMGLOBALCHK##></TD>
 						</TR>
 					</TABLE>
 				</TD>

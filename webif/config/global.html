@@ -43,22 +43,32 @@
 ##TPLLOCALCARDS##
 			<TR><TD><A>Prefer local cards:</A></TD><TD><select name="preferlocalcards"><option value="0">0 - local cards like proxied</option><option value="1" ##PREFERCACHEEX##>1 - prefer cache-ex then local cards</option><option value="2" ##PREFERLOCALCARDS##>2 - prefer local cards above cache-ex</option></select></TD></TR>
 ##TPLUNLOCKPARENTAL##
-			<TR><TD><A>SIGHUP reload:</A></TD>
-				<TD>
-					<input name="reload_useraccounts" type="hidden" value="0"><input name="reload_useraccounts" type="checkbox" value="1" ##RELOADUSERACCOUNTSCHECKED##><label>&nbsp;accounts&nbsp;&nbsp;&nbsp;</label>
-					<input name="reload_readers" type="hidden" value="0"><input name="reload_readers" type="checkbox" value="1" ##RELOADREADERSCHECKED##><label>&nbsp;readers&nbsp;&nbsp;&nbsp;</label>
-					<input name="reload_provid" type="hidden" value="0"><input name="reload_provid" type="checkbox" value="1" ##RELOADPROVIDCHECKED##><label>&nbsp;provid&nbsp;&nbsp;&nbsp;</label>
-					<input name="reload_services_ids" type="hidden" value="0"><input name="reload_services_ids" type="checkbox" value="1" ##RELOADSERVICESIDSCHECKED##><label>&nbsp;services ids&nbsp;&nbsp;&nbsp;</label>
-					<input name="reload_tier_ids" type="hidden" value="0"><input name="reload_tier_ids" type="checkbox" value="1" ##RELOADTIERUDSCHECKED##><label>&nbsp;tier ids&nbsp;&nbsp;&nbsp;</label>
-					<input name="reload_fakecws" type="hidden" value="0"><input name="reload_fakecws" type="checkbox" value="1" ##RELOADFAKECWSCHECKED##><label>&nbsp;fake CWs&nbsp;&nbsp;&nbsp;</label>
-					<input name="reload_ac_stat" type="hidden" value="0"><input name="reload_ac_stat" type="checkbox" value="1" ##RELOADACSTATCHECKED##><label>&nbsp;AC stats&nbsp;&nbsp;&nbsp;</label>
-					<input name="reload_log" type="hidden" value="0"><input name="reload_log" type="checkbox" value="1" ##RELOADLOGCHECKED##><label>&nbsp;log file&nbsp;&nbsp;&nbsp;</label>
+			<TR><TD>SIGHUP reload:</TD>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><A>accounts:</A></TD><TD><input name="reload_useraccounts" type="hidden" value="0"><input name="reload_useraccounts" type="checkbox" value="1" ##RELOADUSERACCOUNTSCHECKED##></TD>
+							<TD><A>readers:</A></TD><TD><input name="reload_readers" type="hidden" value="0"><input name="reload_readers" type="checkbox" value="1" ##RELOADREADERSCHECKED##></TD>
+							<TD><A>provid:</A></TD><TD><input name="reload_provid" type="hidden" value="0"><input name="reload_provid" type="checkbox" value="1" ##RELOADPROVIDCHECKED##></TD>
+							<TD><A>services ids:</A></TD><TD><input name="reload_services_ids" type="hidden" value="0"><input name="reload_services_ids" type="checkbox" value="1" ##RELOADSERVICESIDSCHECKED##></TD>
+						</TR>
+						<TR>
+							<TD><A>tier ids:</A></TD><TD><input name="reload_tier_ids" type="hidden" value="0"><input name="reload_tier_ids" type="checkbox" value="1" ##RELOADTIERUDSCHECKED##></TD>
+							<TD><A>fake CWs:</A></TD><TD><input name="reload_fakecws" type="hidden" value="0"><input name="reload_fakecws" type="checkbox" value="1" ##RELOADFAKECWSCHECKED##></TD>
+							<TD><A>AC stats:</A></TD><TD><input name="reload_ac_stat" type="hidden" value="0"><input name="reload_ac_stat" type="checkbox" value="1" ##RELOADACSTATCHECKED##></TD>
+							<TD><A>log file:</A></TD><TD><input name="reload_log" type="hidden" value="0"><input name="reload_log" type="checkbox" value="1" ##RELOADLOGCHECKED##></TD>
+						</TR>
+					</TABLE>
 				</TD>
 			</TR>
-			<TR><TD><A>Simple block:</A></TD>
-				<TD>
-					<input name="block_same_ip" type="hidden" value="0"><input name="block_same_ip" type="checkbox" value="1" ##BLOCKSAMEIPCHECKED##><label>&nbsp;same IP&nbsp;&nbsp;&nbsp;</label>
-					<input name="block_same_name" type="hidden" value="0"><input name="block_same_name" type="checkbox" value="1" ##BLOCKSAMENAMECHECKED##><label>&nbsp;same Name</label>
+			<TR><TD>Simple block:</TD>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><A>same IP:</A></TD><TD><input name="block_same_ip" type="hidden" value="0"><input name="block_same_ip" type="checkbox" value="1" ##BLOCKSAMEIPCHECKED##></TD>
+							<TD><A>same Name:</A></TD><TD><input name="block_same_name" type="hidden" value="0"><input name="block_same_name" type="checkbox" value="1" ##BLOCKSAMENAMECHECKED##></TD>
+						</TR>
+					</TABLE>
 				</TD>
 			</TR>
 			<TR><TD><A>Drop duplicate users:</A></TD>
@@ -76,23 +86,35 @@
 			</TR>
 			<TR><TH COLSPAN="2">Logging</TH></TR>
 			<TR><TD><A>Usr file:</A></TD>
-				<TD>
-					<input name="usrfile" type="text" maxlength="128" value="##USERFILE##">&nbsp;
-					<input name="disableuserfile" type="hidden" value="1"><input name="disableuserfile" type="checkbox" value="0" ##DISABLEUSERFILECHECKED##><label>&nbsp;enabled&nbsp;</label>
-					<select name="usrfileflag"><option VALUE="0">0 - just join/leave</option><option VALUE="1" ##USERFILEFLAGCHECKED##>1 - each zap</option></select>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><input name="usrfile" type="text" maxlength="128" value="##USERFILE##"></TD>
+							<TD><A>enabled:</A></TD><TD><input name="disableuserfile" type="hidden" value="1"><input name="disableuserfile" type="checkbox" value="0" ##DISABLEUSERFILECHECKED##></TD>
+							<TD><A>flag:</A></TD><TD><select name="usrfileflag"><option VALUE="0">0 - just join/leave</option><option VALUE="1" ##USERFILEFLAGCHECKED##>1 - each zap</option></select></TD>
+						</TR>
+					</TABLE>
 				</TD>
 			</TR>
 			<TR><TD><A>Mail file:</A></TD>
-				<TD>
-					<input name="mailfile" type="text" maxlength="128" value="##MAILFILE##">&nbsp;
-					<input name="disablemail" type="hidden" value="1"><input name="disablemail" type="checkbox" value="0" ##DISABLEMAILCHECKED##><label>&nbsp;enabled&nbsp;</label>
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><input name="mailfile" type="text" maxlength="128" value="##MAILFILE##"></TD>
+							<TD><A>enabled:</A></TD><TD><input name="disablemail" type="hidden" value="1"><input name="disablemail" type="checkbox" value="0" ##DISABLEMAILCHECKED##></TD>
+						</TR>
+					</TABLE>
 				</TD>
 			</TR>
 			<TR><TD><A>Log file / max size:</A></TD>
-				<TD>
-					<input name="logfile" type="text" maxlength="128" value="##LOGFILE##">&nbsp;
-					<input name="disablelog" type="hidden" value="1"><input name="disablelog" type="checkbox" value="0" ##DISABLELOGCHECKED##><label>&nbsp;enabled&nbsp;</label>
-					<input name="maxlogsize" class="withunit short" type="text" maxlength="5" value="##MAXLOGSIZE##"> kB
+				<TD CLASS="invisible">
+					<TABLE>
+						<TR>
+							<TD><input name="logfile" type="text" maxlength="128" value="##LOGFILE##"></TD>
+							<TD><A>enabled:</A></TD><TD><input name="disablelog" type="hidden" value="1"><input name="disablelog" type="checkbox" value="0" ##DISABLELOGCHECKED##></TD>
+							<TD><A>max size:</A></TD><TD><input name="maxlogsize" class="withunit short" type="text" maxlength="5" value="##MAXLOGSIZE##"> kB</TD>
+						</TR>
+					</TABLE>
 				</TD>
 			</TR>
 			<TR><TD><A>Log duplicated lines:</A></TD><TD><input name="logduplicatelines" value="0" type="hidden"><input name="logduplicatelines" value="1" type="checkbox" ##LOGDUPSCHECKED##><label></label></TD></TR>

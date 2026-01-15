@@ -2,7 +2,7 @@ SHELL = /bin/sh
 
 .SUFFIXES:
 .SUFFIXES: .o .c
-.PHONY: all tests help README.build README.config simple default debug config menuconfig allyesconfig allnoconfig defconfig clean distclean
+.PHONY: all tests help README.build README.config simple default debug config menuconfig allyesconfig allnoconfig defconfig clean distclean submodules
 
 VER        := $(shell ./config.sh --oscam-version)
 GIT_SHA    := $(shell ./config.sh --oscam-commit)
@@ -70,6 +70,7 @@ SSL = $(shell which openssl 2>/dev/null || true)
 STAT = $(shell which gnustat 2>/dev/null || which stat 2>/dev/null)
 SPLIT = $(shell which gsplit 2>/dev/null || which split 2>/dev/null)
 GREP = $(shell which ggrep 2>/dev/null || which grep 2>/dev/null)
+GIT = $(shell which git 2>/dev/null || true)
 
 # Compiler warnings
 CC_WARN = -W -Wall -Wshadow -Wredundant-decls -Wstrict-prototypes -Wold-style-definition
@@ -433,6 +434,7 @@ SRC-$(CONFIG_WEBIF) += module-webif-lib.c
 SRC-$(CONFIG_WEBIF) += module-webif-tpl.c
 SRC-$(CONFIG_WEBIF) += module-webif.c
 SRC-$(CONFIG_WEBIF) += webif/pages.c
+SRC-$(CONFIG_WEBIF_WIKI) += webif/pages_wiki.c
 SRC-$(CONFIG_WITH_CARDREADER) += reader-common.c
 SRC-$(CONFIG_READER_BULCRYPT) += reader-bulcrypt.c
 SRC-$(CONFIG_READER_CONAX) += reader-conax.c
@@ -498,7 +500,7 @@ SRC := $(subst config.c,$(OBJDIR)/config.c,$(SRC))
 
 # The default build target rebuilds the config.mak if needed and then
 # starts the compilation.
-all:
+all: submodules
 	@./config.sh --use-flags "$(USE_FLAGS)" --objdir "$(OBJDIR)" --make-config.mak
 	@-mkdir -p $(OBJDIR)/cscrypt $(OBJDIR)/csctapi $(OBJDIR)/minilzo $(OBJDIR)/webif $(OBJDIR)/signing
 	@-printf "\
@@ -600,6 +602,16 @@ distclean: clean
 		rm -rf $$FILE; \
 	done
 	@-$(MAKE) --no-print-directory --quiet -C webif clean
+
+submodules:
+	@if $(GIT) rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
+		echo "Updating git submodules..."; \
+		$(GIT) submodule update --init --remote || { \
+			echo "Warning: failed to update submodules. Using existing versions."; \
+		}; \
+	else \
+		echo "Skipping git submodule update (not a git repository)."; \
+	fi
 
 README.build:
 	@echo "Extracting 'make help' into $@ file."

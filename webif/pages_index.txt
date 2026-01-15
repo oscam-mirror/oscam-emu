@@ -338,3 +338,8 @@ CLIENTCOUNTNOTIFIERBIT        userconfig/userconfig_notify.html
 USERICON                      userconfig/userconfig_usericon.html
 USERLABEL                     userconfig/userconfig_userlabel.html
 USERNOICON                    userconfig/userconfig_usernoicon.html
+
+WIKIJSON                      wiki/wiki.json                                              WEBIF_WIKI
+WIKIERROR                     wiki/wikierror.json                                         WEBIF_WIKI
+WIKINOTFOUND                  wiki/wikinotfound.json                                      WEBIF_WIKI
+WIKISTATUSJSON                wiki/wikistatus.json                                        WEBIF_WIKI

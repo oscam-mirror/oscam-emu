@@ -1140,3 +1140,146 @@ only screen and (min-device-width : 320px) and (max-device-width : 568px) and (o
 		height:508px
 	}
 }
+/* **************** WIKI HELP POPUP */
+#wikiPopup {
+	display:none;
+	position:absolute;
+	z-index:10;
+	width:400px;
+	background-color:#FFF;
+	border:2px solid #AAA;
+	border-radius:5px;
+	box-shadow:0 4px 12px rgba(0,0,0,0.3);
+	font-size:12px;
+	resize:both;
+	overflow:auto;
+	min-width:250px;
+	min-height:150px
+}
+.wiki-popup-header {
+	background-color:#CCC;
+	color:#000;
+	padding:8px 12px;
+	font-weight:bold;
+	font-size:13px;
+	border-radius:3px 3px 0 0;
+	display:flex;
+	justify-content:space-between;
+	align-items:center
+}
+.wiki-popup-title {
+	font-family:Arial;
+	color:#000;
+	text-decoration:none;
+	cursor:pointer
+}
+.wiki-popup-title:hover {
+	color:#FF9E5F;
+	text-decoration:underline
+}
+.wiki-popup-close {
+	cursor:pointer;
+	font-size:18px;
+	font-weight:bold;
+	line-height:1;
+	padding:0 4px
+}
+.wiki-popup-close:hover {
+	color:#FF9E5F
+}
+.wiki-popup-reset {
+	cursor:pointer;
+	font-size:16px;
+	line-height:1;
+	padding:0 4px;
+	margin-left:auto
+}
+.wiki-popup-reset:hover {
+	color:#FF9E5F
+}
+.wiki-popup-content {
+	padding:12px;
+	overflow-y:auto;
+	line-height:1.5;
+	color:#333
+}
+.wiki-popup-content h3,
+.wiki-popup-content h4 {
+	margin:10px 0 5px 0;
+	color:#000
+}
+.wiki-popup-content h3 {
+	font-size:14px
+}
+.wiki-popup-content h4 {
+	font-size:12px
+}
+.wiki-popup-content pre.wiki-code {
+	background-color:#f4f4f4;
+	border:1px solid #ddd;
+	border-radius:3px;
+	padding:8px;
+	margin:8px 0;
+	overflow-x:auto;
+	font-family:'Courier New',monospace;
+	font-size:11px;
+	white-space:pre;
+	line-height:1.4
+}
+.wiki-popup-content code {
+	background-color:#f4f4f4;
+	padding:1px 4px;
+	border-radius:2px;
+	font-family:'Courier New',monospace;
+	font-size:11px
+}
+.wiki-popup-content strong {
+	color:#000
+}
+.wiki-text {
+	word-wrap:break-word
+}
+.wiki-loading {
+	text-align:center;
+	padding:20px;
+	color:#666;
+	font-style:italic
+}
+.wiki-nohelp,
+.wiki-error {
+	text-align:center;
+	padding:20px;
+	color:#666
+}
+.wiki-nohelp a,
+.wiki-error a {
+	color:#000;
+	text-decoration:underline
+}
+.wiki-nohelp a:hover,
+.wiki-error a:hover {
+	color:#FF9E5F
+}
+/* Wiki status icons - keep inline on hover */
+.wiki-status-icon {
+	margin-right:2px;
+	display:none !important
+}
+.wiki-status-icon.visible {
+	display:inline !important
+}
+a:hover .wiki-status-icon {
+	position:static !important;
+	top:auto !important;
+	right:auto !important;
+	padding:0 !important;
+	background-color:transparent !important;
+	border:none !important
+}
+/* Wiki active link highlight */
+a.wiki-active {
+	background-color:#ffffcc !important;
+	outline:2px solid #ffcc00;
+	position:relative;
+	z-index:2
+}
