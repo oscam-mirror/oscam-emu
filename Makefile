@@ -531,7 +531,6 @@ $(SIGN_INFO)\
 |  Binary   : $(OSCAM_BIN)\n\
 +-------------------------------------------------------------------------------\n"
 ifeq "$(shell ./config.sh --enabled WEBIF)" "Y"
-	@-$(MAKE) --no-print-directory --quiet -C webif clean
 	@$(MAKE) --no-print-directory --quiet -C webif
 endif
 	@$(MAKE) --no-print-directory $(OSCAM_BIN) $(LIST_SMARGO_BIN)
