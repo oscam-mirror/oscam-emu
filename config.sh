@@ -915,6 +915,53 @@ do
 		echo $version-$emuversion
 		break
 	;;
+	'--submodule')
+		shift
+		name="$1"
+		if [ ! -f .gitmodules ]; then
+			exit 0
+		fi
+		# If no name given, process all submodules
+		if [ -z "$name" ]; then
+			for sm in `grep '^\[submodule "' .gitmodules | sed 's/.*"\(.*\)".*/\1/'`; do
+				$0 --submodule "$sm"
+			done
+			exit 0
+		fi
+		# Extract submodule section from .gitmodules
+		section=`sed -n "/\[submodule \"$name\"\]/,/^\[/p" .gitmodules | grep ' = '`
+		# Check if submodule is needed based on depends config option
+		depends=`echo "$section" | grep 'depends = ' | sed 's/.*depends = //'`
+		if [ -n "$depends" ]; then
+			enabled $depends || exit 0
+		fi
+		if [ "`git rev-parse --show-toplevel 2>/dev/null`" = "`pwd`" ]; then
+			if echo "$section" | grep -q 'branch = '; then
+				echo "Updating git submodule '$name' (tracking)..."
+				git submodule update --init --remote "$name" || {
+					echo "Warning: failed to update submodule. Using existing version." >&2
+				}
+			else
+				echo "Updating git submodule '$name' (pinned)..."
+				git submodule update --init "$name" || {
+					echo "Warning: failed to update submodule. Using existing version." >&2
+				}
+			fi
+		else
+			url=`echo "$section" | grep 'url = ' | sed 's/.*url = //'`
+			if [ -z "$url" ]; then
+				echo "Error: submodule '$name' not found in .gitmodules" >&2
+				exit 1
+			fi
+			echo "Fetching $name repository..."
+			rm -rf "$name"
+			git clone --depth 1 "$url" "$name" || {
+				echo "Error: failed to clone $name repository." >&2
+				exit 1
+			}
+		fi
+		break
+	;;
 	'-c'|'--oscam-commit')
 		sha=`git log --no-merges 2>/dev/null | sed -n 1p | cut -d ' ' -f2 | cut -c1-8`
 		echo $sha

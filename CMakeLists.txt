@@ -205,38 +205,10 @@ add_definitions ("-DCS_CONFDIR=\"${CS_CONFDIR}\"")
 
 #----------------------- git submodule support ------------------------------
 
-find_program(GIT NAMES git)
-if (GIT)
-	# Check if we are inside a git work tree
-	execute_process(
-		COMMAND "${GIT}" rev-parse --is-inside-work-tree
-		WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-		OUTPUT_VARIABLE GIT_INSIDE_WORK_TREE
-		RESULT_VARIABLE GIT_RET
-		OUTPUT_STRIP_TRAILING_WHITESPACE
-		ERROR_QUIET
-	)
-
-	if (GIT_RET EQUAL 0 AND GIT_INSIDE_WORK_TREE STREQUAL "true")
-		# Single command handles both init and update:
-		# --init: initializes missing submodules
-		# --remote: updates submodules with 'branch' in .gitmodules to latest
-		#           (pinned submodules without 'branch' stay at their commit)
-		message(STATUS "Updating git submodules...")
-		execute_process(
-			COMMAND "${GIT}" submodule update --init --remote
-			WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-			RESULT_VARIABLE UPDATE_RESULT
-		)
-		if (NOT UPDATE_RESULT EQUAL 0)
-			message(WARNING "Warning: failed to update submodules. Using existing versions.")
-		endif()
-	else()
-		message(WARNING "Skipping git submodule update (not a git repository).")
-	endif()
-else()
-	message(WARNING "Git not found. Skipping submodule update.")
-endif()
+execute_process(
+	COMMAND ${CMAKE_CURRENT_SOURCE_DIR}/config.sh --submodule
+	WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+)
 
 # upx compression
 execute_process (COMMAND upx --version RESULT_VARIABLE UPX_RET ERROR_QUIET COMMAND head -n 1 OUTPUT_VARIABLE UPX_VER OUTPUT_STRIP_TRAILING_WHITESPACE)

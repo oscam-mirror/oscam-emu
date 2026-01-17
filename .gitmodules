@@ -3,3 +3,4 @@
 	url = https://git.streamboard.tv/common/oscam.wiki.git
 	branch = main
 	shallow = true
+	depends = WEBIF_WIKI

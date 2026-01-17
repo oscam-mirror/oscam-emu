@@ -604,14 +604,7 @@ distclean: clean
 	@-$(MAKE) --no-print-directory --quiet -C webif clean
 
 submodules:
-	@if $(GIT) rev-parse --is-inside-work-tree >/dev/null 2>&1; then \
-		echo "Updating git submodules..."; \
-		$(GIT) submodule update --init --remote || { \
-			echo "Warning: failed to update submodules. Using existing versions."; \
-		}; \
-	else \
-		echo "Skipping git submodule update (not a git repository)."; \
-	fi
+	@./config.sh --submodule
 
 README.build:
 	@echo "Extracting 'make help' into $@ file."

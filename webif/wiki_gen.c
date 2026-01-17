@@ -965,10 +965,8 @@ int main(int argc, char *argv[])
 				stats_total, stats_included, stats_skipped);
 	}
 
-	printf("GEN\t%s\n", output_wiki_h);
 	generate_header();
 
-	printf("GEN\t%s\n", output_wiki_c);
 	generate_source();
 
 	if(is_defined_content)

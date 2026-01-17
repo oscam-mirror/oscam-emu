@@ -356,6 +356,11 @@
     - !reference [.helper, set-git-properties]
 
     - |
+      echo "Updating wiki submodule to latest..."
+      git submodule update --init --remote wiki
+      git add wiki
+
+    - |
       echo "Updating VERSION information in globals.h..."
       sed -i "/^#define CS_VERSION/s/\.[0-9].*\"/.$new_ver\"/" globals.h
       git diff globals.h
