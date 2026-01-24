@@ -300,6 +300,87 @@
         exit 1;
       fi;
 
+  #check if all config parameters are documented in wiki
+  check-wiki-documentation:
+    - !reference [.helper, terminal-color]
+    - |
+      export LC_ALL=C
+      echo "Checking wiki documentation for config parameters..."
+
+      # Initialize wiki submodule with latest version
+      git submodule update --init --remote wiki 2>/dev/null || true
+
+      # Check if wiki submodule exists
+      if [ ! -d "wiki/pages/configuration" ]; then
+        echo -e "${TC_FNT_YELLOW}Wiki submodule not available, skipping documentation check.${TC_FNT_DEFAULT}";
+        exit 0;
+      fi
+
+      MISSING_DOCS=""
+
+      # Function to find references for a parameter
+      find_refs() {
+        local PARAM="$1"
+        local REFS=""
+        # Search in C files for usage
+        local C_FILES=$(grep -rl "\b${PARAM}\b" --include="*.c" --include="*.h" . 2>/dev/null | grep -v "oscam-config-" | head -3 | xargs -I{} basename {} 2>/dev/null | tr '\n' ' ')
+        # Search in HTML files
+        local HTML_FILES=$(grep -rl "\"${PARAM}\"\|'${PARAM}'\|>${PARAM}<\|name=\"${PARAM}\"" --include="*.html" webif/ 2>/dev/null | head -3 | sed 's|webif/||' | tr '\n' ' ')
+        [ -n "$C_FILES" ] && REFS="C: ${C_FILES}"
+        [ -n "$HTML_FILES" ] && REFS="${REFS}${REFS:+ | }WebIF: ${HTML_FILES}"
+        echo "$REFS"
+      }
+
+      # Check oscam-config-global.c -> oscam.conf.md
+      echo "Checking oscam-config-global.c parameters..."
+      PARAMS=$(grep -E 'DEF_OPT_(INT8|INT32|UINT8|UINT32|STR|SSTR|HEX|FUNC|FUNC_X)[[:space:]]*\(' oscam-config-global.c | \
+        sed -n 's/.*DEF_OPT_[A-Z0-9_]*[[:space:]]*("\([^"]*\)".*/\1/p' | sort -u || true)
+      for PARAM in $PARAMS; do
+        if [ -n "$PARAM" ] && ! grep -qE "^###[[:space:]]+${PARAM}" "wiki/pages/configuration/oscam.conf.md" 2>/dev/null; then
+          REFS=$(find_refs "$PARAM")
+          MISSING_DOCS="${MISSING_DOCS}  - ${PARAM} (oscam.conf)${REFS:+\n      ${REFS}}\n"
+        fi
+      done
+
+      # Check oscam-config-account.c -> oscam.user.md
+      echo "Checking oscam-config-account.c parameters..."
+      PARAMS=$(grep -E 'DEF_OPT_(INT8|INT32|UINT8|UINT32|STR|SSTR|HEX|FUNC|FUNC_X)[[:space:]]*\(' oscam-config-account.c | \
+        sed -n 's/.*DEF_OPT_[A-Z0-9_]*[[:space:]]*("\([^"]*\)".*/\1/p' | sort -u || true)
+      for PARAM in $PARAMS; do
+        if [ -n "$PARAM" ] && ! grep -qE "^###[[:space:]]+${PARAM}" "wiki/pages/configuration/oscam.user.md" 2>/dev/null; then
+          REFS=$(find_refs "$PARAM")
+          MISSING_DOCS="${MISSING_DOCS}  - ${PARAM} (oscam.user)${REFS:+\n      ${REFS}}\n"
+        fi
+      done
+
+      # Check oscam-config-reader.c -> oscam.server.md
+      echo "Checking oscam-config-reader.c parameters..."
+      PARAMS=$(grep -E 'DEF_OPT_(INT8|INT32|UINT8|UINT32|STR|SSTR|HEX|FUNC|FUNC_X)[[:space:]]*\(' oscam-config-reader.c | \
+        sed -n 's/.*DEF_OPT_[A-Z0-9_]*[[:space:]]*("\([^"]*\)".*/\1/p' | sort -u || true)
+      for PARAM in $PARAMS; do
+        if [ -n "$PARAM" ] && ! grep -qE "^###[[:space:]]+${PARAM}" "wiki/pages/configuration/oscam.server.md" 2>/dev/null; then
+          REFS=$(find_refs "$PARAM")
+          MISSING_DOCS="${MISSING_DOCS}  - ${PARAM} (oscam.server)${REFS:+\n      ${REFS}}\n"
+        fi
+      done
+
+      # Report results
+      if [ -n "$MISSING_DOCS" ]; then
+        echo ""
+        echo -e "${TC_FNT_MAGENTA}================================================================${TC_FNT_DEFAULT}"
+        echo -e "${TC_FNT_MAGENTA}Missing wiki documentation for config parameters:${TC_FNT_DEFAULT}"
+        echo -e "${TC_FNT_YELLOW}${MISSING_DOCS}${TC_FNT_DEFAULT}"
+        echo -e "${TC_FNT_MAGENTA}----------------------------------------------------------------${TC_FNT_DEFAULT}"
+        echo -e "${TC_FNT_MAGENTA}Please add documentation in the oscam.wiki repository.${TC_FNT_DEFAULT}"
+        echo -e "${TC_FNT_MAGENTA}Wiki format: ### parametername${TC_FNT_DEFAULT}"
+        echo -e "${TC_FNT_MAGENTA}================================================================${TC_FNT_DEFAULT}"
+        exit 1
+      else
+        echo -e "${TC_FNT_GREEN}All config parameters are documented in wiki.${TC_FNT_DEFAULT}"
+      fi
+
+      echo "Wiki documentation check complete."
+
   #fix trailing white and convert dos2unix
   fix-whitespaces:
     - !reference [.helper, set-git-properties]

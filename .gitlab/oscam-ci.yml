@@ -104,6 +104,18 @@ code-cleanup:
     - !reference [.helper, fix-whitespaces]
   allow_failure: true
 
+wiki-check:
+  stage: fixup
+  tags:
+    - clean
+  needs: [code-cleanup]
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event' && $GITLAB_USER_NAME != 'pipeline-user'
+    - if: $CI_PIPELINE_SOURCE == 'schedule' && $GITLAB_USER_NAME != 'pipeline-user'
+  script:
+    - !reference [.helper, check-wiki-documentation]
+  allow_failure: true
+
 auto-version:
   stage: new-version
   tags:
