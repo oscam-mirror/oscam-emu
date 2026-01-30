@@ -5070,7 +5070,7 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 
 #define ENTITLEMENT_PAGE_SIZE 500
 
-#ifdef MODULE_CCCSHARE
+#ifdef MODULE_CCCAM
 static void print_cards(struct templatevars *vars, struct uriparams *params, struct cc_card **cardarray, int32_t cardsize,
 						int8_t show_global_list, struct s_reader *rdr, int32_t offset, int32_t apicall)
 {
@@ -5284,8 +5284,12 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 	if(!apicall) { setActiveMenu(vars, MNU_READERS); }
 	char *reader_ = getParam(params, "label");
 #ifdef MODULE_CCCAM
+#ifdef MODULE_CCCSHARE
 	char *sharelist_ = getParam(params, "globallist");
 	int32_t show_global_list = sharelist_ && sharelist_[0] == '1';
+#else
+	int32_t show_global_list = 0;
+#endif
 
 	struct s_reader *rdr = get_reader_by_label(getParam(params, "label"));
 	if(show_global_list || cs_strlen(reader_) || (rdr && rdr->typ == R_CCCAM))
@@ -5307,9 +5311,9 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 				tpl_printf(vars, TPLADD, "APIHOSTPORT", "%d", rdr->r_port);
 			}
 
-#ifdef MODULE_CCCSHARE
 			int32_t offset = atoi(getParam(params, "offset")); //should be 0 if parameter is missed on very first call
 			int32_t cardsize;
+#ifdef MODULE_CCCSHARE
 			if(show_global_list)
 			{
 				int32_t i;
@@ -5327,6 +5331,7 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 				NULLFREE(cardarray);
 			}
 			else
+#endif
 			{
 				struct s_client *rc = rdr->client;
 				struct cc_data *rcc = (rc) ? rc->cc : NULL;
@@ -5337,7 +5342,6 @@ static char *send_oscam_entitlement(struct templatevars *vars, struct uriparams 
 					NULLFREE(cardarray);
 				}
 			}
-#endif
 
 		}
 		else
