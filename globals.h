@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://git.streamboard.tv/common/oscam/-/wikis"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.26.04-11947"
+#define CS_VERSION				"2.26.04-11948"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -579,9 +579,16 @@ enum {E2_GLOBAL = 0, E2_GROUP, E2_CAID, E2_IDENT, E2_CLASS, E2_CHID, E2_QUEUE, E
 #define MAX_ATR_LEN				33		// max. ATR length
 #define MAX_HIST				15		// max. number of historical characters
 
+#if defined(__SIZEOF_INT128__)
+#define MAX_SIDBITS				128		// max services
+typedef __uint128_t			group_t;
+#define GROUP_BITS				128
+#else
 #define MAX_SIDBITS				64		// max services
-#define SIDTABBITS				uint64_t // 64bit type for services, if a system does not support this type,
-// please use a define and define it as uint32_t / MAX_SIDBITS 32
+typedef uint64_t				group_t;
+#define GROUP_BITS				64
+#endif
+#define SIDTABBITS				group_t // alias for services bitmask type
 
 #define BAN_UNKNOWN				1		// Failban mask for anonymous/ unknown contact
 #define BAN_DISABLED			2		// Failban mask for Disabled user
@@ -823,7 +830,7 @@ struct s_ecm
 	uint8_t			ecmd5[CS_ECMSTORESIZE];
 	uint8_t			cw[16];
 	uint16_t		caid;
-	uint64_t		grp;
+	group_t			grp;
 	struct s_reader	*reader;
 	int32_t			rc;
 	time_t			time;
@@ -1047,7 +1054,7 @@ typedef struct ecm_request_t
 	struct s_ecm_answer *matching_rdr;				// list of matching readers
 	const struct s_reader *fallback;				// fallback is the first fallback reader in the list matching_rdr
 	struct s_client	*client;						// contains pointer to 'c' client while running in 'r' client
-	uint64_t		grp;
+	group_t			grp;
 	int32_t			msgid;							// client pending table index
 	uint8_t			stage;							// processing stage in server module
 	int8_t			rc;
@@ -1219,7 +1226,7 @@ struct s_client
 	uint8_t			c35_sleepsend;
 	int8_t			ncd_keepalive;
 	int8_t			disabled;
-	uint64_t		grp;
+	group_t			grp;
 	int8_t			crypted;
 	int8_t			dup;
 	LLIST			*aureader_list;
@@ -1569,7 +1576,7 @@ struct s_reader										// contains device info, reader info and card info
 	int8_t			active;
 	int8_t			dropbadcws;						// Schlocke: 1=drops cw if checksum is wrong. 0=fix checksum (default)
 	int8_t			disablecrccws;					// 1=disable cw checksum test. 0=enable checksum check
-	uint64_t		grp;
+	group_t			grp;
 	int8_t			fallback;
 	FTAB			fallback_percaid;
 	FTAB			localcards;
@@ -2020,7 +2027,7 @@ struct s_auth
 	int8_t			autoau;
 	uint8_t			emm_reassembly;					// 0 = OFF; 1 = OFF / DVBAPI = ON; 2 = ON (default)
 	int8_t			monlvl;
-	uint64_t		grp;
+	group_t			grp;
 	int32_t			tosleep;
 	int32_t			umaxidle;
 	CAIDTAB			ctab;
@@ -2275,6 +2282,7 @@ struct s_config
 	char			*http_extern_jquery;
 #endif
 	int32_t			http_refresh;
+	int32_t			http_max_request_size;
 	int32_t			poll_refresh;
 	int8_t			http_hide_idle_clients;
 	char			*http_hide_type;
@@ -2571,7 +2579,7 @@ struct s_config
 	uint8_t			cacheex_lg_only_in_aio_only;
 	CECSPVALUETAB	cacheex_filter_caidtab;
 	CECSPVALUETAB	cacheex_filter_caidtab_aio;
-	uint64_t		cacheex_push_lg_groups;
+	group_t			cacheex_push_lg_groups;
 #endif
 #endif
 
