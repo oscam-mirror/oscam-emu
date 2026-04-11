@@ -752,11 +752,6 @@ static char *send_oscam_config_global(struct templatevars *vars, struct uriparam
 
 	tpl_addVar(vars, TPLADD, "DROPDUPSCHECKED", (cfg.dropdups == 1) ? "checked" : "");
 
-	if(cfg.resolve_gethostbyname == 1)
-		{ tpl_addVar(vars, TPLADD, "RESOLVER1", "selected"); }
-	else
-		{ tpl_addVar(vars, TPLADD, "RESOLVER0", "selected"); }
-
 	tpl_printf(vars, TPLADD, "FAILBANTIME", "%d", cfg.failbantime);
 	tpl_printf(vars, TPLADD, "FAILBANCOUNT", "%d", cfg.failbancount);
 

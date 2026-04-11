@@ -372,7 +372,7 @@
 #define WIKI_URL				"https://git.streamboard.tv/common/oscam/-/wikis"
 #define BOARD_URL				"https://board.streamboard.tv"
 #ifndef CS_VERSION
-#define CS_VERSION				"2.26.04-11950"
+#define CS_VERSION				"2.26.04-11951"
 #endif
 #ifndef CS_GIT_COMMIT
 #define CS_GIT_COMMIT			"a2b4c6d8"
@@ -2433,7 +2433,6 @@ struct s_config
 	int32_t			lb_auto_timeout_p;				// percent added to avg time as timeout time
 	int32_t			lb_auto_timeout_t;				// minimal time added to avg time as timeout time
 #endif
-	int32_t			resolve_gethostbyname;
 	int8_t			double_check;					// schlocke: Double checks each ecm+dcw from two (or more) readers
 	FTAB			double_check_caid;				// do not store loadbalancer stats with providers for this caid
 
