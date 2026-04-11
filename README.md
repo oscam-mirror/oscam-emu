@@ -12,7 +12,6 @@
 - [Issue tracker](https://git.streamboard.tv/common/oscam/-/issues)
 - [Support forum](https://board.streamboard.tv/forum/)
 
-
 ## Releases
 
 For the latest changes and release history, see the
@@ -20,8 +19,7 @@ For the latest changes and release history, see the
 
 ## GitLab repository
 
-Project page:
-   https://git.streamboard.tv/common/oscam
+Project page: [git.streamboard.tv/common/oscam](https://git.streamboard.tv/common/oscam)
 
 ## Building & Dependencies
 
