@@ -22,7 +22,7 @@
 			<TR><TD><A>Drop incoming settings only for CX-AIO peers:</A></TD><TD><input name="cacheex_lg_only_in_aio_only" value="0" type="hidden"><input name="cacheex_lg_only_in_aio_only" value="1" type="checkbox" ##LGONLYINAIOONLYCHECKED##></TD></TR>
 			<TR><TD><A>Cache-EX ECM filter:</A></TD><TD><input name="cacheex_ecm_filter" type="text" maxlength="1385" value="##CACHEEXECMFILTER##"></TD></TR>
 			<TR><TD><A>Cache-EX ECM filter(aio only):</A></TD><TD><input name="cacheex_ecm_filter_aio" type="text" maxlength="1385" value="##CACHEEXECMFILTERAIO##"></TD></TR>
-			<TR><TD><A>Push localgenerated flagged CWs always to these groups:</A></TD><TD><input name="cacheex_push_lg_groups" class="longer" type="text" maxlength="155" value="##CACHEEXPUSHLGGRPS##"> Valid values 1-64</TD></TR>
+			<TR><TD><A>Push localgenerated flagged CWs always to these groups:</A></TD><TD><input name="cacheex_push_lg_groups" class="longer" type="text" maxlength="##GROUPMAXINPUT##" value="##CACHEEXPUSHLGGRPS##"> Valid values 1-##GROUPMAX##</TD></TR>
 			<TR><TH COLSPAN="2">CSP</TH></TR>
 			<TR><TD><A>Port:</A></TD><TD><input name="csp_port" type="text" class="short" maxlength="5" value="##PORT##"></TD></TR>
 			<TR><TD><A>Serverip:</A></TD><TD><input name="csp_serverip" type="text" class="medium" maxlength="15" value="##SERVERIP##"></TD></TR>

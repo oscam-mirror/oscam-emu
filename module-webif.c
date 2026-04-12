@@ -74,6 +74,41 @@ static struct pstat p_stat_old;
 
 static bool use_srvid2 = false;
 
+static int32_t webif_group_input_maxlength(void)
+{
+	int32_t i;
+	int32_t length = 0;
+
+	for(i = 1; i <= GROUP_BITS; ++i)
+	{
+		if(i > 1)
+		{
+			++length;
+		}
+
+		if(i >= 100)
+		{
+			length += 3;
+		}
+		else if(i >= 10)
+		{
+			length += 2;
+		}
+		else
+		{
+			++length;
+		}
+	}
+
+	return length;
+}
+
+static void tpl_add_group_limit_vars(struct templatevars *vars)
+{
+	tpl_printf(vars, TPLADD, "GROUPMAX", "%d", GROUP_BITS);
+	tpl_printf(vars, TPLADD, "GROUPMAXINPUT", "%d", webif_group_input_maxlength());
+}
+
 /* constants for menuactivating */
 #define MNU_STATUS           0
 #define MNU_LIVELOG          1
@@ -930,6 +965,7 @@ static char *send_oscam_config_camd35tcp(struct templatevars *vars, struct uripa
 static char *send_oscam_config_cache(struct templatevars *vars, struct uriparams *params)
 {
 	setActiveSubMenu(vars, MNU_CFG_CACHE);
+	tpl_add_group_limit_vars(vars);
 
 	webif_save_config("cache", vars, params);
 
@@ -1518,6 +1554,7 @@ static char *send_oscam_config_webif(struct templatevars *vars, struct uriparams
 	tpl_printf(vars, TPLADD, "HTTPEMMSCLEAN", "%d", cfg.http_emms_clean);
 	tpl_printf(vars, TPLADD, "HTTPEMMGCLEAN", "%d", cfg.http_emmg_clean);
 	tpl_printf(vars, TPLADD, "HTTPREFRESH", "%d", cfg.http_refresh);
+	tpl_printf(vars, TPLADD, "HTTPMAXREQUESTSIZE", "%d", cfg.http_max_request_size);
 	tpl_printf(vars, TPLADD, "HTTPPOLLREFRESH", "%d", cfg.poll_refresh);
 	tpl_addVar(vars, TPLADD, "HTTPTPL", cfg.http_tpl);
 	tpl_addVar(vars, TPLADD, "HTTPPICONPATH", cfg.http_piconpath);
@@ -2409,6 +2446,8 @@ static char *send_oscam_reader_config(struct templatevars *vars, struct uriparam
 	char *value;
 
 	struct s_reader *rdr;
+
+	tpl_add_group_limit_vars(vars);
 
 	if(!apicall) { setActiveMenu(vars, MNU_READERS); }
 
@@ -3723,6 +3762,8 @@ static char *send_oscam_user_config_edit(struct templatevars *vars, struct uripa
 
 	int32_t i;
 	int existing_insert = 0;
+
+	tpl_add_group_limit_vars(vars);
 
 	if(!apicall) { setActiveMenu(vars, MNU_USERS); }
 
@@ -6901,7 +6942,7 @@ static char *send_oscam_services_edit(struct templatevars * vars, struct uripara
 {
 	struct s_sidtab *sidtab, *ptr;
 	char label[sizeof(cfg.sidtab->label)];
-	int32_t i;
+	int32_t i, sidtab_count;
 
 	setActiveMenu(vars, MNU_SERVICES);
 
@@ -6911,6 +6952,20 @@ static char *send_oscam_services_edit(struct templatevars * vars, struct uripara
 
 	if(sidtab == NULL)
 	{
+		sidtab_count = 0;
+		for(ptr = cfg.sidtab; ptr != NULL; ptr = ptr->next)
+		{
+			sidtab_count++;
+		}
+
+		if(sidtab_count >= MAX_SIDBITS)
+		{
+			cs_log("webif: cannot add service '%s' (limit %d reached)", label[0] ? label : "<new>", MAX_SIDBITS);
+			tpl_addMsg(vars, "Maximum number of services reached");
+			tpl_addMsg(vars, "No new service can be added");
+			return tpl_getTpl(vars, "SERVICESBIT");
+		}
+
 		i = 1;
 		while(cs_strlen(label) < 1)
 		{
@@ -7110,6 +7165,11 @@ static char *send_oscam_services(struct templatevars * vars, struct uriparams * 
 		tpl_addVar(vars, TPLAPPEND, "SERVICETABS", tpl_getTpl(vars, "SERVICECONFIGLISTBIT"));
 		sidtab = sidtab->next;
 		counter++;
+	}
+	if(counter > MAX_SIDBITS)
+	{
+		cs_log("webif: configured services exceed limit (%d > %d)", counter, MAX_SIDBITS);
+		tpl_addMsg(vars, "Configured services exceed maximum and should be reduced");
 	}
 	if(counter >= MAX_SIDBITS)
 	{
@@ -7785,7 +7845,7 @@ static bool send_EMM(struct s_reader * rdr, uint16_t caid, const struct s_cardsy
 		if(cs_malloc(&emm_pack, sizeof(EMM_PACKET)))
 		{
 			struct s_client *webif_client = cur_client();
-			webif_client->grp = 0xFF; /* to access to all readers */
+			webif_client->grp = ~(group_t)0; /* to access to all readers */
 
 			memset(emm_pack, '\0', sizeof(EMM_PACKET));
 			emm_pack->client = webif_client;
@@ -8775,7 +8835,7 @@ static char *send_oscam_api(struct templatevars * vars, FILE * f, struct uripara
 					return tpl_getTpl(vars, "APIERROR");
 				}
 				struct s_client *webif_client = cur_client();
-				webif_client->grp = 0xFF;  // access all readers
+				webif_client->grp = ~(group_t)0;  // access all readers
 
 				memset(cmd_pack, '0', sizeof(CMD_PACKET));
 				cmd_pack->client = webif_client;
@@ -9208,15 +9268,19 @@ static int8_t check_request(char *result, int32_t readen)
 static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePlain)
 {
 	int32_t n, bufsize = 0, errcount = 0;
+#ifdef WITH_EMU
+	const int32_t max_request_size = cfg.http_max_request_size > 0 ? cfg.http_max_request_size : 204800;
+#else
+	const int32_t max_request_size = cfg.http_max_request_size > 0 ? cfg.http_max_request_size : 102400;
+#endif
 	char buf2[1024];
-	struct pollfd pfd2[1];
 #ifdef WITH_SSL
 	int8_t is_ssl = 0;
 	if(ssl_active && !forcePlain)
 		{ is_ssl = 1; }
 #endif
 
-	while(1)
+	do
 	{
 		errno = 0;
 		if(forcePlain)
@@ -9232,7 +9296,7 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 					cs_sleepms(5);
 					continue;
 				}
-				else { return -1; }
+				return -1;
 			}
 #ifdef WITH_SSL
 			if(is_ssl)
@@ -9262,13 +9326,9 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 		memcpy(*result + bufsize, buf2, n);
 		bufsize += n;
 
-#ifdef WITH_EMU
-		if(bufsize > 204800) // max request size 200kb
-#else
-		if(bufsize > 102400) // max request size 100kb
-#endif
+		if(bufsize > max_request_size)
 		{
-			cs_log("error: too much data received from %s", cs_inet_ntoa(in));
+			cs_log("error: too much data received from %s (%d > %d)", cs_inet_ntoa(in), bufsize, max_request_size);
 			NULLFREE(*result);
 			*result = NULL;
 			return -1;
@@ -9282,22 +9342,9 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 
 			if(len > 0)
 				{ continue; }
-
-			pfd2[0].fd = SSL_get_fd((SSL *)f);
-
 		}
-		else
 #endif
-			pfd2[0].fd = fileno(f);
-
-		pfd2[0].events = (POLLIN | POLLPRI);
-
-		int32_t rc = poll(pfd2, 1, 100);
-		if(rc > 0 || !check_request(*result, bufsize))
-			{ continue; }
-		else
-			{ break; }
-	}
+	} while (!check_request(*result, bufsize));
 	return bufsize;
 }
 static int32_t process_request(FILE * f, IN_ADDR_T in)
