@@ -298,8 +298,11 @@ ifndef V
 endif
 
 BINDIR := Distribution
-override BUILD_DIR := build
+BUILD_DIR_DEFAULT := build
+BUILD_DIR ?= $(BUILD_DIR_DEFAULT)
+TESTS_BUILD_DIR ?= $(BUILD_DIR)-tests
 OBJDIR := $(BUILD_DIR)/$(TARGET)
+CLEAN_BUILD_DIRS := $(sort $(BUILD_DIR) $(TESTS_BUILD_DIR))
 
 # Include config.mak which contains variables for all enabled modules
 # These variables will be used to select only needed files for compilation
@@ -536,12 +539,7 @@ $(OBJDIR)/%.o: %.c Makefile
 -include $(subst .o,.d,$(OBJ))
 
 tests:
-	@-$(MAKE) --no-print-directory BUILD_TESTS=1 OSCAM_BIN=$(TESTS_BIN)
-	@-touch oscam.c
-# The above is really hideous hack :-) If we don't force oscam.c recompilation
-# after we've build the tests binary, the next "normal" compilation would fail
-# because there would be no run_tests() function. So the touch is there to
-# ensure oscam.c would be recompiled.
+	@-$(MAKE) --no-print-directory BUILD_TESTS=1 BUILD_DIR=$(TESTS_BUILD_DIR) OSCAM_BIN=$(TESTS_BIN)
 
 config:
 	$(SHELL) ./config.sh --gui
@@ -561,11 +559,11 @@ defconfig:
 	@-$(SHELL) ./config.sh --restore
 
 clean:
-	@-for FILE in $(BUILD_DIR)/* $(TESTS_BIN) $(TESTS_BIN).debug; do \
+	@-for FILE in $(addsuffix /*,$(CLEAN_BUILD_DIRS)) $(TESTS_BIN) $(TESTS_BIN).debug; do \
 		echo "RM	$$FILE"; \
 		rm -rf $$FILE; \
 	done
-	@-rm -rf $(BUILD_DIR) lib
+	@-rm -rf $(CLEAN_BUILD_DIRS) lib
 
 distclean: clean
 	@-for FILE in $(BINDIR)/list_smargo-* $(BINDIR)/oscam-$(VER)*; do \
