@@ -1582,11 +1582,10 @@ static void detect_valgrind(void)
 }
 
 #ifdef BUILD_TESTS
-extern void run_all_tests(void);
+extern int run_all_tests(void);
 __attribute__ ((noreturn)) static void run_tests(void)
 {
-	run_all_tests();
-	exit(0);
+	exit(run_all_tests() ? EXIT_FAILURE : EXIT_SUCCESS);
 }
 #else
 static void run_tests(void) { }

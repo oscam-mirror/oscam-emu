@@ -722,6 +722,13 @@ add_library (${csmodules} STATIC ${csmodules_srcs} ${csmodules_hdrs})
 set (csreaders "csreaders")
 add_library (${csreaders} STATIC ${csreaders_srcs} ${csreaders_hdrs})
 
+#----------------------- BUILD_TESTS --------------------------------
+
+# When ON, build the self-test binary (tests.bin) instead of oscam.
+# Mirrors `make tests` from the Makefile: adds tests.c to the build,
+# defines BUILD_TESTS=1, and skips strip/sign/upx.
+option(BUILD_TESTS "Build self-test binary (tests.bin)" OFF)
+
 #----------------------- other oscam files ------------------------------
 
 set (csoscam "csoscam")
@@ -729,32 +736,44 @@ if (NOT WITH_SIGNING)
 	list(REMOVE_ITEM csoscam_srcs "${CMAKE_SOURCE_DIR}/oscam-signing.c")
 	list(REMOVE_ITEM csoscam_hdrs "${CMAKE_SOURCE_DIR}/oscam-signing.h")
 endif (NOT WITH_SIGNING)
+if (BUILD_TESTS)
+	list (APPEND csoscam_srcs "${CMAKE_CURRENT_SOURCE_DIR}/tests.c")
+	add_definitions ("-DBUILD_TESTS=1")
+endif (BUILD_TESTS)
+
 add_library (${csoscam} STATIC ${csoscam_srcs} ${csoscam_hdrs})
 
 #----------------------- the executable ------------------------------
 
-if (NOT USE_COMPRESS EQUAL 1)
+if (BUILD_TESTS)
+	set (exe_name "tests.bin")
+elseif (NOT USE_COMPRESS EQUAL 1)
 	set (exe_name "oscam")
-else (NOT USE_COMPRESS EQUAL 1)
+else ()
 	set (exe_name "oscam-upx")
-endif (NOT USE_COMPRESS EQUAL 1)
+endif ()
 add_executable (${exe_name} ${exe_srcs} ${exe_hdrs})
 if (OSCamOperatingSystem MATCHES "Mac OS X")
 	target_link_libraries (${exe_name} ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt minilzo)
 else (OSCamOperatingSystem MATCHES "Mac OS X")
 	target_link_libraries (${exe_name} -Wl,--start-group ${csoscam} ${csmodules} ${csreaders} csctapi cscrypt -Wl,--end-group minilzo)
 endif (OSCamOperatingSystem MATCHES "Mac OS X")
-if (WITH_SIGNING EQUAL 1)
-	SIGN_COMMAND_OSCAM()
-endif (WITH_SIGNING EQUAL 1)
-if (USE_COMPRESS EQUAL 1)
-	add_custom_command(TARGET ${exe_name} POST_BUILD COMMAND upx -q ${COMP_LEVEL} ${exe_name} | grep '^[[:space:]]*[[:digit:]]* ->' | xargs | cat | xargs -0 printf '[ UPX] %s')
+if (BUILD_TESTS)
+	# Test binary stays plain: no sign/upx — see Makefile rationale.
+	add_custom_target (run-tests COMMAND ${CMAKE_COMMAND} -E echo "Running ${exe_name}..." COMMAND ./${exe_name} DEPENDS ${exe_name} WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR})
+else (BUILD_TESTS)
 	if (WITH_SIGNING EQUAL 1)
-		set_property(TARGET ${exe_name} APPEND PROPERTY ADDITIONAL_CLEAN_FILES ${UPX_SPLIT_PREFIX}aa ${UPX_SPLIT_PREFIX}ab)
-		add_custom_command(TARGET ${exe_name} POST_BUILD COMMAND ${SPLIT} --bytes=`grep -oba '${SIGN_UPXMARKER}' ${exe_name} | tail -1 | awk -F':' '{ print $$1 }'` ${exe_name} ${UPX_SPLIT_PREFIX})
 		SIGN_COMMAND_OSCAM()
 	endif (WITH_SIGNING EQUAL 1)
-endif (USE_COMPRESS EQUAL 1)
+	if (USE_COMPRESS EQUAL 1)
+		add_custom_command(TARGET ${exe_name} POST_BUILD COMMAND upx -q ${COMP_LEVEL} ${exe_name} | grep '^[[:space:]]*[[:digit:]]* ->' | xargs | cat | xargs -0 printf '[ UPX] %s')
+		if (WITH_SIGNING EQUAL 1)
+			set_property(TARGET ${exe_name} APPEND PROPERTY ADDITIONAL_CLEAN_FILES ${UPX_SPLIT_PREFIX}aa ${UPX_SPLIT_PREFIX}ab)
+			add_custom_command(TARGET ${exe_name} POST_BUILD COMMAND ${SPLIT} --bytes=`grep -oba '${SIGN_UPXMARKER}' ${exe_name} | tail -1 | awk -F':' '{ print $$1 }'` ${exe_name} ${UPX_SPLIT_PREFIX})
+			SIGN_COMMAND_OSCAM()
+		endif (WITH_SIGNING EQUAL 1)
+	endif (USE_COMPRESS EQUAL 1)
+endif (BUILD_TESTS)
 
 if(HAVE_LIBRT AND HAVE_LIBUSB)
 	if (LIBUSBDIR)

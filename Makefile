@@ -514,14 +514,23 @@ endif
 $(OSCAM_BIN).debug: $(OBJ)
 	$(SAY) "LINK	$@"
 	$(Q)$(CC) $(LDFLAGS) $(OBJ) $(LIBS) -o $@
+ifndef BUILD_TESTS
 	$(Q)$(SIGN_COMMAND_OSCAM)
+endif
 
+ifdef BUILD_TESTS
+# Tests: no strip/sign/upx — keep a plain unstripped ELF.
+$(OSCAM_BIN): $(OSCAM_BIN).debug
+	$(SAY) "COPY	$@"
+	$(Q)cp $(OSCAM_BIN).debug $(OSCAM_BIN)
+else
 $(OSCAM_BIN): $(OSCAM_BIN).debug
 	$(SAY) "STRIP	$@"
 	$(Q)cp $(OSCAM_BIN).debug $(OSCAM_BIN)
 	$(Q)$(STRIP) $(OSCAM_BIN)
 	$(Q)$(SIGN_COMMAND_OSCAM)
 	$(Q)$(UPX_COMMAND_OSCAM)
+endif
 
 $(LIST_SMARGO_BIN): utils/list_smargo.c
 	$(SAY) "BUILD	$@"
