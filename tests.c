@@ -1123,6 +1123,7 @@ static int run_des_raw_tests(void)
 /* --------------------------------------------------------------------- */
 /*  aes_decrypt_from_list (per-reader AES key DB used by Viaccess/Conax) */
 /* --------------------------------------------------------------------- */
+#ifdef READER_VIACCESS
 static int run_aes_key_list_tests(void)
 {
 	int failures = 0;
@@ -1164,6 +1165,7 @@ static int run_aes_key_list_tests(void)
 	fflush(stdout);
 	return failures;
 }
+#endif /* READER_VIACCESS */
 
 /* --------------------------------------------------------------------- */
 /*  AES-128-CBC decrypt chunked: verify IV chaining across multiple      */
@@ -1259,7 +1261,9 @@ static int run_crypto_tests(void)
 	failures += run_des_raw_tests();
 #endif
 	failures += run_aes_cbc_dec_chunked();
+#ifdef READER_VIACCESS
 	failures += run_aes_key_list_tests();
+#endif
 	failures += run_bn_tests();
 	failures += run_bn_extra_tests();
 	return failures;
