@@ -161,18 +161,18 @@
       if [ "$ARCH" == "native" ]; then
         echo "List some debug information...";
         openssl version;
-        if [ -z "$(find -L "/usr/include" -name "aes.h" -type f -print -quit)" ]; then
-            DISABLE_OPT+=" WITH_SSL";
-        else
+        if [ -n "$(find -L "/usr/include" -name "aes.h" -type f -print -quit)" ]; then
             echo "Enabling SSL...";
+            MAKE_OPT+=" USE_SSL=1";
+            CMAKE_OPT+=" -DWITH_SSL=1";
             BIN_EXT+="-ssl";
         fi
         if [ -z "$(find "/usr/lib" -name "arm_neon.h" -type f -print -quit)" ]; then
             DISABLE_OPT+=" WITH_ARM_NEON";
-            CMAKE_OPT="-DWITH_ARM_NEON=0";
+            CMAKE_OPT+=" -DWITH_ARM_NEON=0";
         else
             echo "Enabling ARM_NEON...";
-            CMAKE_OPT="-DWITH_ARM_NEON=1";
+            CMAKE_OPT+=" -DWITH_ARM_NEON=1";
             BIN_EXT+="-neon";
         fi;
         if ! ls -la /usr/lib/libdvbcsa.* 2>/dev/null; then
@@ -205,21 +205,18 @@
             CFLAGS="-march=armv7-a -mtune=cortex-a9 -mfloat-abi=softfp -mfpu=vfpv3-d16 -U__ANDROID_API__ -DANDROID -D__ANDROID_API__=31 -fpic -fno-addrsig -funwind-tables -fstack-protector-strong -no-canonical-prefixes -Wno-invalid-command-line-argument -Wno-unused-command-line-argument -Wno-ignored-optimization-argument";
             MAKE_OPT+=" LIB_RT= LIB_PTHREAD=";
         fi;
-        if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "aes.h" -type f -print -quit)" ]; then
-            DISABLE_OPT+=" WITH_SSL";
-            CMAKE_OPT+=" -DUSE_SSL=0";
-        else
+        if [ -n "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "aes.h" -type f -print -quit)" ]; then
             echo "Enabling SSL...";
             MAKE_OPT+=" USE_SSL=1";
-            CMAKE_OPT+=" -DUSE_SSL=1";
+            CMAKE_OPT+=" -DWITH_SSL=1";
             BIN_EXT+="-ssl";
         fi;
         if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "arm_neon.h" -type f -print -quit)" ] || [ "$ARCH" == "ancient" ]; then
             DISABLE_OPT+=" WITH_ARM_NEON";
-            CMAKE_OPT="-DWITH_ARM_NEON=0";
+            CMAKE_OPT+=" -DWITH_ARM_NEON=0";
         else
             echo "Enabling ARM_NEON...";
-            CMAKE_OPT="-DWITH_ARM_NEON=1";
+            CMAKE_OPT+=" -DWITH_ARM_NEON=1";
             BIN_EXT+="-neon";
         fi;
         if [ -z "$(find -L "$HOME/toolchains/${ARCH}_generic" -name "dvbcsa.h" -type f -print -quit)" ]; then

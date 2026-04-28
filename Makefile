@@ -28,10 +28,6 @@ ifeq ($(uname_S),Darwin)
 	LINKER_VER_OPT:=-Wl,-v
 endif
 
-ifeq "$(shell ./config.sh --enabled WITH_SSL)" "Y"
-	override USE_SSL=1
-	override USE_LIBCRYPTO=1
-endif
 ifeq "$(shell ./config.sh --enabled WITH_EMU)" "Y"
 	override USE_LIBCRYPTO=1
 endif
