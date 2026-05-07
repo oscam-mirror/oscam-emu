@@ -157,10 +157,9 @@ int32_t chk_srvid_match(ECM_REQUEST *er, SIDTAB *sidtab)
 #ifdef CS_CACHEEX_AIO
 int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er)
 {
-	int32_t nr;
 	SIDTAB *sidtab;
 
-	for(nr = 0, sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next, nr++)
+	for(sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next)
 	{
 		if(sidtab->disablecrccws_only_for_exception && (sidtab->num_caid | sidtab->num_provid | sidtab->num_srvid) && chk_srvid_match(er, sidtab))
 		{
@@ -172,10 +171,9 @@ int32_t chk_srvid_disablecrccws_only_for_exception(ECM_REQUEST *er)
 
 int32_t chk_srvid_no_wait_time(ECM_REQUEST *er)
 {
-	int32_t nr;
 	SIDTAB *sidtab;
 
-	for(nr = 0, sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next, nr++)
+	for(sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next)
 	{
 		if(sidtab->no_wait_time && (sidtab->num_caid | sidtab->num_provid | sidtab->num_srvid) && chk_srvid_match(er, sidtab))
 		{
@@ -187,10 +185,9 @@ int32_t chk_srvid_no_wait_time(ECM_REQUEST *er)
 
 int32_t chk_srvid_localgenerated_only_exception(ECM_REQUEST *er)
 {
-	int32_t nr;
 	SIDTAB *sidtab;
 
-	for(nr = 0, sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next, nr++)
+	for(sidtab = cfg.sidtab; sidtab; sidtab = sidtab->next)
 	{
 		if(sidtab->lg_only_exception && (sidtab->num_caid | sidtab->num_provid | sidtab->num_srvid) && chk_srvid_match(er, sidtab))
 		{
