@@ -5,8 +5,8 @@
 	<input name="write_sdt_prov" type="hidden" value="0">
 	<TABLE CLASS="config">
 		<TR><TH COLSPAN="2">Edit DVB Api Config</TH></TR>
-		<TR><TD><A>Enabled:</A></TD><TD><input name="enabled" type="checkbox" value="1" ##ENABLEDCHECKED##><label></label>
-		<TR><TD><A>AU:</A></TD><TD><input name="au" type="checkbox" value="1" ##AUCHECKED##><label></label>
+		<TR><TD><A>Enabled:</A></TD><TD><input name="enabled" type="checkbox" value="1" ##ENABLEDCHECKED##><label></label></TD></TR>
+		<TR><TD><A>AU:</A></TD><TD><input name="au" type="checkbox" value="1" ##AUCHECKED##><label></label></TD></TR>
 		<TR><TD><A>Boxtype:</A></TD><TD><select name="boxtype">##BOXTYPE##</select></TD></TR>
 		<TR><TD><A data-p="user_2">User:</A></TD><TD><input name="user" class="longer" type="text" maxlength="63" value="##USERNAME##"></TD></TR>
 		<TR><TD><A>PMT Mode:</A></TD>
@@ -33,7 +33,7 @@
 		<TR><TD><A>Listen port:</A></TD><TD><input name="listen_port" class="short" type="text" maxlength="5" value="##LISTENPORT##"> TCP port to listen instead of camd.socket</TD></TR>
 		<TR><TD><A>Server IP:</A></TD><TD><input name="serverip" class="medium" type="text" maxlength="45" value="##SERVERIP##"></TD></TR>
 		<TR><TD><A>Delayer:</A></TD><TD><input name="delayer" class="withunit short" type="text" maxlength="4" value="##DELAYER##"> ms</TD></TR>
-		<TR><TD><A>Enable ecm.info file:</A></TD><TD><input name="ecminfo_file" type="checkbox" value="1" ##ECMINFOFILECHECKED##><label></label>
+		<TR><TD><A>Enable ecm.info file:</A></TD><TD><input name="ecminfo_file" type="checkbox" value="1" ##ECMINFOFILECHECKED##><label></label></TD></TR>
 		<TR><TD><A>ecm.info type:</A></TD>
 			<TD>
 				<select name="ecminfo_type">
@@ -56,6 +56,6 @@
 				</select>
 			</TD>
 		</TR>
-		<TR><TD><A>Write detected prov name to srvid:</A></TD><TD><input name="write_sdt_prov" type="checkbox" value="1" ##WRITESDTPROVCHECKED##><label></label>
+		<TR><TD><A>Write detected prov name to srvid:</A></TD><TD><input name="write_sdt_prov" type="checkbox" value="1" ##WRITESDTPROVCHECKED##><label></label></TD></TR>
 ##TPLEXTENDEDCWAPI##
 ##TPLDEMUXERFIX##
