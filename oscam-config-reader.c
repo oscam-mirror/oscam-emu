@@ -1152,7 +1152,7 @@ static const struct config_list reader_opts[] =
 {
 	DEF_OPT_FIXUP_FUNC(reader_fixups_fn),
 	DEF_OPT_FUNC("label"                          , 0,                                    reader_label_fn),
-#ifdef WEBIF
+#if defined(WEBIF) || defined(MODULE_GBOX)
 	DEF_OPT_STR("description"                     , OFS(description),                     NULL),
 #endif
 	DEF_OPT_INT8("enable"                         , OFS(enable),                          1),
