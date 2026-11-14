@@ -5068,7 +5068,7 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 			if(apicall == 1){
 				tpl_addVar(vars, TPLAPPEND, "APIUSERCONFIGS", tpl_getTpl(vars, "APIUSERCONFIGLISTBIT"));
 			} else if (apicall == 2){
-				tpl_printf(vars, TPLADD, "JSONDELIMITER", "%s", (total_users > 1)?",":"");
+				tpl_printf(vars, TPLADD, "JSONDELIMITER", "%s", (clientcount > 0)?",":"");
 				tpl_addVar(vars, TPLAPPEND, "APIUSERCONFIGS", tpl_getTpl(vars, "JSONUSERBIT"));
 			}
 			++clientcount;
@@ -5089,18 +5089,7 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 	if(!apicall)
 		{ return tpl_getTpl(vars, "USERCONFIGLIST"); }
 	else
-	{
-		if(!filter || clientcount > 0)
-		{
-			return tpl_getTpl(vars, (apicall==1)?"APIUSERCONFIGLIST":"JSONUSER");
-		}
-		else
-		{
-			tpl_printf(vars, TPLADD, "APIERRORMESSAGE", "Invalid client %s", xml_encode(vars, filter));
-			return tpl_getTpl(vars, "APIERROR");
-		}
-	}
-
+		{ return tpl_getTpl(vars, (apicall==1)?"APIUSERCONFIGLIST":"JSONUSER"); }
 }
 
 #define ENTITLEMENT_PAGE_SIZE 500
