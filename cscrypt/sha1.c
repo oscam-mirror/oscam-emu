@@ -1,5 +1,4 @@
 #ifndef WITH_LIBCRYPTO
-//FIXME Not checked on threadsafety yet; after checking please remove this line
 /*
 SHA-1 in C
 By Steve Reid <sreid@sea-to-sky.net>
@@ -78,8 +77,6 @@ A million repetitions of "a"
   34AA973C D4C4DAA4 F61EEB2B DBAD2731 6534016F
 */
 
-/* #define SHA1HANDSOFF  */
-
 #include <stdio.h>
 #include <string.h>
 
@@ -131,15 +128,9 @@ void SHA1_Transform(uint32_t state[5], const uint8_t buffer[64])
 		uint8_t c[64];
 		uint32_t l[16];
 	} CHAR64LONG16;
-	CHAR64LONG16 *block;
-
-#ifdef SHA1HANDSOFF
-	static uint8_t workspace[64];
-	block = (CHAR64LONG16 *)workspace;
-	memcpy(block, buffer, 64);
-#else
-	block = (CHAR64LONG16 *)buffer;
-#endif
+	CHAR64LONG16 workspace;
+	CHAR64LONG16 *block = &workspace;
+	memcpy(block->c, buffer, sizeof(block->c));
 
 	/* Copy context->state[] to working vars */
 	a = state[0];
@@ -257,19 +248,25 @@ void SHA1_Init(SHA_CTX *context)
 void SHA1_Update(SHA_CTX *context, const uint8_t *data, const size_t len)
 {
 	size_t i, j;
+	uint32_t old_count;
+
+	if(len == 0) { return; }
 
 #ifdef VERBOSE
 	SHAPrintContext(context, "before");
 #endif
 
 	j = (context->count[0] >> 3) & 63;
-	if((context->count[0] += len << 3) < (len << 3)) { context->count[1]++; }
-	context->count[1] += (len >> 29);
-	if((j + len) > 63)
+	/* Detect carry within the low word, even when size_t is wider. */
+	old_count = context->count[0];
+	context->count[0] += (uint32_t)(len << 3);
+	if(context->count[0] < old_count) { context->count[1]++; }
+	context->count[1] += (uint32_t)(len >> 29);
+	if(len >= 64 - j)
 	{
 		memcpy(&context->buffer[j], data, (i = 64 - j));
 		SHA1_Transform(context->state, context->buffer);
-		for(; i + 63 < len; i += 64)
+		for(; len - i >= 64; i += 64)
 		{
 			SHA1_Transform(context->state, data + i);
 		}
@@ -313,8 +310,5 @@ void SHA1_Final(uint8_t digest[SHA_DIGEST_LENGTH], SHA_CTX *context)
 	memset(context->count, 0, 8);
 	memset(finalcount, 0, 8);   /* SWR */
 
-#ifdef SHA1HANDSOFF  /* make SHA1Transform overwrite its own static vars */
-	SHA1_Transform(context->state, context->buffer);
-#endif
 }
 #endif

@@ -252,8 +252,18 @@ OSCam build system documentation
     make static-libcrypto - Builds OSCam with libcrypto linked statically
     make static-ssl    - Builds OSCam with SSL support linked statically
 
- Developer targets:
-    make tests         - Builds 'tests.bin' binary
+ Developer tests:
+   Build the 'tests.bin' binary and run the self-tests:
+     make tests
+     ./tests.bin
+
+   To include the optional bundled SHA-1 single-update checks for 512 MiB
+   and 512 MiB + 1 byte inputs:
+     OSCAM_TEST_SHA1_LARGE=1 ./tests.bin
+
+   These checks allocate a 512 MiB + 1 byte buffer and are skipped by
+   default; the smaller SHA-1 length tests still run. They require the
+   bundled SHA-1 backend (build without USE_LIBCRYPTO or USE_SSL).
 
  Examples:
    Build OSCam for SH4 (the compilers are in the path):

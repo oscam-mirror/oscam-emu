@@ -54,9 +54,11 @@ int32_t ssl_active = 0;
 char noncekey[33];
 pthread_key_t getkeepalive;
 static pthread_key_t getip;
-pthread_key_t getssl;
 static CS_MUTEX_LOCK http_lock;
+#ifdef WITH_SSL
+pthread_key_t getssl;
 CS_MUTEX_LOCK *lock_cs;
+#endif
 
 static uint8_t useLocal = 1;
 #define PRINTF_LOCAL_D useLocal ? "%'d" : "%d"
@@ -425,32 +427,32 @@ static void set_ecm_info(struct templatevars * vars)
 	struct s_reader *rdr;
 	while((rdr = ll_iter_next(&itr)))
 	{
-		if (rdr->webif_ecmsok) { totalrdrok += rdr->webif_ecmsok; }
-		if (rdr->webif_ecmsnok) { totalrdrnok += rdr->webif_ecmsnok; }
-		if (rdr->webif_ecmstout) { totalrdrtout += rdr->webif_ecmstout; }
+		totalrdrok += rdr->webif_ecmsok;
+		totalrdrnok += rdr->webif_ecmsnok;
+		totalrdrtout += rdr->webif_ecmstout;
 
-		if (rdr->webif_ecmsfilteredlen) { flen += rdr->webif_ecmsfilteredlen; }
-		if (rdr->webif_ecmsfilteredhead) { fhead += rdr->webif_ecmsfilteredhead; }
+		flen += rdr->webif_ecmsfilteredlen;
+		fhead += rdr->webif_ecmsfilteredhead;
 
-		if (rdr->webif_emmerror[0]) { teruk += rdr->webif_emmerror[0]; }
-		if (rdr->webif_emmerror[1]) { teruq += rdr->webif_emmerror[1]; }
-		if (rdr->webif_emmerror[2]) { ters += rdr->webif_emmerror[2]; }
-		if (rdr->webif_emmerror[3]) { terg += rdr->webif_emmerror[3]; }
+		teruk += rdr->webif_emmerror[0];
+		teruq += rdr->webif_emmerror[1];
+		ters += rdr->webif_emmerror[2];
+		terg += rdr->webif_emmerror[3];
 
-		if (rdr->webif_emmwritten[0]) { twruk += rdr->webif_emmwritten[0]; }
-		if (rdr->webif_emmwritten[1]) { twruq += rdr->webif_emmwritten[1]; }
-		if (rdr->webif_emmwritten[2]) { twrs += rdr->webif_emmwritten[2]; }
-		if (rdr->webif_emmwritten[3]) { twrg += rdr->webif_emmwritten[3]; }
+		twruk += rdr->webif_emmwritten[0];
+		twruq += rdr->webif_emmwritten[1];
+		twrs += rdr->webif_emmwritten[2];
+		twrg += rdr->webif_emmwritten[3];
 
-		if (rdr->webif_emmskipped[0]) { tskuk += rdr->webif_emmskipped[0]; }
-		if (rdr->webif_emmskipped[1]) { tskuq += rdr->webif_emmskipped[1]; }
-		if (rdr->webif_emmskipped[2]) { tsks += rdr->webif_emmskipped[2]; }
-		if (rdr->webif_emmskipped[3]) { tskg += rdr->webif_emmskipped[3]; }
+		tskuk += rdr->webif_emmskipped[0];
+		tskuq += rdr->webif_emmskipped[1];
+		tsks += rdr->webif_emmskipped[2];
+		tskg += rdr->webif_emmskipped[3];
 
-		if (rdr->webif_emmblocked[0]) { tbluk += rdr->webif_emmblocked[0]; }
-		if (rdr->webif_emmblocked[1]) { tbluq += rdr->webif_emmblocked[1]; }
-		if (rdr->webif_emmblocked[2]) { tbls += rdr->webif_emmblocked[2]; }
-		if (rdr->webif_emmblocked[3]) { tblg += rdr->webif_emmblocked[3]; }
+		tbluk += rdr->webif_emmblocked[0];
+		tbluq += rdr->webif_emmblocked[1];
+		tbls += rdr->webif_emmblocked[2];
+		tblg += rdr->webif_emmblocked[3];
 	}
 	cs_readunlock(__func__, &readerlist_lock);
 
@@ -5094,7 +5096,7 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 			if(apicall == 1){
 				tpl_addVar(vars, TPLAPPEND, "APIUSERCONFIGS", tpl_getTpl(vars, "APIUSERCONFIGLISTBIT"));
 			} else if (apicall == 2){
-				tpl_printf(vars, TPLADD, "JSONDELIMITER", "%s", (total_users > 1)?",":"");
+				tpl_printf(vars, TPLADD, "JSONDELIMITER", "%s", (clientcount > 0)?",":"");
 				tpl_addVar(vars, TPLAPPEND, "APIUSERCONFIGS", tpl_getTpl(vars, "JSONUSERBIT"));
 			}
 			++clientcount;
@@ -5115,18 +5117,7 @@ static char *send_oscam_user_config(struct templatevars *vars, struct uriparams 
 	if(!apicall)
 		{ return tpl_getTpl(vars, "USERCONFIGLIST"); }
 	else
-	{
-		if(!filter || clientcount > 0)
-		{
-			return tpl_getTpl(vars, (apicall==1)?"APIUSERCONFIGLIST":"JSONUSER");
-		}
-		else
-		{
-			tpl_printf(vars, TPLADD, "APIERRORMESSAGE", "Invalid client %s", xml_encode(vars, filter));
-			return tpl_getTpl(vars, "APIERROR");
-		}
-	}
-
+		{ return tpl_getTpl(vars, (apicall==1)?"APIUSERCONFIGLIST":"JSONUSER"); }
 }
 
 #define ENTITLEMENT_PAGE_SIZE 500
@@ -6671,6 +6662,8 @@ static char *send_oscam_status(struct templatevars * vars, struct uriparams * pa
 
 					if(apicall == 2)
 					{
+						tpl_addVar(vars, TPLADD, "JSONDELIMITER", delimiter?",":"");
+						// Keep the previous placeholder available to external status templates.
 						tpl_addVar(vars, TPLADD, "JSONARRAYDELIMITER", delimiter?",":"");
 						tpl_addVar(vars, TPLAPPEND, "JSONSTATUSBITS", tpl_getTpl(vars, "JSONSTATUSBIT"));
 						delimiter++;
@@ -9285,9 +9278,70 @@ static int8_t check_request(char *result, int32_t readen)
 	return 0;
 }
 
+/* Keep retries and partial reads within one monotonic deadline. */
+static int32_t webif_remaining_ms(const struct timespec *deadline)
+{
+	struct timespec now;
+	if(clock_gettime(CLOCK_MONOTONIC, &now) != 0) { return -1; }
+	int64_t remaining = (int64_t)(deadline->tv_sec - now.tv_sec) * 1000
+		+ (deadline->tv_nsec - now.tv_nsec) / 1000000;
+	return remaining > 0 ? remaining : 0;
+}
+
+static int32_t webif_wait(int32_t fd, short events, const struct timespec *deadline)
+{
+	struct pollfd pfd = { .fd = fd, .events = events };
+	for(;;)
+	{
+		int32_t remaining = webif_remaining_ms(deadline);
+		if(remaining <= 0) { return -1; }
+		int32_t rc = poll(&pfd, 1, remaining);
+		if(rc < 0 && (errno == EINTR || errno == EAGAIN)) { continue; }
+		return rc > 0 ? 0 : -1;
+	}
+}
+
+#ifdef WITH_SSL
+/* Return 0 only for a TLS error eligible for the existing plain-HTTP fallback. */
+static int32_t webif_ssl_accept(SSL *ssl, int32_t fd)
+{
+	struct timespec deadline;
+	int32_t flags = fcntl(fd, F_GETFL, 0), ok = -1;
+	if(flags < 0 || clock_gettime(CLOCK_MONOTONIC, &deadline) != 0
+		|| fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) { return -1; }
+	deadline.tv_sec += 10;
+
+	while(webif_remaining_ms(&deadline) > 0)
+	{
+		ERR_clear_error();
+		errno = 0;
+		int32_t rc = SSL_accept(ssl);
+		if(rc == 1)
+		{
+			ok = webif_remaining_ms(&deadline) > 0 ? 1 : -1;
+			break;
+		}
+		int32_t err = SSL_get_error(ssl, rc);
+		if(err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE)
+		{
+			if(err == SSL_ERROR_SYSCALL && errno == EINTR) { continue; }
+			ok = 0;
+			break;
+		}
+		if(webif_wait(fd, err == SSL_ERROR_WANT_WRITE ? POLLOUT : POLLIN, &deadline) < 0)
+			{ break; }
+	}
+	if(fcntl(fd, F_SETFL, flags) < 0) { return -1; }
+	return ok;
+}
+#endif
+
 static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePlain)
 {
-	int32_t n, bufsize = 0, errcount = 0;
+	int32_t n, bufsize = 0, ret = -1;
+	int32_t fd;
+	int8_t allocation_failed = 0;
+	struct timespec deadline;
 #ifdef WITH_EMU
 	const int32_t max_request_size = cfg.http_max_request_size > 0 ? cfg.http_max_request_size : 204800;
 #else
@@ -9298,10 +9352,22 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 	int8_t is_ssl = 0;
 	if(ssl_active && !forcePlain)
 		{ is_ssl = 1; }
+	fd = is_ssl ? SSL_get_fd((SSL *)f) : fileno(f);
+#else
+	fd = fileno(f);
 #endif
+	int32_t flags = fcntl(fd, F_GETFL, 0);
+	if(flags < 0 || clock_gettime(CLOCK_MONOTONIC, &deadline) != 0
+		|| fcntl(fd, F_SETFL, flags | O_NONBLOCK) < 0) { return -1; }
+	/* Each call, including subsequent keepalive requests, gets a fresh budget. */
+	deadline.tv_sec += 10;
 
 	do
 	{
+		if(webif_remaining_ms(&deadline) <= 0) { goto out; }
+#ifdef WITH_SSL
+		if(is_ssl) { ERR_clear_error(); }
+#endif
 		errno = 0;
 		if(forcePlain)
 			{ n = read(fileno(f), buf2, sizeof(buf2)); }
@@ -9309,38 +9375,42 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 			{ n = webif_read(buf2, sizeof(buf2), f); }
 		if(n <= 0)
 		{
-			if((errno == 0 || errno == EINTR))
-			{
-				if(errcount++ < 10)
-				{
-					cs_sleepms(5);
-					continue;
-				}
-				return -1;
-			}
 #ifdef WITH_SSL
 			if(is_ssl)
 			{
+				int32_t err = SSL_get_error((SSL *)f, n);
+				if(err == SSL_ERROR_WANT_READ || err == SSL_ERROR_WANT_WRITE)
+				{
+					if(webif_wait(fd, err == SSL_ERROR_WANT_WRITE ? POLLOUT : POLLIN, &deadline) < 0)
+						{ goto out; }
+					continue;
+				}
+				if(err == SSL_ERROR_SYSCALL && errno == EINTR) { continue; }
 				if(errno != ECONNRESET)
 				{
 					int32_t errcode = ERR_peek_error();
 					char errstring[128];
 					ERR_error_string_n(errcode, errstring, sizeof(errstring) - 1);
-					cs_log_dbg(D_TRACE, "WebIf: read error ret=%d (%d%s%s)", n, SSL_get_error(cur_ssl(), n), errcode ? " " : "", errcode ? errstring : "");
+					cs_log_dbg(D_TRACE, "WebIf: read error ret=%d (%d%s%s)", n, err, errcode ? " " : "", errcode ? errstring : "");
 				}
-				return -1;
+				goto out;
 			}
-#else
+#endif
+			if(n < 0 && errno == EINTR) { continue; }
+			if(n < 0 && (errno == EAGAIN || errno == EWOULDBLOCK))
+			{
+				if(webif_wait(fd, POLLIN, &deadline) < 0) { goto out; }
+				continue;
+			}
 			if(errno != ECONNRESET)
 				{ cs_log_dbg(D_TRACE, "WebIf: read error ret=%d (errno=%d %s)", n, errno, strerror(errno)); }
-#endif
-			return -1;
+			goto out;
 		}
+		if(webif_remaining_ms(&deadline) <= 0) { goto out; }
 		if(!cs_realloc(result, bufsize + n + 1))
 		{
-			send_error500(f);
-			NULLFREE(*result);
-			return -1;
+			allocation_failed = 1;
+			goto out;
 		}
 
 		memcpy(*result + bufsize, buf2, n);
@@ -9349,9 +9419,7 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 		if(bufsize > max_request_size)
 		{
 			cs_log("error: too much data received from %s (%d > %d)", cs_inet_ntoa(in), bufsize, max_request_size);
-			NULLFREE(*result);
-			*result = NULL;
-			return -1;
+			goto out;
 		}
 
 #ifdef WITH_SSL
@@ -9365,8 +9433,60 @@ static int32_t readRequest(FILE * f, IN_ADDR_T in, char **result, int8_t forcePl
 		}
 #endif
 	} while (!check_request(*result, bufsize));
-	return bufsize;
+	ret = bufsize;
+out:
+	/* Response writes retain the existing blocking socket timeout profile. */
+	if(fcntl(fd, F_SETFL, flags) < 0) { ret = -1; }
+	if(ret < 0) { NULLFREE(*result); }
+	if(allocation_failed) { send_error500(f); }
+	return ret;
 }
+enum webif_page
+{
+	WEBIF_PAGE_UNKNOWN = -1,
+	WEBIF_PAGE_CONFIG,
+	WEBIF_PAGE_READERS,
+	WEBIF_PAGE_ENTITLEMENTS,
+	WEBIF_PAGE_STATUS,
+	WEBIF_PAGE_USERCONFIG,
+	WEBIF_PAGE_READERCONFIG,
+	WEBIF_PAGE_SERVICES,
+	WEBIF_PAGE_USER_EDIT,
+	WEBIF_PAGE_CSS,
+	WEBIF_PAGE_SERVICES_EDIT,
+	WEBIF_PAGE_SAVETEMPLATES,
+	WEBIF_PAGE_SHUTDOWN,
+	WEBIF_PAGE_SCRIPT,
+	WEBIF_PAGE_SCANUSB,
+	WEBIF_PAGE_FILES,
+	WEBIF_PAGE_READERSTATS,
+	WEBIF_PAGE_FAILBAN,
+	WEBIF_PAGE_JS,
+	WEBIF_PAGE_API_HTML,
+	WEBIF_PAGE_IMAGE,
+	WEBIF_PAGE_FAVICON,
+	WEBIF_PAGE_GRAPH,
+	WEBIF_PAGE_API_XML,
+	WEBIF_PAGE_CACHEEX,
+	WEBIF_PAGE_API_JSON,
+	WEBIF_PAGE_EMM,
+	WEBIF_PAGE_EMM_RUNNING,
+	WEBIF_PAGE_ROBOTS,
+	WEBIF_PAGE_GHTTP,
+	WEBIF_PAGE_LOGPOLL,
+	WEBIF_PAGE_JQUERY,
+#ifdef WEBIF_WIKI
+	WEBIF_PAGE_WIKI,
+	WEBIF_PAGE_WIKI_STATUS,
+#endif
+	WEBIF_PAGE_COUNT
+};
+
+static bool is_api_page(enum webif_page page)
+{
+	return page == WEBIF_PAGE_API_HTML || page == WEBIF_PAGE_API_XML || page == WEBIF_PAGE_API_JSON;
+}
+
 static int32_t process_request(FILE * f, IN_ADDR_T in)
 {
 	int32_t ok = 0;
@@ -9399,47 +9519,47 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 		char *method, *path, *protocol, *str1, *saveptr1 = NULL, *authheader = NULL, *extraheader = NULL, *filebuf = NULL;
 		char *pch, *tmp, *buf, *nameInUrl, subdir[32];
 		/* List of possible pages */
-		char *pages[] =
+		static const char *const pages[WEBIF_PAGE_COUNT] =
 		{
-			"/config.html",
-			"/readers.html",
-			"/entitlements.html",
-			"/status.html",
-			"/userconfig.html",
-			"/readerconfig.html",
-			"/services.html",
-			"/user_edit.html",
-			"/site.css",
-			"/services_edit.html",
-			"/savetemplates.html",
-			"/shutdown.html",
-			"/script.html",
-			"/scanusb.html",
-			"/files.html",
-			"/readerstats.html",
-			"/failban.html",
-			"/oscam.js",
-			"/oscamapi.html",
-			"/image",
-			"/favicon.ico",
-			"/graph.svg",
-			"/oscamapi.xml",
-			"/cacheex.html",
-			"/oscamapi.json",
-			"/emm.html",
-			"/emm_running.html",
-			"/robots.txt",
-			"/ghttp.html",
-			"/logpoll.html",
-			"/jquery.js",
+			[WEBIF_PAGE_CONFIG] = "/config.html",
+			[WEBIF_PAGE_READERS] = "/readers.html",
+			[WEBIF_PAGE_ENTITLEMENTS] = "/entitlements.html",
+			[WEBIF_PAGE_STATUS] = "/status.html",
+			[WEBIF_PAGE_USERCONFIG] = "/userconfig.html",
+			[WEBIF_PAGE_READERCONFIG] = "/readerconfig.html",
+			[WEBIF_PAGE_SERVICES] = "/services.html",
+			[WEBIF_PAGE_USER_EDIT] = "/user_edit.html",
+			[WEBIF_PAGE_CSS] = "/site.css",
+			[WEBIF_PAGE_SERVICES_EDIT] = "/services_edit.html",
+			[WEBIF_PAGE_SAVETEMPLATES] = "/savetemplates.html",
+			[WEBIF_PAGE_SHUTDOWN] = "/shutdown.html",
+			[WEBIF_PAGE_SCRIPT] = "/script.html",
+			[WEBIF_PAGE_SCANUSB] = "/scanusb.html",
+			[WEBIF_PAGE_FILES] = "/files.html",
+			[WEBIF_PAGE_READERSTATS] = "/readerstats.html",
+			[WEBIF_PAGE_FAILBAN] = "/failban.html",
+			[WEBIF_PAGE_JS] = "/oscam.js",
+			[WEBIF_PAGE_API_HTML] = "/oscamapi.html",
+			[WEBIF_PAGE_IMAGE] = "/image",
+			[WEBIF_PAGE_FAVICON] = "/favicon.ico",
+			[WEBIF_PAGE_GRAPH] = "/graph.svg",
+			[WEBIF_PAGE_API_XML] = "/oscamapi.xml",
+			[WEBIF_PAGE_CACHEEX] = "/cacheex.html",
+			[WEBIF_PAGE_API_JSON] = "/oscamapi.json",
+			[WEBIF_PAGE_EMM] = "/emm.html",
+			[WEBIF_PAGE_EMM_RUNNING] = "/emm_running.html",
+			[WEBIF_PAGE_ROBOTS] = "/robots.txt",
+			[WEBIF_PAGE_GHTTP] = "/ghttp.html",
+			[WEBIF_PAGE_LOGPOLL] = "/logpoll.html",
+			[WEBIF_PAGE_JQUERY] = "/jquery.js",
 #ifdef WEBIF_WIKI
-			"/wiki.json",
-			"/wiki_status.json",
+			[WEBIF_PAGE_WIKI] = "/wiki.json",
+			[WEBIF_PAGE_WIKI_STATUS] = "/wiki_status.json",
 #endif
 		};
 
-		int32_t pagescnt = sizeof(pages) / sizeof(char *); // Calculate the amount of items in array
-		int32_t i, bufsize, len, pgidx = -1;
+		int32_t i, bufsize, len;
+		enum webif_page pgidx = WEBIF_PAGE_UNKNOWN;
 		uint32_t etagheader = 0;
 		struct uriparams params;
 		params.paramcount = 0;
@@ -9523,9 +9643,9 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 		}
 
 		/* Map page to our static page definitions */
-		for(i = 0; i < pagescnt; i++)
+		for(i = 0; i < WEBIF_PAGE_COUNT; i++)
 		{
-			if(!strcmp(nameInUrl, pages[i])) { pgidx = i; }
+			if(!strcmp(nameInUrl, pages[i])) { pgidx = (enum webif_page)i; }
 		}
 
 		parseParams(&params, pch);
@@ -9632,15 +9752,15 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 		}
 
 		/*build page*/
-		if(pgidx == 8)
+		if(pgidx == WEBIF_PAGE_CSS)
 		{
 			send_file(f, "CSS", subdir, modifiedheader, etagheader, extraheader);
 		}
-		else if(pgidx == 17)
+		else if(pgidx == WEBIF_PAGE_JS)
 		{
 			send_file(f, "JS", subdir, modifiedheader, etagheader, extraheader);
 		}
-		else if(pgidx == 30)
+		else if(pgidx == WEBIF_PAGE_JQUERY)
 		{
 			send_file(f, "JQ", subdir, modifiedheader, etagheader, extraheader);
 		}
@@ -9699,12 +9819,12 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 				tpl_printf(vars, TPLADD, "POLLREFRESHTIME", "%d", cfg.poll_refresh);
 			}
 			if	(	cfg.http_refresh > 0 &&
-				(((	pgidx == 1 || pgidx == 4 ) && !cfg.poll_refresh ) ||
-				(	pgidx == 3 && ( cfg.http_status_log || !cfg.poll_refresh )) ||
-					pgidx == 15 || pgidx == 23 || pgidx == -1 )) // wenn polling bei cachex.html eingeführt wird muss die 23 => 2 zeilen höher
+				(((	pgidx == WEBIF_PAGE_READERS || pgidx == WEBIF_PAGE_USERCONFIG ) && !cfg.poll_refresh ) ||
+				(	pgidx == WEBIF_PAGE_STATUS && ( cfg.http_status_log || !cfg.poll_refresh )) ||
+					pgidx == WEBIF_PAGE_READERSTATS || pgidx == WEBIF_PAGE_CACHEEX || pgidx == WEBIF_PAGE_UNKNOWN ))
 			{
 				tpl_printf(vars, TPLADD, "REFRESHTIME", "%d", cfg.http_refresh);
-				tpl_addVar(vars, TPLADD, "WITHQUERY", pgidx == 15 ? "1" : "0");
+				tpl_addVar(vars, TPLADD, "WITHQUERY", pgidx == WEBIF_PAGE_READERSTATS ? "1" : "0");
 				tpl_addVar(vars, TPLADD, "REFRESH", tpl_getTpl(vars, "REFRESH"));
 			}
 #ifdef WEBIF_JQUERY
@@ -9731,8 +9851,8 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 			tpl_addVar(vars, TPLADD, "RUNAS", urlencode(vars, username(first_client)));
 
 			time_t now = time((time_t *)0);
-			// XMLAPI
-			if(pgidx == 18 || pgidx == 22 || pgidx == 24)
+			// API response metadata
+			if(is_api_page(pgidx))
 			{
 				char tbuffer [30];
 				strftime(tbuffer, 30, "%Y-%m-%dT%H:%M:%S%z", &st);
@@ -9769,108 +9889,105 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 			char *result = NULL;
 
 			// WebIf allows modifying many things. Thus, all pages except images/css/static are expected to be non-threadsafe!
-			if(pgidx != 19 && pgidx != 20 && pgidx != 21 && pgidx != 27) { cs_writelock(__func__, &http_lock); }
+			if(pgidx != WEBIF_PAGE_IMAGE && pgidx != WEBIF_PAGE_FAVICON && pgidx != WEBIF_PAGE_GRAPH && pgidx != WEBIF_PAGE_ROBOTS) { cs_writelock(__func__, &http_lock); }
 			switch(pgidx)
 			{
-			case 0:
+			case WEBIF_PAGE_CONFIG:
 				tpl_addVar(vars, TPLADD, "CONFIG_CONTENT", send_oscam_config(vars, &params));
 				result = tpl_getTpl(vars, "CONFIGCONTENT");
 				break;
-			case 1:
+			case WEBIF_PAGE_READERS:
 				result = send_oscam_reader(vars, &params, 0);
 				break;
-			case 2:
+			case WEBIF_PAGE_ENTITLEMENTS:
 				result = send_oscam_entitlement(vars, &params, 0);
 				break;
-			case 3:
+			case WEBIF_PAGE_STATUS:
 				result = send_oscam_status(vars, &params, 0);
 				break;
-			case 4:
+			case WEBIF_PAGE_USERCONFIG:
 				result = send_oscam_user_config(vars, &params, 0);
 				break;
-			case 5:
+			case WEBIF_PAGE_READERCONFIG:
 				result = send_oscam_reader_config(vars, &params);
 				break;
-			case 6:
+			case WEBIF_PAGE_SERVICES:
 				result = send_oscam_services(vars, &params);
 				break;
-			case 7:
+			case WEBIF_PAGE_USER_EDIT:
 				result = send_oscam_user_config_edit(vars, &params, 0);
 				break;
-				//case  8: css file
-			case 9:
+			case WEBIF_PAGE_SERVICES_EDIT:
 				result = send_oscam_services_edit(vars, &params);
 				break;
-			case 10:
+			case WEBIF_PAGE_SAVETEMPLATES:
 				result = send_oscam_savetpls(vars);
 				break;
-			case 11:
+			case WEBIF_PAGE_SHUTDOWN:
 				result = send_oscam_shutdown(vars, f, &params, 0, keepalive, extraheader);
 				break;
-			case 12:
+			case WEBIF_PAGE_SCRIPT:
 				result = send_oscam_script(vars, &params);
 				break;
-			case 13:
+			case WEBIF_PAGE_SCANUSB:
 				result = send_oscam_scanusb(vars);
 				break;
-			case 14:
+			case WEBIF_PAGE_FILES:
 				result = send_oscam_files(vars, &params, 0);
 				break;
-			case 15:
+			case WEBIF_PAGE_READERSTATS:
 				result = send_oscam_reader_stats(vars, &params, 0);
 				break;
-			case 16:
+			case WEBIF_PAGE_FAILBAN:
 				result = send_oscam_failban(vars, &params, 0);
 				break;
-				//case  17: js file
-			case 18:
+			case WEBIF_PAGE_API_HTML:
 				result = send_oscam_api(vars, f, &params, keepalive, 1, extraheader);
 				break; //oscamapi.html
-			case 19:
+			case WEBIF_PAGE_IMAGE:
 				result = send_oscam_image(vars, f, &params, NULL, modifiedheader, etagheader, extraheader);
 				break;
-			case 20:
+			case WEBIF_PAGE_FAVICON:
 				result = send_oscam_image(vars, f, &params, "ICMAI", modifiedheader, etagheader, extraheader);
 				break;
-			case 21:
+			case WEBIF_PAGE_GRAPH:
 				result = send_oscam_graph(vars);
 				break;
-			case 22:
+			case WEBIF_PAGE_API_XML:
 				result = send_oscam_api(vars, f, &params, keepalive, 1, extraheader);
 				break; //oscamapi.xml
 #ifdef CS_CACHEEX
-			case 23:
+			case WEBIF_PAGE_CACHEEX:
 				result = send_oscam_cacheex(vars, &params, 0);
 				break;
 #endif
-			case 24:
+			case WEBIF_PAGE_API_JSON:
 				result = send_oscam_api(vars, f, &params, keepalive, 2, extraheader);
 				break; //oscamapi.json
-			case 25:
+			case WEBIF_PAGE_EMM:
 				result = send_oscam_EMM(vars, &params);
 				break; //emm.html
-			case 26:
+			case WEBIF_PAGE_EMM_RUNNING:
 				result = send_oscam_EMM_running(vars, &params);
 				break; //emm_running.html
-			case 27:
+			case WEBIF_PAGE_ROBOTS:
 				result = send_oscam_robots_txt(f);
 				break; //robots.txt
 #ifdef MODULE_GHTTP
-			case 28:
+			case WEBIF_PAGE_GHTTP:
 				result = send_oscam_ghttp(vars, &params, 0);
 				break;
 #endif
 #ifdef WEBIF_LIVELOG
-			case 29:
+			case WEBIF_PAGE_LOGPOLL:
 				result = send_oscam_logpoll(vars, &params);
 				break;
-			//case 30: jquery.js
 #endif
 #ifdef WEBIF_WIKI
-			case 31:
+			case WEBIF_PAGE_WIKI:
 				result = send_oscam_wiki(vars, &params);
 				break;
-			case 32:
+			case WEBIF_PAGE_WIKI_STATUS:
 				result = send_oscam_wiki_status(vars, &params);
 				break;
 #endif
@@ -9878,20 +9995,20 @@ static int32_t process_request(FILE * f, IN_ADDR_T in)
 				result = send_oscam_status(vars, &params, 0);
 				break;
 			}
-			if(pgidx != 19 && pgidx != 20 && pgidx != 21 && pgidx != 27) { cs_writeunlock(__func__, &http_lock); }
+			if(pgidx != WEBIF_PAGE_IMAGE && pgidx != WEBIF_PAGE_FAVICON && pgidx != WEBIF_PAGE_GRAPH && pgidx != WEBIF_PAGE_ROBOTS) { cs_writeunlock(__func__, &http_lock); }
 
 			if(result == NULL || !strcmp(result, "0") || cs_strlen(result) == 0) { send_error500(f); }
 			else if(strcmp(result, "1"))
 			{
 				//it doesn't make sense to check for modified etagheader here as standard template has timestamp in output and so site changes on every request
-				if(pgidx == 18)
+				if(pgidx == WEBIF_PAGE_API_HTML)
 					{ send_headers(f, 200, "OK", extraheader, "text/xml", 0, cs_strlen(result), NULL, 0); }
-				else if(pgidx == 21)
+				else if(pgidx == WEBIF_PAGE_GRAPH)
 					{ send_headers(f, 200, "OK", extraheader, "image/svg+xml", 0, cs_strlen(result), NULL, 0); }
-				else if(pgidx == 24)
+				else if(pgidx == WEBIF_PAGE_API_JSON)
 					{ send_headers(f, 200, "OK", extraheader, "text/javascript", 0, cs_strlen(result), NULL, 0); }
 #ifdef WEBIF_WIKI
-				else if(pgidx == 31)
+				else if(pgidx == WEBIF_PAGE_WIKI)
 					{ send_headers(f, 200, "OK", extraheader, "application/json", 0, cs_strlen(result), NULL, 0); }
 #endif
 				else
@@ -9931,40 +10048,17 @@ static void *serve_process(void *conn)
 #ifdef WITH_SSL
 	if(ssl_active)
 	{
+		FILE *f = NULL;
+		int32_t request_ok = -1;
 		if(SSL_set_fd(ssl, s))
 		{
-			int32_t ok = (SSL_accept(ssl) != -1);
-			if(!ok)
+			int32_t ok = webif_ssl_accept(ssl, s);
+			if(ok == 1)
 			{
-				int8_t tries = 100;
-				while(!ok && tries--)
-				{
-					int32_t err = SSL_get_error(ssl, -1);
-					if(err != SSL_ERROR_WANT_READ && err != SSL_ERROR_WANT_WRITE)
-						{ break; }
-					else
-					{
-						struct pollfd pfd;
-						pfd.fd = s;
-						pfd.events = POLLIN | POLLPRI;
-						int32_t rc = poll(&pfd, 1, -1);
-						if(rc < 0)
-						{
-							if(errno == EINTR || errno == EAGAIN) { continue; }
-							break;
-						}
-						if(rc == 1)
-							{ ok = (SSL_accept(ssl) != -1); }
-					}
-				}
+				request_ok = process_request((FILE *)ssl, in);
 			}
-			if(ok)
+			else if(ok == 0)
 			{
-				process_request((FILE *)ssl, in);
-			}
-			else
-			{
-				FILE *f;
 				f = fdopen(s, "r+");
 				if(f != NULL)
 				{
@@ -9991,7 +10085,6 @@ static void *serve_process(void *conn)
 					else
 						{ send_error(f, 200, "Bad Request", NULL, "This web server is running in SSL mode.", 1); }
 					fflush(f);
-					fclose(f);
 					NULLFREE(filebuf);
 				}
 				else
@@ -10001,9 +10094,11 @@ static void *serve_process(void *conn)
 			}
 		}
 		else { cs_log("WebIf: Error calling SSL_set_fd()."); }
-		SSL_shutdown(ssl);
-		close(s);
+		if(request_ok >= 0) { SSL_shutdown(ssl); }
 		SSL_free(ssl);
+		/* A fallback stream owns the socket; release TLS before its descriptor. */
+		if(f != NULL) { fclose(f); }
+		else { close(s); }
 	}
 	else
 #endif
@@ -10014,14 +10109,15 @@ static void *serve_process(void *conn)
 		{
 			process_request(f, in);
 			fflush(f);
+			shutdown(s, SHUT_WR);
 			fclose(f);
 		}
 		else
 		{
 			cs_log_dbg(D_TRACE, "WebIf: fdopen(%d) failed. (errno=%d %s)", s, errno, strerror(errno));
+			shutdown(s, SHUT_WR);
+			close(s);
 		}
-		shutdown(s, SHUT_WR);
-		close(s);
 	}
 
 	return NULL;

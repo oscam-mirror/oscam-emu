@@ -31,8 +31,8 @@ function initDoc() {
 /* Function for add new reader/user in readers.html/userconfig.html */
 function addinsert() {
 	cdpause();
-	$("#searchTable").fadeOut('slow', function() {
-		$("#newinsert").fadeIn('slow');
+	$("#searchTable").fadeOut('fast', function() {
+		$("#newinsert").fadeIn('fast');
 	});
 }
 
@@ -49,7 +49,7 @@ function cleaninsert(deleteinsert) {
 	var tmp_array = existing_inserts.slice();
 	existing_inserts.length = 0;
 	var i2 = 0;
-	for (i = 0; i < tmp_array.length; i++) {
+	for (var i = 0; i < tmp_array.length; i++) {
 		if (tmp_array[i] != deleteinsert){
 			existing_inserts[i2] = tmp_array[i];
 			i2++;
@@ -65,10 +65,8 @@ var beep = (function () {
 						window.msAudioContext);
 	if (contextClass) {
 		var ctx = new contextClass();
-		return function (duration, type, freq, vol, finishedCallback) {
+		return function (duration, freq, vol, finishedCallback) {
 			duration = +duration;
-			// Only 0-4 are valid types.
-			type = (type % 5) || 0;
 
 			if (typeof finishedCallback != "function") {
 				finishedCallback = function () {};
@@ -76,11 +74,9 @@ var beep = (function () {
 
 			var osc = ctx.createOscillator();
 			var gainNode = ctx.createGain();
-			osc.type = type;
 			osc.connect(gainNode);
 			gainNode.connect(ctx.destination);
 			gainNode.gain.value = vol;
-			osc.type = type;
 			osc.frequency.value = freq; // value in hertz
 			osc.detune.value = 100; // value in cents
 			osc.start(0);
@@ -91,7 +87,7 @@ var beep = (function () {
 			}, duration);
 		};
 	} else {
-		return function (duration, type, freq, vol, finishedCallback) {return;};
+		return function (duration, freq, vol, finishedCallback) {return;};
 	}
 })();
 
@@ -302,10 +298,10 @@ $(function () {
 	$("#showhidesettings").click(function () {
 		if ($("#showhidesettings").val() == 'Show Settings') {
 			$("#showhidesettings").val('Hide Settings');
-			$("#regexdata").fadeIn('slow');
+			$("#regexdata").fadeIn('fast');
 		} else {
 			$("#showhidesettings").val('Show Settings');
-			$("#regexdata").fadeOut('slow');
+			$("#regexdata").fadeOut('fast');
 		}
 	});
 
@@ -573,9 +569,7 @@ function updateUserpage(data) {
 						$(uid + " > td.usercol6").text('');
 
 						// just to be sure that class of image is set
-						if ($(uid + " > td.usercol6 > img").length) {
-							$(uid + " > td.usercol6 > img").attr('class', 'usericon');
-						}
+						$(uid + " > td.usercol6 > img").attr('class', 'usericon');
 
 						newimage = $('<img class="usericon" src="image?i=IC_' + item.user.lca + '">');
 						newimage.hide();
@@ -730,9 +724,7 @@ function updateUserpage(data) {
 				// last status was online so cleanup offline
 				$(uid).attr('class', item.user.classname);
 				if (!is_nopoll('usercol1')) {
-					if ($(uid + " td.usercol1 > span.span_notifier").length) {
-						$(uid + " td.usercol1 > span.span_notifier").remove();
-					}
+					$(uid + " td.usercol1 > span.span_notifier").remove();
 				}
 				if (!is_nopoll('usercol2')) {
 					$(uid + " td.usercol2")
@@ -871,11 +863,7 @@ function setDebuglevel(debug, maxdebug) {
 		$("#debugfrom").text(' Switch Debug from ' + cs_dblevel + ' to ');
 		for (var i = 0; i < maxlevel; i++) {
 			lvl = 1 << i;
-			if (cs_dblevel & lvl) {
-				$("#debug" + lvl).attr('sendval', cs_dblevel - lvl);
-			} else {
-				$("#debug" + lvl).attr('sendval', cs_dblevel + lvl);
-			}
+			$("#debug" + lvl).attr('sendval', cs_dblevel ^ lvl);
 			$("#debug" + lvl).attr('class', (cs_dblevel & lvl) ? 'debugls' : 'debugl');
 		}
 		lastdebuglevel = cs_dblevel;
@@ -969,7 +957,7 @@ function updateLogpage(data) {
 					}
 					$("#livelogdata").append(newline);
 					if (newcolor.beep == 1) {
-						beep(50, 4, 1000, 0.2);
+						beep(50, 1000, 0.2);
 					}
 				} else {
 					hiddenline = 1;
@@ -1291,9 +1279,7 @@ function updateStatuspage(data) {
 					$(uid + " > td.statuscol13 > a").attr('title', item.request.chname + item.request.chprovider);
 
 					// just to be sure that class of image is set
-					if ($(uid + " > td.statuscol13 > a > img").length) {
-						$(uid + " > td.statuscol13 > a > img").attr('class', 'statususericon');
-					}
+					$(uid + " > td.statuscol13 > a > img").attr('class', 'statususericon');
 
 					newimage = $('<img class="statususericon" src="image?i=IC_' + item.request.picon + '">');
 					newimage.hide();
@@ -1545,9 +1531,7 @@ function setPollerr(error) {
 	if (error && !$("#pollerr").length) {
 		$("body").append('<div id="pollerr" style="top:5px;left:5px;background-color:red;color:yellow;">POLLERR</div>');
 	} else {
-		if ($("#pollerr").length) {
-			$("#pollerr").fadeOut('slow').remove();
-		}
+		$("#pollerr").fadeOut('slow').remove();
 	}
 }
 
@@ -1952,18 +1936,18 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 
 				var bin = parseInt(b[2] + b[3], 16);
 				var time = {};
-				time.s = ((bin & parseInt('11111', 2)) * 2);
+				time.s = ((bin & 0x1F) * 2);
 				bin = bin >>> 5;
-				time.m = (bin & parseInt('111111', 2));
+				time.m = (bin & 0x3F);
 				bin = bin >>> 6;
-				time.h = (bin & parseInt('11111', 2));
+				time.h = (bin & 0x1F);
 				bin = bin >>> 5;
 
 				bin = parseInt(b[0] + b[1], 16);
 				var date = {};
-				date.d = (bin & parseInt('11111111', 2));
+				date.d = (bin & 0xFF);
 				bin = bin >>> 8;
-				date.m = (bin & parseInt('11111111', 2));
+				date.m = (bin & 0xFF);
 				bin = bin >>> 8;
 
 				date.y = parseInt(date.m / 12) + 2004;
@@ -2321,27 +2305,24 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 	};
 	e.extend(true, e.fn.colorPicker, {
 		toHex: function (e) {
-			if (e.match(/[0-9A-F]{6}|[0-9A-F]{3}$/i)) {
-				return e.charAt(0) === "#" ? e : "#" + e
-			} else if (e.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/)) {
-				var t = [parseInt(RegExp.$1, 10), parseInt(RegExp.$2, 10), parseInt(RegExp.$3, 10)],
-					n = function (e) {
-						if (e.length < 2) {
-							for (var t = 0, n = 2 - e.length; t < n; t++) {
-								e = "0" + e
-							}
-						}
-						return e
-					};
-				if (t.length === 3) {
-					var r = n(t[0].toString(16)),
-						i = n(t[1].toString(16)),
-						s = n(t[2].toString(16));
-					return "#" + r + i + s
-				}
-			} else {
+			var hex = e.match(/^#?([0-9A-F]{3}|[0-9A-F]{6})$/i);
+			if (hex && hex[0] === e) {
+				return "#" + hex[1]
+			}
+			var rgb = e.match(/^rgb\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})\s*\)$/);
+			if (!rgb || rgb[0] !== e) {
 				return false
 			}
+			var channels = [parseInt(rgb[1], 10), parseInt(rgb[2], 10), parseInt(rgb[3], 10)],
+				hexColor = "#";
+			for (var channel = 0; channel < channels.length; channel++) {
+				if (channels[channel] > 255) {
+					return false
+				}
+				var hexChannel = channels[channel].toString(16);
+				hexColor += hexChannel.length < 2 ? "0" + hexChannel : hexChannel;
+			}
+			return hexColor
 		},
 		checkMouse: function (r, i) {
 			var s = n,
@@ -2454,7 +2435,7 @@ function decodeVideoguardEMM(text, target, addHideButton) {
 						var o = typeof s !== "undefined" ? s : r.text();
 						a.push([o, n])
 					});
-					a.sort(function (e, t, s) {
+					a.sort(function (e, t) {
 						return f(e[0], t[0], o)
 					});
 					if (o != s.ASC) a.reverse();
