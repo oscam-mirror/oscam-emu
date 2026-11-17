@@ -6,58 +6,59 @@ then
 	exit 1
 fi
 
-OPTS=`grep "static const char short_options" oscam.c | sed -e 's|.* \"||;s|\".*||;s|:||g;s|\(.\)|\1 |g'`
-SOPTS=$((for i in $OPTS; do echo $i; done) | sort)
+OPTS=$(grep "static const char short_options" oscam.c | sed -e 's|.* \"||;s|\".*||;s|:||g;s|\(.\)|\1 |g')
+SOPTS=$(for i in $OPTS; do printf '%s\n' "$i"; done | sort -u)
 LOPTS=$(grep "^	{ \"" oscam.c | sed -e 's|.*{ \"||;s|".*||')
-FOPTS=""
 
-#echo opts:$OPTS
-#echo sopts:$SOPTS
-#echo lopts:$LOPTS
-#exit
-
-echo -en "Short options that are free to use:\n    "
-for i in $(echo {A..Z}) $(echo {a..z}) $(echo {0..9})
+printf 'Short options that are free to use:\n    '
+for i in A B C D E F G H I J K L M N O P Q R S T U V W X Y Z \
+	a b c d e f g h i j k l m n o p q r s t u v w x y z \
+	0 1 2 3 4 5 6 7 8 9
 do
-	echo $OPTS | grep -q $i 2>/dev/null
-	if [ $? != 0 ]
+	if ! printf '%s\n' "$OPTS" | grep -Fq "$i"
 	then
-		echo -n $i
-		FOPTS="$FOPTS $i"
+		printf '%s' "$i"
 	fi
 done
-echo
+printf '\n'
 
-echo -en "Options that are not processed in oscam.c (missing case 'x'):\n    "
-#AOPTS="$FOPTS $SOPTS"
+printf "Options that are not processed in oscam.c (missing case 'x'):\n    "
 AOPTS="$SOPTS"
 for i in $AOPTS
 do
-	grep -q "case '$i'" oscam.c 2>/dev/null
-	[ $? != 0 ] && echo -n $i
+	if ! grep -Fq "case '$i'" oscam.c
+	then
+		printf '%s' "$i"
+	fi
 done
-echo
+printf '\n'
 
-echo -en "Short options that are missing from 'struct long_options[]'\n    "
+printf "Short options that are missing from 'struct long_options[]'\n    "
 for i in $AOPTS
 do
-	grep -q "NULL, '$i' }," oscam.c 2>/dev/null
-	[ $? != 0 ] && echo -n $i
+	if ! grep -Fq "NULL, '$i' }," oscam.c
+	then
+		printf '%s' "$i"
+	fi
 done
-echo
+printf '\n'
 
-echo -en "No help entry in usage() for short options:\n    "
+printf 'No help entry in usage() for short options:\n    '
 for i in $AOPTS
 do
-	grep -q "	printf(\" -$i" oscam.c 2>/dev/null
-	[ $? != 0 ] && echo -n $i
+	if ! grep -Fq "	printf(\" -$i" oscam.c
+	then
+		printf '%s' "$i"
+	fi
 done
-echo
+printf '\n'
 
-echo "No help entry in usage() long options:"
+printf 'No help entry in usage() long options:\n'
 for i in $LOPTS
 do
-	grep -q "	printf(\" -., --$i" oscam.c 2>/dev/null
-	[ $? != 0 ] && echo "    $i"
+	if ! grep -q "	printf(\" -., --$i" oscam.c
+	then
+		printf '    %s\n' "$i"
+	fi
 done
-echo
+printf '\n'
