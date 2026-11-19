@@ -5,6 +5,7 @@
 #include "cscrypt/md5.h"
 #include "module-anticasc.h"
 #include "module-cccam.h"
+#include "module-gbox.h"
 #include "module-webif.h"
 #include "oscam-array.h"
 #include "oscam-conf-chk.h"
@@ -748,6 +749,13 @@ void client_check_status(struct s_client *cl)
 			struct s_reader *rdr = cl->reader;
 			if(!rdr || !rdr->enable || !rdr->active) // reader is disabled or restarting at this moment
 			{
+				break;
+			}
+
+			// Bootstrap retries must work before an incoming GBox client exists.
+			if(gbox_reader_hello_pending(cl))
+			{
+				add_job(cl, ACTION_READER_GBOX_HELLO, NULL, 0);
 				break;
 			}
 

@@ -142,6 +142,7 @@ struct gbox_data
 struct gbox_peer
 {
 	struct gbox_data gbox;
+	uint8_t initialized; // Protected by local_gbox_init_lock.
 	uint8_t *hostname;
 	uint8_t checkcode[7];
 	int8_t online;
@@ -183,12 +184,16 @@ void restart_gbox_peer(char *rdrlabel, uint8_t all, uint16_t gbox_id);
 void write_msg_info(struct s_client *cli, uint8_t msg_id, uint8_t txt_id, uint16_t misc);
 extern void gbx_local_card_stat(uint8_t crdstat, uint16_t caid);
 extern void gbox_send_init_hello(void);
+int8_t gbox_reader_hello_pending(struct s_client *cli);
+void gbox_send_reader_hello(struct s_client *cli);
 extern void stop_gbx_ticker(void);
 #else
 static inline void gbox_free_cards_pending(ECM_REQUEST *UNUSED(er)) { }
 static inline void gbox_send_good_night(void) { }
 static inline void gbx_local_card_stat(uint8_t UNUSED(crdstat), uint16_t UNUSED(caid) ) { }
 static inline void gbox_send_init_hello(void) { }
+static inline int8_t gbox_reader_hello_pending(struct s_client *UNUSED(cli)) { return 0; }
+static inline void gbox_send_reader_hello(struct s_client *UNUSED(cli)) { }
 static inline void stop_gbx_ticker(void) { }
 
 #endif
