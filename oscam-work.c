@@ -14,6 +14,7 @@
 #include "module-cccam.h"
 #include "module-cccam-data.h"
 #include "module-cccshare.h"
+#include "module-gbox.h"
 #include "oscam-time.h"
 
 extern CS_MUTEX_LOCK system_lock;
@@ -236,7 +237,8 @@ void *work_thread(void *ptr)
 			struct timeb actualtime;
 			cs_ftime(&actualtime);
 			int64_t gone = comp_timeb(&actualtime, &data->time);
-			if(data != &tmp_data && gone > (int) cfg.ctimeout+1000)
+			// The initial GBox hello must survive slow reader initialization.
+			if(data != &tmp_data && data->action != ACTION_READER_GBOX_HELLO && gone > (int) cfg.ctimeout+1000)
 			{
 				cs_log_dbg(D_TRACE, "dropping client data for %s time %"PRId64" ms", username(cl), gone);
 				__free_job_data(cl, data);
@@ -339,7 +341,14 @@ void *work_thread(void *ptr)
 
 				case ACTION_READER_INIT:
 					if(!cl->init_done)
-						{ reader_init(reader); }
+					{
+						if(reader_init(reader))
+							{ gbox_send_reader_hello(cl); }
+					}
+					break;
+
+				case ACTION_READER_GBOX_HELLO:
+					gbox_send_reader_hello(cl);
 					break;
 
 				case ACTION_READER_RESTART:
